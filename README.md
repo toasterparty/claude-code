@@ -10,6 +10,8 @@ The scripts provided by this repository handle the following (idempotently):
 - Adding of Claude Code to PATH
 - Updating the contents of the user-space claude directory (default: `~/.claude/`) with the files in `claude-code/`
 
+> Note: Install scripts overwrite `CLAUDE.md` and a few user settings.
+
 ## Usage
 
 ### Linux/MacOS (Bash)
@@ -38,4 +40,5 @@ Windows:
 
 ```powershell
 $env:CLAUDE_DIR = "$HOME\.claude-work"; irm https://claude.toasterparty.net/install.ps1 | iex
+$env:CLAUDE_DIR = "$HOME\.claude-personal"; irm https://claude.toasterparty.net/install.ps1 | iex
 ```
