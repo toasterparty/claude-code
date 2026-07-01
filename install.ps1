@@ -9,8 +9,14 @@ $script:TempDir = $null
 function Write-Step($msg) { Write-Host "==> $msg" }
 
 function Install-ClaudeCode {
-    Write-Step 'Installing/upgrading Claude Code'
-    Invoke-RestMethod https://claude.ai/install.ps1 | Invoke-Expression
+    if (Get-Command claude -ErrorAction SilentlyContinue) {
+        Write-Step 'Updating Claude Code'
+        claude update
+    }
+    else {
+        Write-Step 'Installing Claude Code'
+        Invoke-RestMethod https://claude.ai/install.ps1 | Invoke-Expression
+    }
 }
 
 # Download the repo and return the config directory within it.

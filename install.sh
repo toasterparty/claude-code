@@ -25,8 +25,13 @@ check_requirements() {
 }
 
 install_claude_code() {
-    log "Installing/upgrading Claude Code"
-    curl -fsSL https://claude.ai/install.sh | bash
+    if command -v claude >/dev/null 2>&1; then
+        log "Updating Claude Code"
+        claude update
+    else
+        log "Installing Claude Code"
+        curl -fsSL https://claude.ai/install.sh | bash
+    fi
 }
 
 # Download the repo and set SRC to the config directory within it.
