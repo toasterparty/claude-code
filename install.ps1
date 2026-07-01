@@ -53,16 +53,16 @@ function Merge-Settings($tracked, $target) {
     [System.IO.File]::WriteAllText($target, ($baseObj | ConvertTo-Json -Depth 20))
 }
 
+# Replace each top-level entry of $ClaudeDir that this repo owns with a fresh copy from $src,
+# so entries removed from $src (e.g. a deleted languages/*.md) don't linger in $ClaudeDir.
 function Sync-Config($src) {
     Write-Step "Deploying config into $ClaudeDir"
     New-Item -ItemType Directory -Force -Path $ClaudeDir | Out-Null
     $srcFull = (Resolve-Path $src).Path
-    Get-ChildItem -Path $srcFull -Recurse -File | ForEach-Object {
-        $rel = $_.FullName.Substring($srcFull.Length).TrimStart('\', '/')
-        if ($rel -eq 'settings.json') { return }
-        $dest = Join-Path $ClaudeDir $rel
-        New-Item -ItemType Directory -Force -Path (Split-Path $dest) | Out-Null
-        Copy-Item -Path $_.FullName -Destination $dest -Force
+    Get-ChildItem -Path $srcFull -Force | Where-Object { $_.Name -ne 'settings.json' } | ForEach-Object {
+        $dest = Join-Path $ClaudeDir $_.Name
+        Remove-Item -Recurse -Force $dest -ErrorAction SilentlyContinue
+        Copy-Item -Path $_.FullName -Destination $dest -Recurse -Force
     }
     Merge-Settings (Join-Path $srcFull 'settings.json') (Join-Path $ClaudeDir 'settings.json')
 }
@@ -70,7 +70,7 @@ function Sync-Config($src) {
 try {
     Install-ClaudeCode
     Sync-Config (Resolve-Source)
-    Write-Step "Done. Config deployed to $ClaudeDir"
+    Write-Step "Done."
 }
 finally {
     if ($script:TempDir -and (Test-Path $script:TempDir)) { Remove-Item -Recurse -Force $script:TempDir }

@@ -58,16 +58,19 @@ merge_settings() {
     fi
 }
 
+# Replace each top-level entry of $CLAUDE_DIR that this repo owns with a fresh copy from $src,
+# so entries removed from $src (e.g. a deleted languages/*.md) don't linger in $CLAUDE_DIR.
 sync_config() {
-    local src="$1" f rel
+    local src="$1" f name dest
     log "Deploying config into $CLAUDE_DIR"
     mkdir -p "$CLAUDE_DIR"
     while IFS= read -r -d '' f; do
-        rel="${f#"$src"/}"
-        [ "$rel" = "settings.json" ] && continue
-        mkdir -p "$CLAUDE_DIR/$(dirname "$rel")"
-        cp -f "$f" "$CLAUDE_DIR/$rel"
-    done < <(find "$src" -type f -print0)
+        name="$(basename "$f")"
+        [ "$name" = "settings.json" ] && continue
+        dest="$CLAUDE_DIR/$name"
+        rm -rf "$dest"
+        cp -rf "$f" "$dest"
+    done < <(find "$src" -mindepth 1 -maxdepth 1 -print0)
     merge_settings "$src/settings.json" "$CLAUDE_DIR/settings.json"
 }
 
@@ -75,4 +78,4 @@ check_requirements
 install_claude_code
 resolve_source
 sync_config "$SRC"
-log "Done. Config deployed to $CLAUDE_DIR"
+log "Done."

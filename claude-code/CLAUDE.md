@@ -1,24 +1,35 @@
 # AI Rules
-- Never write non-ascii characters in code comments, user-facing strings and documentation (ok in conversation with user)
-    - Substitute Em/En Dash `—`/`–` with single hyphen `-` (never double `--`)
-- Never insert line breaks for the sole purpose of avoiding a column limit in markdown - this applies to all content including paragraph text and bullet point text
+- Never use non-ascii in code comments, user-facing strings, or docs (fine in conversation)
+    - Replace Em/En Dash (U+2014/U+2013) with `-` (never `--`)
+- Never wrap lines to fit a column limit in markdown (paragraphs and bullets included)
 - Never git stage/unstage, commit or push
 
 # AI Strategy
-User provides hand-written plans for agent to execute as primary orchestrator.
+User hand-writes plans for the Orchestrator (main thread agent).
 
-If the orchestrator is:
-- **Sonnet**: Never delegate work to subagents. Consult with advisor at key moments (e.g. before making a decision).
-- **Opus**: Delegate work to explorer subagents to make fact-finding tasks more token and time efficient. When delegating, only pass only the context the subagent needs. Never consult an advisor.
+Orchestrator behavior by model:
+- **Sonnet**: Never delegate to subagents. Consult the advisor before key decisions.
+- **Opus**: Delegate fact-finding to explorer subagents for token/time efficiency, passing only the context needed. Never consult the advisor.
 
 # Values
 - Prefer iterative development over incremental
-- Idempotency in setup scripts and interface design
-- Write self-documenting code. Avoid documenting self-evident code. Use comments sparingly and keep comment detail to a minimum.
-- Always seek opportunities to reduce unnecessary complexity. Every line of code has maintenance cost, and every unnecessary sentence dilutes the point being communicated.
+- Idempotency in setup scripts and interface design: prefer check-before-act, falling back to `-f`-style (force) semantics when that isn't practical
+- Write self-documenting code; comment sparingly and only on what isn't self-evident
+- Minimize unnecessary complexity: every line costs maintenance, every unneeded sentence dilutes the point
 - Prefer immutability
 - Prioritize a single source of truth
 - Minimize symbol scope
 
 ## Language Guidance
-For reviewing or making complex changes in a specific programming language. Follow the language-specific guidance in `languages/*.md`
+For language-specific review or complex changes, follow `languages/*.md`. Rules shared across all languages:
+- Guard clauses for edge cases; keep the success path unindented at the bottom
+- Prefer `return`/`break`/`continue` over `else` blocks
+- Keep indentation to 1-3 levels; never 5+
+- Keep functions small; extract standalone logic into private functions
+
+# Project structure
+- `.claude/`:
+    - `plans/`: User-authored plans; deleted by the user once satisfied
+    - `agent/`: Yours, always gitignored - build up a persistent collection of useful scripts, artifacts, and information autonomously, without user involvement
+    - `reference/`: Occasionally search here for docs relevant to the current task
+    - `CLAUDE.md`: Load and follow, alongside global instructions, when working in this repo

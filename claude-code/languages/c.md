@@ -1,29 +1,49 @@
 # C
 
-Applies when reviewing C or making complex C changes. Assume modern GCC and C99+ unless evidence suggests otherwise. Prefer data-oriented design.
+Applies to C review or complex changes. Assume modern GCC, C99+, unless evidence says otherwise. Prefer data-oriented design.
 
 ## Language & safety
-- Never rely on undefined behavior.
 - Avoid the preprocessor, superfluous casts, and bit fields (use `BIT` macros instead).
 - Prefer a compiler error over a runtime failure, and a runtime failure over a panic.
 - Fix all compiler warnings before release; treat each as a TODO.
+- Prefer fixed-width integers (`stdint.h`) for I/O-bound data (wire formats, `packed` structs); plain `int`/`size_t` remain fine for loop counters and other transient values.
+- Use `_Static_assert` for compile-time invariants; GCC supports it as an extension even before C11.
 
 ## Functions & control flow
 - Declare zero-arg functions with `(void)`.
-- Place the success exit point at the bottom of the function.
-- Use `return`/`break`/`continue` to avoid `else` blocks.
-- Keep indentation to 1–3 levels; never 5+.
-- Keep functions small; extract standalone logic into `static` functions.
+- On error, `goto EXIT` a single cleanup block rather than duplicating cleanup at each early return:
+```c
+int foo(void) {
+    int ret = -1;
+    resource_t *r = acquire();
+    if (!r) goto EXIT;
+    if (do_work(r) != 0) goto EXIT;
+    ret = 0;
+EXIT:
+    release(r);
+    return ret;
+}
+```
 
 ## Scope & visibility
-Minimize the visibility of every variable, function, struct, and enum:
 - `.c` over `.h`
 - `static` over global
 - function-scope over file-scope
 - define as late and as nested (`{ }`) as possible
 
 ## File layout (`.c`)
-Order: includes → preprocessor → typedefs → extern vars → static vars → static functions → public functions.
+Order: includes -> preprocessor -> typedefs -> extern vars -> static vars -> static functions -> public functions.
+
+## Header files (`.h`)
+- Guard with `#ifndef`/`#define` (not `#pragma once`), named `<FILENAME>__`:
+```c
+#ifndef FILENAME__ // filename.h
+#define FILENAME__
+
+// ...
+
+#endif // FILENAME__
+```
 
 ## Structs
 - Always `typedef`; prefer anonymous.
@@ -53,5 +73,5 @@ static const struct {
     [FOO_A] = { /* ... */ },
     [FOO_B] = { /* ... */ },
 };
-// static assert: ARRAY_LEN(FOO_DATA) == FOO_COUNT
+_Static_assert(ARRAY_LEN(FOO_DATA) == FOO_COUNT, "FOO_DATA/FOO_COUNT mismatch");
 ```
