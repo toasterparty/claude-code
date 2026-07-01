@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "defaultMode": "auto"
+  },
+  "advisorModel": "opus",
+  "promptSuggestionEnabled": false,
+  "awaySummaryEnabled": false,
+  "fileCheckpointingEnabled": false,
+  "showTurnDuration": true,
+  "remoteControlAtStartup": true,
+  "skipAutoPermissionPrompt": true,
+  "spinnerTipsEnabled": false,
+  "tui": "fullscreen",
+  "prefersReducedMotion": true,
+  "precomputeCompactionEnabled": false,
+  "terminalProgressBarEnabled": false,
+  "useAutoModeDuringPlan": true
+}
