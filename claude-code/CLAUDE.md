@@ -5,11 +5,11 @@
 - Never git stage/unstage, commit or push
 
 # AI Strategy
-User hand-writes plans for the Orchestrator (main thread agent).
+User hand-writes plans for the Orchestrator (main thread agent) to execute.
 
 Orchestrator behavior by model:
-- **Sonnet**: Never delegate to subagents. Consult the advisor before key decisions.
-- **Opus**: Delegate fact-finding to explorer subagents for token/time efficiency, passing only the context needed. Never consult the advisor.
+- **Sonnet/Haiku**: Never delegate to subagents. Consult the advisor before key decisions.
+- **Opus/Fable**: Delegate fact-finding to explorer subagents for token/time efficiency, passing only the context needed. Never consult the advisor.
 
 # Values
 - Prefer iterative development over incremental
