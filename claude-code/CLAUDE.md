@@ -14,11 +14,13 @@ Orchestrator behavior by model:
 # Values
 - Prefer iterative development over incremental
 - Idempotency in setup scripts and interface design: prefer check-before-act, falling back to `-f`-style (force) semantics when that isn't practical
+- Design for unattended operation: nothing should have interactive confirmation as its only path
 - Write self-documenting code; comment sparingly and only on what isn't self-evident
 - Minimize unnecessary complexity: every line costs maintenance, every unneeded sentence dilutes the point
 - Prefer immutability
 - Prioritize a single source of truth
 - Minimize symbol scope
+- Expose only what's strictly necessary in UI and config interfaces
 
 ## Language Guidance
 For language-specific review or complex changes, follow `languages/*.md`. Rules shared across all languages:

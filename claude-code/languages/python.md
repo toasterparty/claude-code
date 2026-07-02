@@ -55,3 +55,11 @@ FOO_DATA = {
 - Bootstrap `uv` in setup scripts (official installer if missing) rather than assuming it's preinstalled.
 - Default to the lockfile (`uv run --locked`, `uv sync --frozen`); upgrading (`uv lock --upgrade`) is a separate, explicit action.
 - Pass `--directory`/`--all-packages` explicitly instead of relying on cwd or a single-package assumption.
+
+## CLI & entry points
+- Use `click` for argument parsing over `argparse` or hand-rolled `sys.argv` handling.
+- Expose the CLI through `<package>/__main__.py`, registered as a `[project.scripts]` entry point in `pyproject.toml`; invoke it as `uv run foo <command>`, not `uv run python foo/main.py`.
+
+## Packaging & releases
+- Library meant to be imported by other Python projects: publish a wheel/sdist to PyPI.
+- Standalone application/CLI meant to be run directly: ship a binary built with Nuitka rather than bundling with PyInstaller.
