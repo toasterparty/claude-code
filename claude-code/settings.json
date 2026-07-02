@@ -19,5 +19,6 @@
   "prefersReducedMotion": true,
   "precomputeCompactionEnabled": false,
   "terminalProgressBarEnabled": false,
-  "useAutoModeDuringPlan": true
+  "useAutoModeDuringPlan": true,
+  "autoMemoryEnabled": false
 }

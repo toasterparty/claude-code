@@ -28,8 +28,7 @@ For language-specific review or complex changes, follow `languages/*.md`. Rules 
 - Keep functions small; extract standalone logic into private functions
 
 # Project structure
-- `.claude/`:
-    - `plans/`: User-authored plans; deleted by the user once satisfied
-    - `agent/`: Yours, always gitignored - build up a persistent collection of useful scripts, artifacts, and information autonomously, without user involvement
-    - `reference/`: Occasionally search here for docs relevant to the current task
-    - `CLAUDE.md`: Load and follow, alongside global instructions, when working in this repo
+- `<repo>/.claude/plans/`: User-authored plans; deleted by the user once satisfied
+- `<repo>/.claude/agent/`: Yours, always gitignored - build up a persistent collection of useful scripts, artifacts, and information autonomously, without user involvement
+- `<repo>/.claude/reference/`: Occasionally search here for docs relevant to the current task
+- `<repo>/.claude/CLAUDE.md`: project-specific instructions, loaded alongside this global file, when present
