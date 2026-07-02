@@ -26,7 +26,7 @@ curl -fsSL https://claude.toasterparty.net/install.sh | bash
 irm https://claude.toasterparty.net/install.ps1 | iex
 ```
 
-### Custom Claude Code home directory
+### Custom Claude Code Home Directory
 
 Set `CLAUDE_DIR` to deploy into a directory other than the default `~/.claude/`.
 
