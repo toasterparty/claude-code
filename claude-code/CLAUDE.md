@@ -5,14 +5,19 @@
 - Never git stage/unstage, commit or push
 
 # AI Strategy
-User hand-writes plans for the Orchestrator (main thread agent) to execute.
+User hand-writes plans in `<repo>/.claude/plans/` for the Orchestrator (main thread agent) to execute.
+
+Executing a plan:
+- Read the whole plan before acting; raise ambiguities and conflicts up front, not mid-run
+- Once underway, work unattended: resolve gaps in line with the plan's intent and list any deviations in the final report
+- Verify the result against the plan before reporting done
 
 Orchestrator behavior by model:
+- **Opus and above**: Never consult the advisor. Delegate broad fact-finding (multi-file exploration, codebase surveys) to Explore subagents, passing only the context needed - this keeps bulk reads out of the main context. Do targeted lookups (a known file, a single search) inline; an agent spawn costs more than it saves there.
 - **Sonnet/Haiku**: Never delegate to subagents. Consult the advisor before key decisions.
-- **Opus/Fable**: Delegate fact-finding to explorer subagents for token/time efficiency, passing only the context needed. Never consult the advisor.
 
 # Values
-- Prefer iterative development over incremental
+- Prefer iterative development over incremental: rough in the full working path first, then refine - don't perfect one piece at a time
 - Idempotency in setup scripts and interface design: prefer check-before-act, falling back to `-f`-style (force) semantics when that isn't practical
 - Design for unattended operation: nothing should have interactive confirmation as its only path
 - Write self-documenting code; comment sparingly and only on what isn't self-evident
@@ -23,7 +28,7 @@ Orchestrator behavior by model:
 - Expose only what's strictly necessary in UI and config interfaces
 
 ## Language Guidance
-For language-specific review or complex changes, follow `languages/*.md`. Rules shared across all languages:
+For language-specific review or complex changes, read the matching file in `languages/` next to this file. Rules shared across all languages:
 - Guard clauses for edge cases; keep the success path unindented at the bottom
 - Prefer `return`/`break`/`continue` over `else` blocks
 - Keep indentation to 1-3 levels; never 5+
@@ -31,6 +36,5 @@ For language-specific review or complex changes, follow `languages/*.md`. Rules 
 
 # Project structure
 - `<repo>/.claude/plans/`: User-authored plans; deleted by the user once satisfied
-- `<repo>/.claude/agent/`: Yours, always gitignored - build up a persistent collection of useful scripts, artifacts, and information autonomously, without user involvement
-- `<repo>/.claude/reference/`: Occasionally search here for docs relevant to the current task
-- `<repo>/.claude/CLAUDE.md`: project-specific instructions, loaded alongside this global file, when present
+- `<repo>/.claude/agent/`: Yours, always gitignored - maintain scripts, notes, and working state here autonomously; record anything a long run needs to survive context compaction
+- `<repo>/.claude/reference/`: User-curated docs; search here before researching externally

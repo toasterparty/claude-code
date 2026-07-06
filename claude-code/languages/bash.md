@@ -6,7 +6,7 @@
 - Never depend on the caller's `pwd`
 - Keep console output terse
 - Print status directly with `echo`/`printf`; don't wrap output in a logging helper function
-- Start `.sh` files like so:
+- Start `.sh` files like so (omit `TOP_DIR` when the script doesn't need the repo root):
 ```sh
 #!/usr/bin/env bash
 set -euo pipefail

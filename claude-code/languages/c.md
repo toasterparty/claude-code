@@ -1,9 +1,10 @@
 # C
 
-Applies to C review or complex changes. Assume modern GCC, C99+, unless evidence says otherwise. Prefer data-oriented design.
+Assume modern GCC, C99+, unless evidence says otherwise. Prefer data-oriented design.
 
 ## Language & safety
-- Avoid the preprocessor, superfluous casts, and bit fields (use `BIT` macros instead).
+- Keep the preprocessor to header guards, constants, and small helpers like `BIT`/`ARRAY_LEN`; avoid macros containing logic and conditional-compilation feature gates.
+- Avoid superfluous casts and bit fields (use `BIT` macros instead).
 - Prefer a compiler error over a runtime failure, and a runtime failure over a panic.
 - Fix all compiler warnings before release; treat each as a TODO.
 - Prefer fixed-width integers (`stdint.h`) for I/O-bound data (wire formats, `packed` structs); plain `int`/`size_t` remain fine for loop counters and other transient values.
@@ -29,15 +30,16 @@ EXIT:
 - `.c` over `.h`
 - `static` over global
 - function-scope over file-scope
+- `const` wherever possible
 - define as late and as nested (`{ }`) as possible
 
 ## File layout (`.c`)
 Order: includes -> preprocessor -> typedefs -> extern vars -> static vars -> static functions -> public functions.
 
 ## Header files (`.h`)
-- Guard with `#ifndef`/`#define` (not `#pragma once`), named `<FILENAME>__`:
+- Guard with `#ifndef`/`#define` (not `#pragma once`), named `<FILENAME>__` (e.g. `event_db.h` -> `EVENT_DB__`):
 ```c
-#ifndef FILENAME__ // filename.h
+#ifndef FILENAME__
 #define FILENAME__
 
 // ...

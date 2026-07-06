@@ -1,6 +1,6 @@
 # Python
 
-Applies to Python review or complex changes. Assume latest production Python version, unless evidence says otherwise.
+Assume latest production Python version, unless evidence says otherwise.
 
 ## Language & safety
 - Never rely on CPython implementation details (refcounting-based cleanup timing, GIL-based atomicity of compound operations like `list.append`).

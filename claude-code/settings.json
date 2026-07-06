@@ -3,6 +3,7 @@
     "defaultMode": "auto",
     "deny": [
       "Bash(git add:*)",
+      "Bash(git stage:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)"
     ]
