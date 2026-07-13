@@ -22,7 +22,7 @@ curl -fsSL https://claude.toasterparty.net/install.sh | bash
 
 ### Windows (PowerShell)
 
-```powershell
+```sh
 irm https://claude.toasterparty.net/install.ps1 | iex
 ```
 
@@ -38,7 +38,11 @@ curl -fsSL https://claude.toasterparty.net/install.sh | CLAUDE_DIR="$HOME/.claud
 
 Windows:
 
-```powershell
+```sh
 $env:CLAUDE_DIR = "$HOME\.claude-work"; irm https://claude.toasterparty.net/install.ps1 | iex
 $env:CLAUDE_DIR = "$HOME\.claude-personal"; irm https://claude.toasterparty.net/install.ps1 | iex
 ```
+
+## Other Documentation
+
+- [Reusable Prompts](./doc/prompts.md)
