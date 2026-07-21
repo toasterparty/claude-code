@@ -4,7 +4,7 @@ Assume modern GCC, C99+, unless evidence says otherwise. Prefer data-oriented de
 
 ## Language & safety
 - Keep the preprocessor to header guards, constants, and small helpers like `BIT`/`ARRAY_LEN`; avoid macros containing logic and conditional-compilation feature gates.
-- Avoid superfluous casts and bit fields (use `BIT` macros instead).
+- Do not use bit fields (use `BIT` macros instead).
 - Prefer a compiler error over a runtime failure, and a runtime failure over a panic.
 - Fix all compiler warnings before release; treat each as a TODO.
 - Prefer fixed-width integers (`stdint.h`) for I/O-bound data (wire formats, `packed` structs); plain `int`/`size_t` remain fine for loop counters and other transient values.
@@ -77,3 +77,7 @@ static const struct {
 };
 _Static_assert(ARRAY_LEN(FOO_DATA) == FOO_COUNT, "FOO_DATA/FOO_COUNT mismatch");
 ```
+
+## Style
+- Projects typically ship with a `.clang-format` file which codify stylistic preferences. Use this to format large sections of newly written code before reporting done.
+- Avoid explicit casts unless absolutely necessary. Use intermediate variables to invoke casting implicitly instead.
