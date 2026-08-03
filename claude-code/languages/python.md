@@ -27,13 +27,19 @@ Prefer the least powerful construct that fits:
 - a class over a module of related functions only when state must be threaded through methods
 
 ## Dataclasses
-- Use `@dataclass(frozen=True, slots=True)`; prefer immutability.
-- Initialize, set, and copy safely:
+- `@dataclass(frozen=True, slots=True)`
 ```py
-foo = Foo()                          # initialize (field defaults)
-foo = dataclasses.replace(foo, a=1)  # set (immutable update)
-foo_b = copy.copy(foo)               # copy
+from copy import copy
+from dataclasses import replace
+
+foo = Foo()
+foo = replace(foo, a=1)
+foo_b = copy(foo)
 ```
+- Never wrap `replace` in a `with_(**changes)` helper; `**kwargs` loses type-checker field validation.
+- Name a recurring update as a past-participle method: `cursor.advanced(1)`.
+- Construct once from locals over chained `replace`.
+- Non-frozen (still `slots=True`) only for a short-lived local accumulator, with a comment saying why.
 
 ## Enums
 - Use `enum.Enum`/`enum.IntEnum`; members are already namespaced (`Foo.A`), so don't prefix values (`FOO_A`).
