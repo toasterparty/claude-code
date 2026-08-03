@@ -16,8 +16,6 @@ Orchestrator behavior by model:
 - **Opus and above**: Delegate broad fact-finding (multi-file exploration, codebase surveys) to Explore subagents, passing only the context needed - this keeps bulk reads out of the main context. Do targeted lookups (a known file, a single search) inline; an agent spawn costs more than it saves there.
 - **Sonnet/Haiku**: Never delegate to subagents.
 
-Consult the advisor (`/advisor`) before key decisions, unless it would run the same model as you (Opus -> Opus, Fable -> Fable) - a model advising itself adds cost without adding judgment.
-
 # Values
 - Prefer iterative development over incremental: rough in the full working path first, then refine - don't perfect one piece at a time
 - Idempotency in setup scripts and interface design: prefer check-before-act, falling back to `-f`-style (force) semantics when that isn't practical

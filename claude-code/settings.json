@@ -8,7 +8,6 @@
       "Bash(git push:*)"
     ]
   },
-  "advisorModel": "opus",
   "promptSuggestionEnabled": false,
   "awaySummaryEnabled": false,
   "fileCheckpointingEnabled": false,
