@@ -21,13 +21,21 @@ Order: imports -> module constants -> type aliases -> private helpers -> public 
 - Keep imports at the top of the file; only import inside a function to break a circular import or defer an expensive/optional dependency.
 
 ## Choosing a construct
-Prefer the least powerful construct that fits:
-- `enum.Enum`/`IntEnum`/`StrEnum` over `@dataclass` for a fixed, named set of values
-- `@dataclass` over a class when there's no behavior to bind to the data
-- a class over a module of related functions only when state must be threaded through methods
+Prefer the least powerful construct that fits.
 
-## Dataclasses
-- `@dataclass(frozen=True, slots=True)`
+Data:
+- no new type - plain values or a function's parameters - until two or more travel together through more than one call
+- `enum.Enum`/`IntEnum`/`StrEnum` for a fixed, named set of values
+- `typing.NamedTuple` for a small immutable record; already frozen, hashable, and slotted
+- `@dataclass(frozen=True, slots=True)` once the type needs `field()` defaults, `__post_init__`, inheritance, or must not be usable as a plain tuple
+- `dict`/`TypedDict` only for dynamic keys or a shape dictated by an external payload (JSON, config); convert at the deserialization boundary rather than passing the mapping inward
+
+Behavior:
+- a module of functions until state must be threaded through methods
+- `typing.Protocol` over an ABC or a shared base class; declare the shape you consume instead of growing an inheritance tree
+- an ABC only to share implementation via `@abstractmethod` hooks, never as a bare interface declaration; still preferred over a concrete base with `NotImplementedError` stubs
+
+## Dataclasses & named tuples
 ```py
 from copy import copy
 from dataclasses import replace
@@ -39,7 +47,8 @@ foo_b = copy(foo)
 - Never wrap `replace` in a `with_(**changes)` helper; `**kwargs` loses type-checker field validation.
 - Name a recurring update as a past-participle method: `cursor.advanced(1)`.
 - Construct once from locals over chained `replace`.
-- Non-frozen (still `slots=True`) only for a short-lived local accumulator, with a comment saying why.
+- Non-frozen (still `slots=True`) only for a short-lived local accumulator.
+- These rules carry over to `NamedTuple`, with `_replace` in place of `replace`.
 
 ## Enums
 - Use `enum.Enum`/`enum.IntEnum`; members are already namespaced (`Foo.A`), so don't prefix values (`FOO_A`).
