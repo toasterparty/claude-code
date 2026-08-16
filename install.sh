@@ -48,15 +48,25 @@ resolve_source() {
 merge_settings() {
     local tracked="$1" target="$2"
     [ -f "$tracked" ] || return 0
-    local current='{}' tmp_out
+    local current='{}' tmp_out resolved
     [ -f "$target" ] && current="$(cat "$target")"
+    resolved="$(mktemp)"
+    resolve_hook_placeholders "$tracked" >"$resolved"
     tmp_out="$(mktemp)"
-    if jq -s '.[0] * .[1]' <(printf '%s' "$current") "$tracked" >"$tmp_out"; then
+    if jq -s '.[0] * .[1]' <(printf '%s' "$current") "$resolved" >"$tmp_out"; then
         mv "$tmp_out" "$target"
     else
         rm -f "$tmp_out"
         log "WARNING: could not parse existing settings.json; left it untouched."
     fi
+    rm -f "$resolved"
+}
+
+# Hook commands need an absolute path, which only exists once CLAUDE_DIR is resolved,
+# so the tracked settings.json carries a placeholder instead.
+resolve_hook_placeholders() {
+    jq --arg gate "bash \"$CLAUDE_DIR/hooks/permission-gate.sh\"" \
+        'walk(if . == "{{PERMISSION_GATE}}" then $gate else . end)' "$1"
 }
 
 # Replace each top-level entry of $CLAUDE_DIR that this repo owns with a fresh copy from $src,

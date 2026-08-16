@@ -54,6 +54,8 @@ Deployed configuration (`claude-code/`):
 
 - [CLAUDE.md](./claude-code/CLAUDE.md) - rules, strategy, and values loaded into every session
 - [settings.json](./claude-code/settings.json)
+- [hooks/permission-gate.ps1](./claude-code/hooks/permission-gate.ps1) - Windows PreToolUse gate: auto-approves tool calls that policy allows, so nothing waits on a prompt
+- [hooks/permission-gate.sh](./claude-code/hooks/permission-gate.sh) - the same gate for Linux/MacOS
 - [languages/bash.md](./claude-code/languages/bash.md)
 - [languages/c.md](./claude-code/languages/c.md)
 - [languages/make.md](./claude-code/languages/make.md)

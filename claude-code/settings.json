@@ -23,10 +23,29 @@
       "Bash(sudo *)",
       "Bash(git add:*)",
       "Bash(git stage:*)",
+      "Bash(git restore:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(git stash:*)",
+      "Bash(git reset:*)",
+      "Bash(git checkout:*)",
+      "Bash(git clean:*)",
+      "Bash(git switch:*)",
       "Edit(**/.agent/inbox/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^(?!(Read|Glob|Grep|Edit|Write|NotebookEdit|TodoWrite)$).*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{PERMISSION_GATE}}",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   },
   "disableArtifact": true,
