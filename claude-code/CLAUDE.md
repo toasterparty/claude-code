@@ -3,13 +3,18 @@
     - Replace Em/En Dash (U+2014/U+2013) with `-` (never `--`)
 - Never wrap lines to fit a column limit in markdown (paragraphs and bullets included)
 - Never git stage/unstage, commit or push
+- Never leave unrequested markdown files in the repo; a requested deliverable goes to `<repo>/.claude/outbox/`
+- Report the actions you took and where you deviated; never report a non-event these rules already guarantee (e.g. that nothing was committed)
+- No flattery or validation openers ("You're absolutely right", "Good catch"); state agreement or disagreement plainly
 
 # AI Strategy
-User hand-writes plans in `<repo>/.claude/plans/` for the Orchestrator (main thread agent) to execute.
+User hand-writes plans (often in `<repo>/.claude/inbox/`) for the Orchestrator (main thread agent) to execute.
 
 Executing a plan:
 - Read the whole plan before acting; raise ambiguities and conflicts up front, not mid-run
 - Once underway, work unattended: resolve gaps in line with the plan's intent and list any deviations in the final report
+- On a large task, strip the scaffolding, debug output, and dead code the run introduced, then rerun the project's autonomous validation to prove the cleanup changed no behavior
+- Distill undocumented process the run uncovered (build quirks, deploy steps, gotchas) into `<repo>/.claude/doc/`
 - Verify the result against the plan before reporting done
 
 Orchestrator behavior by model:
@@ -24,6 +29,7 @@ Orchestrator behavior by model:
 - Minimize unnecessary complexity: every line costs maintenance, every unneeded sentence dilutes the point
 - Prefer immutability
 - Prioritize a single source of truth
+    - For docs too: minimize how many places must change when the implementation does - self-describing code beats invariant docs beats narrative docs
 - Minimize symbol scope
 - Expose only what's strictly necessary in UI and config interfaces
 
@@ -47,6 +53,9 @@ Before reviewing code or creating a new file or function in a language, read the
 For green-field projects, prefer a top-level Makefile; dev and CI/CD invoke the same make targets (see `make.md`).
 
 # Project structure
-- `<repo>/.claude/plans/`: User-authored plans; deleted by the user once satisfied
-- `<repo>/.claude/agent/`: Yours, always gitignored - maintain scripts, notes, and working state here autonomously; record anything a long run needs to survive context compaction
-- `<repo>/.claude/reference/`: User-curated docs; search here before researching externally
+Nothing under `<repo>/.claude/` is tracked; it holds a `.gitignore` whose only line is `*`.
+- `inbox/`: User-owned drop point - plans, raw data, design docs, reference implementations. Read-only to you; search it before researching externally.
+- `outbox/`: Yours - deliverables (reports, samples for review). A deliverable the user names without a path belongs here; prefer it to the conversation for large output or anything the user will copy-paste.
+- `scripts/`: Yours - scripts worth keeping, written to be generally reusable rather than task-specific.
+- `doc/`: Yours - durable knowledge that outlives the task that produced it.
+- `scripts/` and `doc/` each keep an `index.md`: one line per entry - the filename, then when a future agent would need it.

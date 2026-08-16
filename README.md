@@ -43,6 +43,19 @@ $env:CLAUDE_DIR = "$HOME\.claude-work"; irm https://claude.toasterparty.net/inst
 $env:CLAUDE_DIR = "$HOME\.claude-personal"; irm https://claude.toasterparty.net/install.ps1 | iex
 ```
 
-## Other Documentation
+## Contents
 
+Documentation:
+
+- [API Usage Summary](./doc/api-usage.md)
 - [Reusable Prompts](./doc/prompts.md)
+
+Deployed configuration (`claude-code/`):
+
+- [CLAUDE.md](./claude-code/CLAUDE.md) - rules, strategy, and values loaded into every session
+- [settings.json](./claude-code/settings.json)
+- [languages/bash.md](./claude-code/languages/bash.md)
+- [languages/c.md](./claude-code/languages/c.md)
+- [languages/make.md](./claude-code/languages/make.md)
+- [languages/python.md](./claude-code/languages/python.md)
+- [skills/tidy-claude](./claude-code/skills/tidy-claude/SKILL.md)

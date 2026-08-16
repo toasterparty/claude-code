@@ -12,6 +12,7 @@ Assume modern GCC, C99+, unless evidence says otherwise. Prefer data-oriented de
 
 ## Functions & control flow
 - Declare zero-arg functions with `(void)`.
+- Test pointers and counts by truthiness (`if (data)`, `if (!data)`) rather than comparing against `NULL` or `0`.
 - On error, `goto EXIT` a single cleanup block rather than duplicating cleanup at each early return:
 ```c
 int foo(void) {
@@ -29,6 +30,7 @@ EXIT:
 ## Scope & visibility
 - `.c` over `.h`
 - `static` over global
+- prefix `static` function names with `_`
 - function-scope over file-scope
 - `const` wherever possible
 - define as late and as nested (`{ }`) as possible
@@ -60,8 +62,8 @@ foo = foo_b;                                   // copy
 ## Enums
 - Always `typedef`; prefer anonymous.
 - Prefix every value; end with `<PREFIX>_COUNT`.
-- Use enums only for contiguous ranges starting at 0; use `const`/`#define` otherwise.
-- Back enums with static lookup tables indexed by value:
+- Prefer an enum to `#define` for any group of related integer constants; reserve `const`/`#define` for sparse or non-integer values.
+- Back enums with static lookup tables indexed by value, which requires a contiguous range starting at 0:
 ```c
 typedef enum {
     FOO_A,
@@ -70,14 +72,23 @@ typedef enum {
 } foo_t;
 
 static const struct {
-    // ...
+    const char *name;
+    bool data_required;
 } FOO_DATA[] = {
-    [FOO_A] = { /* ... */ },
-    [FOO_B] = { /* ... */ },
+    [FOO_A] = {
+        .name = "A",
+        .data_required = true,
+    },
+    [FOO_B] = {
+        .name = "B",
+        .data_required = false,
+    },
 };
 _Static_assert(ARRAY_LEN(FOO_DATA) == FOO_COUNT, "FOO_DATA/FOO_COUNT mismatch");
 ```
 
 ## Style
 - Projects typically ship with a `.clang-format` file which codify stylistic preferences. Use this to format large sections of newly written code before reporting done.
-- Avoid explicit casts unless absolutely necessary. Use intermediate variables to invoke casting implicitly instead.
+- Avoid explicit casts unless absolutely necessary. Use intermediate variables, preferably `const`, to invoke casting implicitly instead.
+- Head a section of code or a block of documentation with a `/* */` comment; `//` stays fine inline and trailing.
+- Spread a designated initializer over multiple lines whenever it sets more than one field: `{` opens on the designator's line, one field per line, trailing comma (see `FOO_DATA` above).
