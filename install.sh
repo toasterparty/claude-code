@@ -25,6 +25,7 @@ check_requirements() {
 }
 
 install_claude_code() {
+    [ -x "$HOME/.local/bin/claude" ] && PATH="$HOME/.local/bin:$PATH"
     if command -v claude >/dev/null 2>&1; then
         log "Updating Claude Code"
         claude update
