@@ -5,6 +5,7 @@
       "Agent",
       "Bash",
       "Edit",
+      "Edit(**/.claude/**)",
       "Glob",
       "Grep",
       "NotebookEdit",
