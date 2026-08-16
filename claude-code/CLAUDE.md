@@ -3,7 +3,7 @@
     - Replace Em/En Dash (U+2014/U+2013) with `-` (never `--`)
 - Never wrap lines to fit a column limit in markdown (paragraphs and bullets included)
 - Never git stage/unstage, commit or push
-- Never leave unrequested markdown files in the repo; a requested deliverable goes to `<repo>/.agent/outbox/`
+- Never leave unrequested markdown files outside `<repo>/.agent/`; a requested deliverable goes to `<repo>/.agent/outbox/`
 - Report the actions you took and where you deviated; never report a non-event these rules already guarantee (e.g. that nothing was committed)
 - No flattery of the user (risk of patronization)
 
@@ -35,16 +35,14 @@ Orchestrator behavior by model:
 
 ## Comments
 Prefer none - names, types, and structure should carry the meaning. Write one only for a fact the code cannot state itself, and the best kind is counterintuitive: it defends this implementation against the simpler one a reader would otherwise reach for.
-- Comment why, never what; drop any comment a reader could re-derive from the code beside it
-- One or two lines - a fact that needs a paragraph belongs in a design doc, not the source
+- Comment why, never what; one or two lines, stopping at the surprising fact - anything longer belongs in a design doc
 - Never narrate the implementation journey (alternatives tried, bugs chased, how an earlier draft failed); the maintainer inherits the code, not the road to it - route that story to the final report instead
-- Stop at the surprising fact; detail past it only gets skimmed and remembered by no one
 - Docstrings follow the same rules; they state the contract of a public API (inputs, outputs, invariants), never the implementation
 - Good: `timeout = 250  # Cloudflare drops idle connections at 300s`. Weak: `# set the timeout` (restates code) or `# was 500, kept dropping` (journey)
 - Final pass before reporting done: reread the diff and delete any comment that fails these rules - comments are written hot but read cold
 
 ## Language Guidance
-Before reviewing code or creating a new file or function in a language, read the matching file in `languages/` next to this file. Rules shared across all languages:
+Before first reviewing or writing code in a language each session, read the matching file in `languages/` next to this file; once read, don't reread it. If no file matches the language, apply only the shared rules below - don't search elsewhere:
 - Guard clauses for edge cases; keep the success path unindented at the bottom
 - Prefer `return`/`break`/`continue` over `else` blocks
 - Keep indentation to 1-3 levels; never 5+

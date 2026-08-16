@@ -88,7 +88,7 @@ _Static_assert(ARRAY_LEN(FOO_DATA) == FOO_COUNT, "FOO_DATA/FOO_COUNT mismatch");
 ```
 
 ## Style
-- Projects typically ship with a `.clang-format` file which codify stylistic preferences. Use this to format large sections of newly written code before reporting done.
+- Projects typically ship with a `.clang-format` file codifying stylistic preferences. Use it to format large sections of newly written code before reporting done.
 - Avoid explicit casts unless absolutely necessary. Use intermediate variables, preferably `const`, to invoke casting implicitly instead.
 - Head a section of code or a block of documentation with a `/* */` comment; `//` stays fine inline and trailing.
 - Spread a designated initializer over multiple lines whenever it sets more than one field: `{` opens on the designator's line, one field per line, trailing comma (see `FOO_DATA` above).

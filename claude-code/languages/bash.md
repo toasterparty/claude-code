@@ -1,6 +1,6 @@
 # Bash (sh)
 - Assume Debian family distro
-- Assume passwordless sudo
+- Scripts may assume passwordless sudo; you cannot run sudo yourself, so hand such scripts to the user instead of testing them
 - Pass arguments as `--arg`
 - Minimize env var reliance
 - Never depend on the caller's `pwd`
