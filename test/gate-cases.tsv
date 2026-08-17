@@ -56,10 +56,22 @@ allow	unzip $(gh run download 1 --dir out; echo out)/a.zip
 allow	gh api -X GET search/issues -f q=repo:o/r
 allow	gh api --method=GET repos/o/r
 
+# Driving CI is a write, but destroys nothing durable
+allow	gh workflow run ci.yml
+allow	gh workflow run ci.yml --ref main -f env=prod
+allow	gh workflow run ci.yml -F config=@cfg.json
+allow	gh run rerun 123
+allow	gh run rerun 123 --failed
+allow	gh run rerun --job 456
+allow	bash -c 'gh run rerun 123'
+allow	gh run cancel 123
+deny	gh run delete 123
+deny	gh workflow disable ci.yml
+deny	gh workflow enable ci.yml
+deny	gh api -X POST repos/o/r/actions/workflows/ci.yml/dispatches
+
 # gh writes, including the glued flag form and the unmethoded field flag
 deny	gh pr merge 5
-deny	gh run rerun 123
-deny	gh workflow run ci.yml
 deny	gh cache delete 1
 deny	gh issue create -t x
 deny	gh repo delete o/r

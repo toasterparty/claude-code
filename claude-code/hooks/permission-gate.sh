@@ -23,6 +23,11 @@ GH_INVOCATION_STRIP='^[^[:alnum:]_-]?gh[[:space:]]+'
 GH_BARE_READS='status|version|help|search|api'
 GH_READ_VERBS='view|list|ls|diff|checks|status|watch|download|clone|verify'
 GH_READ_ONLY_PATTERN='^('"$GH_BARE_READS"')'"$WORD_END"'|^[^[:space:]]+[[:space:]]+('"$GH_READ_VERBS"')'"$WORD_END"
+# Driving CI destroys nothing durable - a cancelled or rerun job can be dispatched again - so these
+# are permitted despite being writes. They carry workflow inputs as field flags, so they are matched
+# before the field check.
+GH_PERMITTED_WRITE_VERBS='rerun|cancel'
+GH_PERMITTED_WRITE_PATTERN='^workflow[[:space:]]+run'"$WORD_END"'|^run[[:space:]]+('"$GH_PERMITTED_WRITE_VERBS"')'"$WORD_END"
 # A read query and a mutation are the same request shape, and -F query=@file puts the deciding text
 # out of reach of this hook, so the whole graphql endpoint stays denied.
 GH_GRAPHQL_PATTERN='graphql'
@@ -35,7 +40,7 @@ GH_READ_METHODS='GET|HEAD'
 REASON_ALLOW='Auto-approved by permission-gate.'
 REASON_GIT='Commands that alter git state are reserved for the user.'
 REASON_SUDO='Elevation is not permitted.'
-REASON_GH='Only read-only gh queries are permitted.'
+REASON_GH='Only read-only gh queries and CI dispatch are permitted.'
 
 matches() {
     printf '%s' "$1" | grep -Eq "$2"
@@ -46,11 +51,15 @@ gh_method() {
     printf '%s' "$1" | grep -oE "$GH_METHOD_PATTERN" | tail -1 | grep -oE '[A-Za-z]+$' || true
 }
 
-gh_read_only() {
+gh_permitted() {
     local gh_args="$1"
 
     if matches "$gh_args" "$GH_GRAPHQL_PATTERN"; then
         return 1
+    fi
+
+    if matches "$gh_args" "$GH_PERMITTED_WRITE_PATTERN"; then
+        return 0
     fi
 
     local method
@@ -71,11 +80,11 @@ gh_read_only() {
     matches "$gh_args" "$GH_READ_ONLY_PATTERN"
 }
 
-gh_invocations_read_only() {
+gh_invocations_permitted() {
     local invocation gh_args
     while IFS= read -r invocation; do
         gh_args="$(printf '%s' "$invocation" | sed -E "s/$GH_INVOCATION_STRIP//")"
-        gh_read_only "$gh_args" || return 1
+        gh_permitted "$gh_args" || return 1
     done < <(printf '%s' "$1" | grep -oE "$GH_INVOCATION_PATTERN" || true)
 }
 
@@ -95,7 +104,7 @@ gate_decision() {
         return
     fi
 
-    if ! gh_invocations_read_only "$command_text"; then
+    if ! gh_invocations_permitted "$command_text"; then
         GATE_DECISION=deny
         GATE_REASON=$REASON_GH
         return

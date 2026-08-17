@@ -27,6 +27,11 @@ $GhInvocationPattern = $WordStart + 'gh\s+([^;&|)]*)'
 $GhBareReads = 'status|version|help|search|api'
 $GhReadVerbs = 'view|list|ls|diff|checks|status|watch|download|clone|verify'
 $GhReadOnlyPattern = '^(' + $GhBareReads + ')' + $WordEnd + '|^\S+\s+(' + $GhReadVerbs + ')' + $WordEnd
+# Driving CI destroys nothing durable - a cancelled or rerun job can be dispatched again - so these
+# are permitted despite being writes. They carry workflow inputs as field flags, so they are matched
+# before the field check.
+$GhPermittedWriteVerbs = 'rerun|cancel'
+$GhPermittedWritePattern = '^workflow\s+run' + $WordEnd + '|^run\s+(' + $GhPermittedWriteVerbs + ')' + $WordEnd
 # A read query and a mutation are the same request shape, and -F query=@file puts the deciding text
 # out of reach of this hook, so the whole graphql endpoint stays denied.
 $GhGraphqlPattern = 'graphql'
@@ -39,7 +44,7 @@ $GhReadMethods = @('GET', 'HEAD')
 $ReasonAllow = 'Auto-approved by permission-gate.'
 $ReasonGit = 'Commands that alter git state are reserved for the user.'
 $ReasonSudo = 'Elevation is not permitted.'
-$ReasonGh = 'Only read-only gh queries are permitted.'
+$ReasonGh = 'Only read-only gh queries and CI dispatch are permitted.'
 
 # Method named by the last -X/--method flag in the arguments, empty when none is given.
 function Get-GhMethod($ghArgs) {
@@ -48,8 +53,9 @@ function Get-GhMethod($ghArgs) {
     return $found[$found.Count - 1].Groups[2].Value.ToUpperInvariant()
 }
 
-function Test-GhReadOnly($ghArgs) {
+function Test-GhPermitted($ghArgs) {
     if ($ghArgs -match $GhGraphqlPattern) { return $false }
+    if ($ghArgs -match $GhPermittedWritePattern) { return $true }
 
     $method = Get-GhMethod $ghArgs
     $readMethod = $method -in $GhReadMethods
@@ -59,9 +65,9 @@ function Test-GhReadOnly($ghArgs) {
     return $ghArgs -match $GhReadOnlyPattern
 }
 
-function Test-GhInvocationsReadOnly($command) {
+function Test-GhInvocationsPermitted($command) {
     foreach ($invocation in [regex]::Matches($command, $GhInvocationPattern)) {
-        if (-not (Test-GhReadOnly $invocation.Groups[2].Value)) { return $false }
+        if (-not (Test-GhPermitted $invocation.Groups[2].Value)) { return $false }
     }
     return $true
 }
@@ -75,7 +81,7 @@ function Get-GateDecision($command) {
         return @{ decision = 'deny'; reason = $ReasonSudo }
     }
 
-    if (-not (Test-GhInvocationsReadOnly $command)) {
+    if (-not (Test-GhInvocationsPermitted $command)) {
         return @{ decision = 'deny'; reason = $ReasonGh }
     }
 
