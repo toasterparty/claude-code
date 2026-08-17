@@ -1,0 +1,79 @@
+# Expected permission-gate decision, tab, command text. Both hooks must agree on every line.
+# Blank lines and # lines are skipped. An empty command stands for a tool call with no command field.
+allow
+allow	ls -la
+allow	python -m pytest
+
+# Ordinary git reads
+allow	git status
+allow	git log --oneline -5
+allow	git diff HEAD~1
+allow	git --version
+
+# git writes are the user's alone
+deny	git push origin main
+deny	git commit -m x
+deny	git -C /repo push
+deny	git stash
+
+# The boundary is a word edge, not a delimiter list, so quoting and paths do not smuggle a write
+deny	bash -c 'git push'
+deny	bash -c 'git stash'
+deny	bash -c 'sudo'
+deny	echo `git push`
+deny	/usr/bin/git push
+deny	sudo apt-get install x
+deny	/usr/bin/sudo ls
+deny	bash -c "sudo ls"
+
+# A gated name inside a longer word is not an invocation
+allow	echo "legit push"
+allow	echo "pseudo sudo-less"
+
+# gh reads
+allow	gh pr view 5
+allow	gh pr list
+allow	gh run ls
+allow	gh run view 123 --log
+allow	gh auth status
+allow	gh secret list
+allow	gh workflow view ci.yml
+allow	bash -c 'gh pr view 5'
+allow	bash -c 'gh pr list'
+
+# Artifact and archive fetches
+allow	gh run download 123 -n build
+allow	gh run download --repo o/r 1 --pattern *.log
+allow	gh release download v1 -D out
+allow	gh repo clone o/r
+allow	gh attestation verify a.zip -R o/r
+allow	gh api repos/o/r/actions/runs/1/artifacts
+allow	gh api --paginate repos/o/r/actions/artifacts
+allow	gh api repos/o/r/actions/artifacts/1/zip
+allow	unzip $(gh run download 1 --dir out; echo out)/a.zip
+
+# An explicit read method makes field flags read-only again
+allow	gh api -X GET search/issues -f q=repo:o/r
+allow	gh api --method=GET repos/o/r
+
+# gh writes, including the glued flag form and the unmethoded field flag
+deny	gh pr merge 5
+deny	gh run rerun 123
+deny	gh workflow run ci.yml
+deny	gh cache delete 1
+deny	gh issue create -t x
+deny	gh repo delete o/r
+deny	gh api repos/o/r/issues -f title=x
+deny	gh api -X POST repos/o/r/issues
+deny	gh api --method=POST repos/o/r/issues
+deny	gh api -XDELETE repos/o/r/actions/artifacts/1
+deny	gh api -X GET repos/o/r -X DELETE repos/o/r
+
+# graphql cannot be told apart from a mutation without reading the query body
+deny	gh api graphql -f query=query{viewer{login}}
+
+# Every gh invocation in the command has to pass
+deny	gh run download 1 && gh pr merge 5
+deny	bash -c 'gh pr merge 5'
+deny	echo `gh pr merge 5`
+deny	/usr/bin/gh pr merge 5

@@ -2,49 +2,100 @@
 # Bash allow rules are matched against literal command text, so a generated command using shell
 # variables or substitution falls through them and prompts; deciding here bypasses that matcher.
 # permissions.deny in settings.json is kept as the fallback for when this hook fails to run.
+#
+# Policy lives in the constants below and is mirrored in permission-gate.sh; test/run-gate-tests.ps1
+# and its .sh twin assert both against the same cases.
+param(
+    # Load the policy without reading stdin, which is how the tests drive it.
+    [switch]$LibraryOnly
+)
+
 $ErrorActionPreference = 'Stop'
 
-$GitWritePattern = '(^|[\s;&|(])git(\s+\S+)*\s+(add|stage|restore|commit|push|stash|reset|checkout|clean|switch)(\s|$)'
-$SudoPattern = '(^|[\s;&|(])sudo(\s|$)'
+# A gated word counts wherever it is not part of a longer word, on both sides, so quoting
+# (bash -c '...'), substitution (backticks) and paths (/usr/bin/gh) cannot smuggle one past the
+# patterns. Anchoring on delimiters instead would miss every quoted and substituted form.
+$WordStart = '(^|[^\w-])'
+$WordEnd = '([^\w-]|$)'
+
+$GitWriteVerbs = 'add|stage|restore|commit|push|stash|reset|checkout|clean|switch'
+$GitWritePattern = $WordStart + 'git(\s+\S+)*\s+(' + $GitWriteVerbs + ')' + $WordEnd
+$SudoPattern = $WordStart + 'sudo' + $WordEnd
 
 # gh is inverted: only these read-only shapes pass, everything else is a denial.
-$GhInvocationPattern = '(^|[\s;&|(])gh\s+([^;&|)]*)'
-$GhReadOnlyPattern = '^(status|version|help)(\s|$)|^search(\s|$)|^api(\s|$)|^\S+\s+(view|list|diff|checks|status|watch)(\s|$)'
-# gh api sends POST the moment a field flag appears, with or without an explicit method.
-$GhWritePattern = '(^|\s)(-f|-F|--field|--raw-field|--input)(\s|=|$)|(-X|--method)[\s=]+(POST|PUT|PATCH|DELETE)|graphql'
+$GhInvocationPattern = $WordStart + 'gh\s+([^;&|)]*)'
+$GhBareReads = 'status|version|help|search|api'
+$GhReadVerbs = 'view|list|ls|diff|checks|status|watch|download|clone|verify'
+$GhReadOnlyPattern = '^(' + $GhBareReads + ')' + $WordEnd + '|^\S+\s+(' + $GhReadVerbs + ')' + $WordEnd
+# A read query and a mutation are the same request shape, and -F query=@file puts the deciding text
+# out of reach of this hook, so the whole graphql endpoint stays denied.
+$GhGraphqlPattern = 'graphql'
+# gh api sends POST the moment a field flag appears, so a field flag is a write unless the method
+# says otherwise. Any explicitly named method other than these is a write on its own.
+$GhMethodPattern = '(-X|--method)[\s=]*([A-Za-z]+)'
+$GhFieldPattern = '(^|\s)(-f|-F|--field|--raw-field|--input)(\s|=|$)'
+$GhReadMethods = @('GET', 'HEAD')
 
-function Write-Decision($decision, $reason) {
-    $payload = @{
-        hookSpecificOutput = @{
-            hookEventName            = 'PreToolUse'
-            permissionDecision       = $decision
-            permissionDecisionReason = $reason
-        }
-    }
-    [Console]::Out.Write((ConvertTo-Json $payload -Depth 5 -Compress))
-    exit 0
+$ReasonAllow = 'Auto-approved by permission-gate.'
+$ReasonGit = 'Commands that alter git state are reserved for the user.'
+$ReasonSudo = 'Elevation is not permitted.'
+$ReasonGh = 'Only read-only gh queries are permitted.'
+
+# Method named by the last -X/--method flag in the arguments, empty when none is given.
+function Get-GhMethod($ghArgs) {
+    $found = [regex]::Matches($ghArgs, $GhMethodPattern)
+    if ($found.Count -eq 0) { return '' }
+    return $found[$found.Count - 1].Groups[2].Value.ToUpperInvariant()
 }
 
 function Test-GhReadOnly($ghArgs) {
-    if ($ghArgs -match $GhWritePattern) { return $false }
+    if ($ghArgs -match $GhGraphqlPattern) { return $false }
+
+    $method = Get-GhMethod $ghArgs
+    $readMethod = $method -in $GhReadMethods
+    if ($method -and -not $readMethod) { return $false }
+    if (-not $readMethod -and $ghArgs -match $GhFieldPattern) { return $false }
+
     return $ghArgs -match $GhReadOnlyPattern
 }
 
-$request = [Console]::In.ReadToEnd() | ConvertFrom-Json
-$command = if ($request.tool_input -and $request.tool_input.PSObject.Properties['command']) { [string]$request.tool_input.command } else { '' }
-
-if ($command -match $GitWritePattern) {
-    Write-Decision 'deny' 'Commands that alter git state are reserved for the user.'
-}
-
-if ($command -match $SudoPattern) {
-    Write-Decision 'deny' 'Elevation is not permitted.'
-}
-
-foreach ($invocation in [regex]::Matches($command, $GhInvocationPattern)) {
-    if (-not (Test-GhReadOnly $invocation.Groups[2].Value)) {
-        Write-Decision 'deny' 'Only read-only gh queries are permitted.'
+function Test-GhInvocationsReadOnly($command) {
+    foreach ($invocation in [regex]::Matches($command, $GhInvocationPattern)) {
+        if (-not (Test-GhReadOnly $invocation.Groups[2].Value)) { return $false }
     }
+    return $true
 }
 
-Write-Decision 'allow' 'Auto-approved by permission-gate.'
+function Get-GateDecision($command) {
+    if ($command -match $GitWritePattern) {
+        return @{ decision = 'deny'; reason = $ReasonGit }
+    }
+
+    if ($command -match $SudoPattern) {
+        return @{ decision = 'deny'; reason = $ReasonSudo }
+    }
+
+    if (-not (Test-GhInvocationsReadOnly $command)) {
+        return @{ decision = 'deny'; reason = $ReasonGh }
+    }
+
+    return @{ decision = 'allow'; reason = $ReasonAllow }
+}
+
+function Invoke-Gate {
+    $request = [Console]::In.ReadToEnd() | ConvertFrom-Json
+    $command = if ($request.tool_input -and $request.tool_input.PSObject.Properties['command']) { [string]$request.tool_input.command } else { '' }
+    $result = Get-GateDecision $command
+    $payload = @{
+        hookSpecificOutput = @{
+            hookEventName            = 'PreToolUse'
+            permissionDecision       = $result.decision
+            permissionDecisionReason = $result.reason
+        }
+    }
+    [Console]::Out.Write((ConvertTo-Json $payload -Depth 5 -Compress))
+}
+
+if (-not $LibraryOnly) {
+    Invoke-Gate
+}

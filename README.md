@@ -64,3 +64,9 @@ Deployed configuration (`claude-code/`):
 - [languages/make/install-bash.ps1](./claude-code/languages/make/install-bash.ps1) - one-time Windows bootstrap for the same scaffolding
 - [languages/python.md](./claude-code/languages/python.md)
 - [skills/tidy-claude](./claude-code/skills/tidy-claude/SKILL.md)
+
+Tests (`test/`), not deployed:
+
+- [gate-cases.tsv](./test/gate-cases.tsv) - expected permission-gate decision per command, shared by both runners
+- [run-gate-tests.sh](./test/run-gate-tests.sh) - asserts `hooks/permission-gate.sh` against those cases
+- [run-gate-tests.ps1](./test/run-gate-tests.ps1) - the same for `hooks/permission-gate.ps1`
