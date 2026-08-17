@@ -58,6 +58,7 @@ Deployed configuration (`claude-code/`):
 - [hooks/permission-gate.sh](./claude-code/hooks/permission-gate.sh) - the same gate for Linux/MacOS
 - [languages/bash.md](./claude-code/languages/bash.md)
 - [languages/c.md](./claude-code/languages/c.md)
+- [languages/english.md](./claude-code/languages/english.md)
 - [languages/make.md](./claude-code/languages/make.md)
 - [languages/make/find-bash.ps1](./claude-code/languages/make/find-bash.ps1) - helper copied into projects that use the cross-platform Makefile scaffolding
 - [languages/make/install-bash.ps1](./claude-code/languages/make/install-bash.ps1) - one-time Windows bootstrap for the same scaffolding

@@ -1,7 +1,7 @@
 # AI Rules
 - Never use non-ascii in code comments, user-facing strings, or docs (fine in conversation)
     - Replace Em/En Dash (U+2014/U+2013) with `-` (never `--`)
-- Never wrap lines to fit a column limit in markdown (paragraphs and bullets included)
+- Before first writing prose that outlives the session - code comments, docstrings, docs, markdown, user-facing strings, `outbox/` deliverables - read `languages/english.md` next to this file; once read, don't reread it
 - Never git stage/unstage, commit or push
 - Never leave unrequested markdown files outside `<repo>/.agent/`; a requested deliverable goes to `<repo>/.agent/outbox/`
 - Report the actions you took and where you deviated; never report a non-event these rules already guarantee (e.g. that nothing was committed)
@@ -25,21 +25,12 @@ Orchestrator behavior by model:
 - Prefer iterative development over incremental: rough in the full working path first, then refine - don't perfect one piece at a time
 - Idempotency in setup scripts and interface design: prefer check-before-act, falling back to `-f`-style (force) semantics when that isn't practical
 - Design for unattended operation: nothing should have interactive confirmation as its only path
-- Write self-documenting code (see Comments)
+- Write self-documenting code (see `languages/english.md`)
 - Minimize unnecessary complexity: every line costs maintenance, every unneeded sentence dilutes the point
 - Prefer immutability
 - Prioritize a single source of truth
-    - For docs too: minimize how many places must change when the implementation does - self-describing code beats invariant docs beats narrative docs
 - Minimize symbol scope
 - Expose only what's strictly necessary in UI and config interfaces
-
-## Comments
-Prefer none - names, types, and structure should carry the meaning. Write one only for a fact the code cannot state itself, and the best kind is counterintuitive: it defends this implementation against the simpler one a reader would otherwise reach for.
-- Comment why, never what; one or two lines, stopping at the surprising fact - anything longer belongs in a design doc
-- Never narrate the implementation journey (alternatives tried, bugs chased, how an earlier draft failed); the maintainer inherits the code, not the road to it - route that story to the final report instead
-- Docstrings follow the same rules; they state the contract of a public API (inputs, outputs, invariants), never the implementation
-- Good: `timeout = 250  # Cloudflare drops idle connections at 300s`. Weak: `# set the timeout` (restates code) or `# was 500, kept dropping` (journey)
-- Final pass before reporting done: reread the diff and delete any comment that fails these rules - comments are written hot but read cold
 
 ## Language Guidance
 Before first reviewing or writing code in a language each session, read the matching file in `languages/` next to this file; once read, don't reread it. If no file matches the language, apply only the shared rules below - don't search elsewhere:
@@ -58,6 +49,6 @@ Project memory is `<repo>/CLAUDE.md`, which Claude Code loads natively, kept per
 Nothing under `<repo>/.agent/` is tracked; it holds a `.gitignore` whose only line is `*`.
 - `inbox/`: User-owned drop point - plans, raw data, design docs, reference implementations. Read-only to you; search it before researching externally.
 - `outbox/`: Yours - deliverables (reports, samples for review). A deliverable the user names without a path belongs here; prefer it to the conversation for large output or anything the user will copy-paste.
-- `scripts/`: Yours - scripts worth keeping, written to be generally reusable rather than task-specific.
+- `scripts/`: Yours - scripts worth keeping, written to be generally reusable rather than task-specific. Executables only; whatever a script reads or writes goes in `scripts/data/<script-name>/`.
 - `doc/`: Yours - durable knowledge that outlives the task that produced it.
-- `scripts/` and `doc/` each keep an `index.md`: one line per entry - the filename, then when a future agent would need it.
+- `scripts/` and `doc/` each keep an `index.md`: one line per entry - the filename, then when a future agent would need it. `scripts/data/` is not indexed.
