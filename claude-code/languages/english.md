@@ -48,3 +48,5 @@ The executor holds only part of the plan in attention, so completeness outranks 
 
 ## Audit
 Before reporting done, reread every artifact the session wrote and cut what fails the sections above - prose is written hot and read cold. Audit a plan for gaps and ambiguity, never length.
+- Hand the pass to a subagent on fresh context wherever the artifact can be judged without the session's history: the author cannot see what the prose silently assumes. Opus at medium effort.
+- On a complex task, the pass ends when the writing is two thirds the length it started. Falling short means the cuts were cosmetic - look for the section that restates another, and for the detail that survived only because it was expensive to learn.
