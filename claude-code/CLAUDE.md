@@ -26,7 +26,7 @@ Orchestrator behavior by model:
 - Idempotency in setup scripts and interface design: prefer check-before-act, falling back to `-f`-style (force) semantics when that isn't practical
 - Design for unattended operation: nothing should have interactive confirmation as its only path
 - Write self-documenting code (see `languages/english.md`)
-- Minimize unnecessary complexity: every line costs maintenance, every unneeded sentence dilutes the point
+- Minimize unnecessary complexity: every line costs maintenance
 - Prefer immutability
 - Prioritize a single source of truth
 - Minimize symbol scope
