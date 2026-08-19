@@ -65,8 +65,9 @@ merge_settings() {
 # Hook commands need an absolute path, which only exists once CLAUDE_DIR is resolved,
 # so the tracked settings.json carries a placeholder instead.
 resolve_hook_placeholders() {
-    jq --arg gate "bash \"$CLAUDE_DIR/hooks/permission-gate.sh\"" \
-        'walk(if . == "{{PERMISSION_GATE}}" then $gate else . end)' "$1"
+    jq --arg permission_gate "bash \"$CLAUDE_DIR/hooks/permission-gate.sh\"" \
+        --arg prose_gate "bash \"$CLAUDE_DIR/hooks/prose-gate.sh\"" \
+        'walk(if . == "{{PERMISSION_GATE}}" then $permission_gate elif . == "{{PROSE_GATE}}" then $prose_gate else . end)' "$1"
 }
 
 # Replace each top-level entry of $CLAUDE_DIR that this repo owns with a fresh copy from $src,

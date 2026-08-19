@@ -45,8 +45,15 @@ function Merge-Json($base, $overlay) {
 # Hook commands need an absolute path, which only exists once $ClaudeDir is resolved,
 # so the tracked settings.json carries a placeholder instead.
 function Resolve-HookPlaceholders($json) {
-    $gate = 'powershell -NoProfile -NonInteractive -File "{0}"' -f (Join-Path $ClaudeDir 'hooks\permission-gate.ps1')
-    return $json.Replace('{{PERMISSION_GATE}}', $gate.Replace('\', '\\').Replace('"', '\"'))
+    $gates = [ordered]@{
+        '{{PERMISSION_GATE}}' = 'permission-gate.ps1'
+        '{{PROSE_GATE}}'      = 'prose-gate.ps1'
+    }
+    foreach ($placeholder in $gates.Keys) {
+        $gate = 'powershell -NoProfile -NonInteractive -File "{0}"' -f (Join-Path $ClaudeDir "hooks\$($gates[$placeholder])")
+        $json = $json.Replace($placeholder, $gate.Replace('\', '\\').Replace('"', '\"'))
+    }
+    return $json
 }
 
 # Enforce the keys from the tracked settings.json onto the user's existing file,

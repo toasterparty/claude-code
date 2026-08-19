@@ -1,0 +1,39 @@
+# Expected prose-gate decision, tab, 1 when english.md is already in context, tab, write target.
+# Both hooks must agree on every line. Blank lines and # lines are skipped. A missing third field
+# stands for a tool call with no file_path.
+
+# Nothing is gated once the file is in context
+allow	1	/repo/.agent/outbox/review.md
+allow	1	/repo/docs/design.md
+allow	1	/repo/CLAUDE.md
+
+# Markdown anywhere is prose
+deny	0	/repo/docs/design.md
+deny	0	README.md
+deny	0	/repo/CLAUDE.md
+deny	0	/repo/.agent/doc/index.md
+deny	0	C:\Users\x\repo\docs\design.md
+
+# Everything the deliverable directory holds is prose, whatever the extension
+deny	0	/repo/.agent/outbox/review.md
+deny	0	/repo/.agent/outbox/summary.txt
+deny	0	/repo/.agent/outbox/data/table.csv
+deny	0	C:\Users\x\repo\.agent\outbox\report.md
+deny	0	/repo/.AGENT/Outbox/Report.MD
+
+# Source, config and the agent's own scripts are out of scope
+allow	0	/repo/src/main.c
+allow	0	/repo/package.json
+allow	0	/repo/.agent/scripts/deploy.sh
+allow	0	/repo/.agent/inbox/plan.md.bak
+allow	0	/repo/settings.json
+
+# Boundaries of the markdown suffix
+allow	0	/repo/notes.markdown
+allow	0	/repo/schema.mdx
+allow	0	/repo/md
+allow	0	/repo/.mdignore
+deny	0	/repo/NOTES.MD
+
+# A tool call carrying no file_path decides nothing
+allow	0

@@ -7,7 +7,7 @@ Source of truth for a personal Claude Code configuration: an online backup that 
 Layout:
 - `claude-code/` - the deployed payload, mirrored into the Claude Code home directory: `CLAUDE.md`, `settings.json`, `languages/`, `skills/`
 - `doc/` - human-facing docs, published with `README.md` via GitHub Pages
-- `test/` - not deployed; `run-gate-tests.sh` and `run-gate-tests.ps1` assert both permission-gate hooks against the shared cases in `gate-cases.tsv`. Run both after any edit to a hook - the two hooks must decide identically
+- `test/` - not deployed; each hook has a `.sh`/`.ps1` runner pair asserting both twins against one shared `*-cases.tsv`. Run both runners after any edit to a hook - the two twins must decide identically
 - `install.sh` / `install.ps1` - idempotent deploy scripts; each replaces every top-level entry of `claude-code/` wholesale and key-merges `settings.json` (tracked keys win)
 
 The install scripts download the repo archive from GitHub `main`, so an edit here changes nothing live until the user pushes and reruns install.

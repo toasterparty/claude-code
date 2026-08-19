@@ -56,6 +56,8 @@ Deployed configuration (`claude-code/`):
 - [settings.json](./claude-code/settings.json)
 - [hooks/permission-gate.ps1](./claude-code/hooks/permission-gate.ps1) - Windows PreToolUse gate: auto-approves tool calls that policy allows, so nothing waits on a prompt
 - [hooks/permission-gate.sh](./claude-code/hooks/permission-gate.sh) - the same gate for Linux/MacOS
+- [hooks/prose-gate.ps1](./claude-code/hooks/prose-gate.ps1) - Windows PreToolUse gate: blocks a markdown or `outbox/` write until `languages/english.md` is in context
+- [hooks/prose-gate.sh](./claude-code/hooks/prose-gate.sh) - the same gate for Linux/MacOS
 - [languages/bash.md](./claude-code/languages/bash.md)
 - [languages/c.md](./claude-code/languages/c.md)
 - [languages/english.md](./claude-code/languages/english.md)
@@ -64,9 +66,3 @@ Deployed configuration (`claude-code/`):
 - [languages/make/install-bash.ps1](./claude-code/languages/make/install-bash.ps1) - one-time Windows bootstrap for the same scaffolding
 - [languages/python.md](./claude-code/languages/python.md)
 - [skills/tidy-claude](./claude-code/skills/tidy-claude/SKILL.md)
-
-Tests (`test/`), not deployed:
-
-- [gate-cases.tsv](./test/gate-cases.tsv) - expected permission-gate decision per command, shared by both runners
-- [run-gate-tests.sh](./test/run-gate-tests.sh) - asserts `hooks/permission-gate.sh` against those cases
-- [run-gate-tests.ps1](./test/run-gate-tests.ps1) - the same for `hooks/permission-gate.ps1`
