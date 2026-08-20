@@ -18,14 +18,40 @@ $ErrorActionPreference = 'Stop'
 $WordStart = '(^|[^\w-])'
 $WordEnd = '([^\w-]|$)'
 
-$GitWriteVerbs = 'add|stage|restore|commit|push|stash|reset|checkout|clean|switch'
-$GitWritePattern = $WordStart + 'git(\s+\S+)*\s+(' + $GitWriteVerbs + ')' + $WordEnd
-# A worktree add leaves the current tree, index and history untouched, so it escapes the write
-# denial its add verb would otherwise earn. Cutting it out of the text before the write check keeps
-# the rest of a compound command judged on its own. Separator and quote characters stay out of the
-# intervening arguments so the cut cannot reach across into a neighbouring command and erase it.
-$GitArgChars = '[^;&|)''"`\s]'
-$GitWorktreeAddPattern = $WordStart + 'git(\s+' + $GitArgChars + '+)*\s+worktree\s+add' + $WordEnd
+# Anything that can move the index, HEAD, a ref, the working tree or the repository config. The
+# arguments that may stand between git and its subcommand, such as -C <path>, exclude the command
+# separators, so the command after a separator is never read as an argument of the git before it.
+$Blank = '[ \t]'
+$GitArg = '[^;&|)\s]'
+$GitArgs = '(' + $Blank + '+' + $GitArg + '+)*'
+$GitWriteVerbs = 'add|stage|rm|mv|restore|commit|push|pull|merge|rebase|cherry-pick|revert|am|apply' +
+    '|stash|reset|checkout|clean|switch|branch|tag|remote|config' +
+    '|submodule|worktree|notes|replace|reflog|gc|prune|filter-branch' +
+    '|fast-import|sparse-checkout|bisect|update-index|update-ref|symbolic-ref'
+$GitWritePattern = $WordStart + 'git(\.exe)?' + $GitArgs + $Blank + '+(' + $GitWriteVerbs + ')' + $WordEnd
+
+# Shapes cut from the command text before the write check above, so a verb that names both a read and
+# a write is denied only in its write form. Worktree creation is among them because it leaves the
+# index, HEAD and the working tree untouched. Quotes stay out of the arguments here, so a commit
+# message quoting one of these shapes cannot clear the commit that carries it.
+$GitSafeArg = '[^;&|)''"`\s]'
+$GitSafeArgs = '(' + $Blank + '+' + $GitSafeArg + '+)*'
+$GitReadShapes = 'worktree' + $Blank + '+(add|list)' +
+    # The short listing flags cluster (-avv), and none of the write flags share a letter with them.
+    '|branch' + $Blank + '+(-[avrl]+|--list|--all|--remotes|--verbose|--show-current|--contains|--merged|--no-merged|--points-at|--format|--sort)' +
+    '|tag' + $Blank + '+(-l|-n[0-9]*|--list|--contains|--points-at|--format|--sort)' +
+    '|remote' + $Blank + '+(-v|--verbose|show|get-url)' +
+    '|config' + $Blank + '+(--get[a-zA-Z-]*|--list|-l)' +
+    '|submodule' + $Blank + '+(status|summary)|notes' + $Blank + '+(list|show)' +
+    '|reflog' + $Blank + '+show|stash' + $Blank + '+(list|show)' +
+    # These modes of apply print what a patch would do and stop short of touching anything.
+    '|apply' + $Blank + '+(--check|--stat|--numstat|--summary)' +
+    '|bisect' + $Blank + '+(log|view|visualize)'
+# A subcommand given nothing to act on only lists, except stash, whose bare form stashes.
+$GitListVerbs = 'branch|tag|remote|worktree|submodule|notes|reflog'
+$GitReadPattern = $WordStart + 'git(\.exe)?' + $GitSafeArgs + $Blank + '+((' + $GitReadShapes + ')' + $WordEnd +
+    '|(' + $GitListVerbs + ')' + $Blank + '*($|[;&|)\r\n]))'
+
 $SudoPattern = $WordStart + 'sudo' + $WordEnd
 
 # gh is inverted: only these read-only shapes pass, everything else is a denial.
@@ -79,7 +105,7 @@ function Test-GhInvocationsPermitted($command) {
 }
 
 function Get-GateDecision($command) {
-    if (($command -replace $GitWorktreeAddPattern, ' ') -match $GitWritePattern) {
+    if (($command -replace $GitReadPattern, ' ') -match $GitWritePattern) {
         return @{ decision = 'deny'; reason = $ReasonGit }
     }
 

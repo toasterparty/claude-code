@@ -16,14 +16,82 @@ deny	git commit -m x
 deny	git -C /repo push
 deny	git stash
 
+# Staging under another name, and the Windows executable spelling
+deny	git rm --cached secret.txt
+deny	git rm -r src
+deny	git mv a b
+deny	git apply patch.diff
+deny	git am patch.mbox
+deny	git update-index --add f
+deny	git update-ref refs/heads/x HEAD
+deny	git.exe add .
+deny	git.exe commit -m x
+
+# Rewrites of history or the working tree
+deny	git merge origin/main
+deny	git rebase -i main
+deny	git cherry-pick abc123
+deny	git revert HEAD
+deny	git pull --rebase
+deny	git gc --prune=now
+deny	git prune
+deny	git filter-branch --tree-filter x
+deny	git bisect start
+deny	git sparse-checkout set src
+deny	git submodule update --init
+deny	git symbolic-ref HEAD refs/heads/x
+
+# Refs, config and stash writes
+deny	git branch -D feature
+deny	git branch -m old new
+deny	git branch feature
+deny	git tag v1.0
+deny	git tag -d v1.0
+deny	git remote add origin url
+deny	git remote remove origin
+deny	git config user.email x
+deny	git config --global core.editor vim
+deny	git reflog expire --expire=now
+deny	git notes add -m x
+deny	git replace a b
+deny	git stash pop
+
+# The read half of a verb that names both a read and a write
+allow	git branch
+allow	git branch -a
+allow	git branch --show-current
+allow	git branch --contains HEAD
+allow	git tag -l v1*
+allow	git remote -v
+allow	git remote show origin
+allow	git config --get remote.origin.url
+allow	git config --list
+allow	git submodule status
+allow	git reflog show HEAD
+allow	git stash list
+allow	git stash show -p
+allow	git notes list
+allow	git branch -vv
+allow	git branch -av
+allow	git tag -n
+allow	git apply --check patch.diff
+allow	git apply --stat patch.diff
+allow	git bisect log
+deny	git apply --index patch.diff
+
 # Worktree creation touches nothing the user owns
 allow	git worktree add ../wt -b feature
 allow	git -C /repo worktree add ../wt main
 allow	bash -c 'git worktree add ../wt'
 allow	git worktree list
+deny	git worktree remove ../wt
+deny	git worktree prune
 deny	git worktree add ../wt && git commit -m x
 deny	git commit -m x; git worktree add ../wt
 deny	git worktree add ../wt && git push
+deny	git status && git rm --cached f
+allow	git branch -a && git log
+deny	git branch -a && git commit -m x
 
 # The boundary is a word edge, not a delimiter list, so quoting and paths do not smuggle a write
 deny	bash -c 'git push'

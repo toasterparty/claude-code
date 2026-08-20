@@ -13,14 +13,38 @@
 WORD_START='(^|[^[:alnum:]_-])'
 WORD_END='([^[:alnum:]_-]|$)'
 
-GIT_WRITE_VERBS='add|stage|restore|commit|push|stash|reset|checkout|clean|switch'
-GIT_WRITE_PATTERN="$WORD_START"'git([[:space:]]+[^[:space:]]+)*[[:space:]]+('"$GIT_WRITE_VERBS"')'"$WORD_END"
-# A worktree add leaves the current tree, index and history untouched, so it escapes the write
-# denial its add verb would otherwise earn. Cutting it out of the text before the write check keeps
-# the rest of a compound command judged on its own. Separator and quote characters stay out of the
-# intervening arguments so the cut cannot reach across into a neighbouring command and erase it.
-GIT_ARG_CHARS="[^;&|)\`'\"[:space:]]"
-GIT_WORKTREE_ADD_PATTERN="$WORD_START"'git([[:space:]]+'"$GIT_ARG_CHARS"'+)*[[:space:]]+worktree[[:space:]]+add'"$WORD_END"
+# Anything that can move the index, HEAD, a ref, the working tree or the repository config. The
+# arguments that may stand between git and its subcommand, such as -C <path>, exclude the command
+# separators, so the command after a separator is never read as an argument of the git before it.
+GIT_ARG='[^;&|)[:blank:]]'
+GIT_ARGS='([[:blank:]]+'"$GIT_ARG"'+)*'
+GIT_WRITE_VERBS='add|stage|rm|mv|restore|commit|push|pull|merge|rebase|cherry-pick|revert|am|apply'
+GIT_WRITE_VERBS="$GIT_WRITE_VERBS"'|stash|reset|checkout|clean|switch|branch|tag|remote|config'
+GIT_WRITE_VERBS="$GIT_WRITE_VERBS"'|submodule|worktree|notes|replace|reflog|gc|prune|filter-branch'
+GIT_WRITE_VERBS="$GIT_WRITE_VERBS"'|fast-import|sparse-checkout|bisect|update-index|update-ref|symbolic-ref'
+GIT_WRITE_PATTERN="$WORD_START"'git(\.exe)?'"$GIT_ARGS"'[[:blank:]]+('"$GIT_WRITE_VERBS"')'"$WORD_END"
+
+# Shapes cut from the command text before the write check above, so a verb that names both a read and
+# a write is denied only in its write form. Worktree creation is among them because it leaves the
+# index, HEAD and the working tree untouched. Quotes stay out of the arguments here, so a commit
+# message quoting one of these shapes cannot clear the commit that carries it.
+GIT_SAFE_ARG="[^;&|)\`'\"[:blank:]]"
+GIT_SAFE_ARGS='([[:blank:]]+'"$GIT_SAFE_ARG"'+)*'
+GIT_READ_SHAPES='worktree[[:blank:]]+(add|list)'
+# The short listing flags cluster (-avv), and none of the write flags share a letter with them.
+GIT_READ_SHAPES="$GIT_READ_SHAPES"'|branch[[:blank:]]+(-[avrl]+|--list|--all|--remotes|--verbose|--show-current|--contains|--merged|--no-merged|--points-at|--format|--sort)'
+GIT_READ_SHAPES="$GIT_READ_SHAPES"'|tag[[:blank:]]+(-l|-n[0-9]*|--list|--contains|--points-at|--format|--sort)'
+GIT_READ_SHAPES="$GIT_READ_SHAPES"'|remote[[:blank:]]+(-v|--verbose|show|get-url)'
+GIT_READ_SHAPES="$GIT_READ_SHAPES"'|config[[:blank:]]+(--get[[:alpha:]-]*|--list|-l)'
+GIT_READ_SHAPES="$GIT_READ_SHAPES"'|submodule[[:blank:]]+(status|summary)|notes[[:blank:]]+(list|show)'
+GIT_READ_SHAPES="$GIT_READ_SHAPES"'|reflog[[:blank:]]+show|stash[[:blank:]]+(list|show)'
+# These modes of apply print what a patch would do and stop short of touching anything.
+GIT_READ_SHAPES="$GIT_READ_SHAPES"'|apply[[:blank:]]+(--check|--stat|--numstat|--summary)'
+GIT_READ_SHAPES="$GIT_READ_SHAPES"'|bisect[[:blank:]]+(log|view|visualize)'
+# A subcommand given nothing to act on only lists, except stash, whose bare form stashes.
+GIT_LIST_VERBS='branch|tag|remote|worktree|submodule|notes|reflog'
+GIT_READ_PATTERN="$WORD_START"'git(\.exe)?'"$GIT_SAFE_ARGS"'[[:blank:]]+(('"$GIT_READ_SHAPES"')'"$WORD_END"'|('"$GIT_LIST_VERBS"')[[:blank:]]*($|[;&|)]))'
+
 SUDO_PATTERN="$WORD_START"'sudo'"$WORD_END"
 
 # gh is inverted: only these read-only shapes pass, everything else is a denial.
@@ -99,7 +123,7 @@ gate_decision() {
     local command_text="$1"
 
     local git_write_text
-    git_write_text="$(printf '%s' "$command_text" | sed -E "s/$GIT_WORKTREE_ADD_PATTERN/ /g")"
+    git_write_text="$(printf '%s' "$command_text" | sed -E "s/$GIT_READ_PATTERN/ /g")"
     if matches "$git_write_text" "$GIT_WRITE_PATTERN"; then
         GATE_DECISION=deny
         GATE_REASON=$REASON_GIT
