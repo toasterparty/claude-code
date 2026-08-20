@@ -20,6 +20,12 @@ $WordEnd = '([^\w-]|$)'
 
 $GitWriteVerbs = 'add|stage|restore|commit|push|stash|reset|checkout|clean|switch'
 $GitWritePattern = $WordStart + 'git(\s+\S+)*\s+(' + $GitWriteVerbs + ')' + $WordEnd
+# A worktree add leaves the current tree, index and history untouched, so it escapes the write
+# denial its add verb would otherwise earn. Cutting it out of the text before the write check keeps
+# the rest of a compound command judged on its own. Separator and quote characters stay out of the
+# intervening arguments so the cut cannot reach across into a neighbouring command and erase it.
+$GitArgChars = '[^;&|)''"`\s]'
+$GitWorktreeAddPattern = $WordStart + 'git(\s+' + $GitArgChars + '+)*\s+worktree\s+add' + $WordEnd
 $SudoPattern = $WordStart + 'sudo' + $WordEnd
 
 # gh is inverted: only these read-only shapes pass, everything else is a denial.
@@ -73,7 +79,7 @@ function Test-GhInvocationsPermitted($command) {
 }
 
 function Get-GateDecision($command) {
-    if ($command -match $GitWritePattern) {
+    if (($command -replace $GitWorktreeAddPattern, ' ') -match $GitWritePattern) {
         return @{ decision = 'deny'; reason = $ReasonGit }
     }
 

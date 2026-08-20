@@ -16,6 +16,15 @@ deny	git commit -m x
 deny	git -C /repo push
 deny	git stash
 
+# Worktree creation touches nothing the user owns
+allow	git worktree add ../wt -b feature
+allow	git -C /repo worktree add ../wt main
+allow	bash -c 'git worktree add ../wt'
+allow	git worktree list
+deny	git worktree add ../wt && git commit -m x
+deny	git commit -m x; git worktree add ../wt
+deny	git worktree add ../wt && git push
+
 # The boundary is a word edge, not a delimiter list, so quoting and paths do not smuggle a write
 deny	bash -c 'git push'
 deny	bash -c 'git stash'

@@ -15,6 +15,12 @@ WORD_END='([^[:alnum:]_-]|$)'
 
 GIT_WRITE_VERBS='add|stage|restore|commit|push|stash|reset|checkout|clean|switch'
 GIT_WRITE_PATTERN="$WORD_START"'git([[:space:]]+[^[:space:]]+)*[[:space:]]+('"$GIT_WRITE_VERBS"')'"$WORD_END"
+# A worktree add leaves the current tree, index and history untouched, so it escapes the write
+# denial its add verb would otherwise earn. Cutting it out of the text before the write check keeps
+# the rest of a compound command judged on its own. Separator and quote characters stay out of the
+# intervening arguments so the cut cannot reach across into a neighbouring command and erase it.
+GIT_ARG_CHARS="[^;&|)\`'\"[:space:]]"
+GIT_WORKTREE_ADD_PATTERN="$WORD_START"'git([[:space:]]+'"$GIT_ARG_CHARS"'+)*[[:space:]]+worktree[[:space:]]+add'"$WORD_END"
 SUDO_PATTERN="$WORD_START"'sudo'"$WORD_END"
 
 # gh is inverted: only these read-only shapes pass, everything else is a denial.
@@ -92,7 +98,9 @@ gh_invocations_permitted() {
 gate_decision() {
     local command_text="$1"
 
-    if matches "$command_text" "$GIT_WRITE_PATTERN"; then
+    local git_write_text
+    git_write_text="$(printf '%s' "$command_text" | sed -E "s/$GIT_WORKTREE_ADD_PATTERN/ /g")"
+    if matches "$git_write_text" "$GIT_WRITE_PATTERN"; then
         GATE_DECISION=deny
         GATE_REASON=$REASON_GIT
         return
