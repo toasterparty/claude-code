@@ -24,6 +24,12 @@ GIT_WRITE_VERBS="$GIT_WRITE_VERBS"'|submodule|worktree|notes|replace|reflog|gc|p
 GIT_WRITE_VERBS="$GIT_WRITE_VERBS"'|fast-import|sparse-checkout|bisect|update-index|update-ref|symbolic-ref'
 GIT_WRITE_PATTERN="$WORD_START"'git(\.exe)?'"$GIT_ARGS"'[[:blank:]]+('"$GIT_WRITE_VERBS"')'"$WORD_END"
 
+# Applying a patch only rewrites working tree files, which the user can review and revert like any
+# other edit, so it is left open. These flags are the exception: they move the index, and --3way
+# reaches for the index too unless it is told to stay in the cache.
+GIT_APPLY_INDEX_FLAGS='--index|--cached|--3way|-3'
+GIT_APPLY_INDEX_PATTERN="$WORD_START"'git(\.exe)?'"$GIT_ARGS"'[[:blank:]]+apply([[:blank:]]+'"$GIT_ARG"'+)*[[:blank:]]+('"$GIT_APPLY_INDEX_FLAGS"')'"$WORD_END"
+
 # Shapes cut from the command text before the write check above, so a verb that names both a read and
 # a write is denied only in its write form. Worktree creation is among them because it leaves the
 # index, HEAD and the working tree untouched. Quotes stay out of the arguments here, so a commit
@@ -38,8 +44,8 @@ GIT_READ_SHAPES="$GIT_READ_SHAPES"'|remote[[:blank:]]+(-v|--verbose|show|get-url
 GIT_READ_SHAPES="$GIT_READ_SHAPES"'|config[[:blank:]]+(--get[[:alpha:]-]*|--list|-l)'
 GIT_READ_SHAPES="$GIT_READ_SHAPES"'|submodule[[:blank:]]+(status|summary)|notes[[:blank:]]+(list|show)'
 GIT_READ_SHAPES="$GIT_READ_SHAPES"'|reflog[[:blank:]]+show|stash[[:blank:]]+(list|show)'
-# These modes of apply print what a patch would do and stop short of touching anything.
-GIT_READ_SHAPES="$GIT_READ_SHAPES"'|apply[[:blank:]]+(--check|--stat|--numstat|--summary)'
+# apply reaches no further than the working tree once its index flags are ruled out above.
+GIT_READ_SHAPES="$GIT_READ_SHAPES"'|apply'
 GIT_READ_SHAPES="$GIT_READ_SHAPES"'|bisect[[:blank:]]+(log|view|visualize)'
 # A subcommand given nothing to act on only lists, except stash, whose bare form stashes.
 GIT_LIST_VERBS='branch|tag|remote|worktree|submodule|notes|reflog'
@@ -88,6 +94,7 @@ GH_READ_METHODS='GET|HEAD'
 
 REASON_ALLOW='Auto-approved by permission-gate.'
 REASON_GIT='Commands that alter git state are reserved for the user.'
+REASON_GIT_APPLY='git apply may not stage what it applies; drop --index, --cached and --3way.'
 REASON_SUDO='Elevation is not permitted.'
 REASON_GH='Only read-only gh queries and CI dispatch are permitted.'
 REASON_BACKGROUND='Background work belongs in the run_in_background parameter, not in the shell.'
@@ -163,6 +170,12 @@ gh_invocations_permitted() {
 # Sets GATE_DECISION and GATE_REASON for the given command text.
 gate_decision() {
     local command_text="$1"
+
+    if matches "$command_text" "$GIT_APPLY_INDEX_PATTERN"; then
+        GATE_DECISION=deny
+        GATE_REASON=$REASON_GIT_APPLY
+        return
+    fi
 
     local git_write_text
     git_write_text="$(printf '%s' "$command_text" | sed -E "s/$GIT_READ_PATTERN/ /g")"

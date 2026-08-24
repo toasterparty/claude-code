@@ -20,7 +20,6 @@ deny	git stash
 deny	git rm --cached secret.txt
 deny	git rm -r src
 deny	git mv a b
-deny	git apply patch.diff
 deny	git am patch.mbox
 deny	git update-index --add f
 deny	git update-ref refs/heads/x HEAD
@@ -74,10 +73,25 @@ allow	git notes list
 allow	git branch -vv
 allow	git branch -av
 allow	git tag -n
+allow	git bisect log
+
+# apply stops at the working tree until a flag hands it the index
+allow	git apply patch.diff
 allow	git apply --check patch.diff
 allow	git apply --stat patch.diff
-allow	git bisect log
+allow	git apply -R patch.diff
+allow	git apply
+allow	git -C /repo apply patch.diff
+allow	bash -c 'git apply patch.diff'
+allow	git apply patch.diff && git diff
 deny	git apply --index patch.diff
+deny	git apply --cached patch.diff
+deny	git apply --3way patch.diff
+deny	git apply -3 patch.diff
+deny	git apply patch.diff --index
+deny	git.exe apply --index patch.diff
+deny	git apply patch.diff && git commit -m x
+deny	git apply patch.diff; git apply --index other.diff
 
 # Worktree creation touches nothing the user owns
 allow	git worktree add ../wt -b feature

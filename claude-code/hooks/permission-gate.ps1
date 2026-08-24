@@ -30,6 +30,13 @@ $GitWriteVerbs = 'add|stage|rm|mv|restore|commit|push|pull|merge|rebase|cherry-p
     '|fast-import|sparse-checkout|bisect|update-index|update-ref|symbolic-ref'
 $GitWritePattern = $WordStart + 'git(\.exe)?' + $GitArgs + $Blank + '+(' + $GitWriteVerbs + ')' + $WordEnd
 
+# Applying a patch only rewrites working tree files, which the user can review and revert like any
+# other edit, so it is left open. These flags are the exception: they move the index, and --3way
+# reaches for the index too unless it is told to stay in the cache.
+$GitApplyIndexFlags = '--index|--cached|--3way|-3'
+$GitApplyIndexPattern = $WordStart + 'git(\.exe)?' + $GitArgs + $Blank + '+apply(' + $Blank + '+' + $GitArg + '+)*' +
+    $Blank + '+(' + $GitApplyIndexFlags + ')' + $WordEnd
+
 # Shapes cut from the command text before the write check above, so a verb that names both a read and
 # a write is denied only in its write form. Worktree creation is among them because it leaves the
 # index, HEAD and the working tree untouched. Quotes stay out of the arguments here, so a commit
@@ -44,8 +51,8 @@ $GitReadShapes = 'worktree' + $Blank + '+(add|list)' +
     '|config' + $Blank + '+(--get[a-zA-Z-]*|--list|-l)' +
     '|submodule' + $Blank + '+(status|summary)|notes' + $Blank + '+(list|show)' +
     '|reflog' + $Blank + '+show|stash' + $Blank + '+(list|show)' +
-    # These modes of apply print what a patch would do and stop short of touching anything.
-    '|apply' + $Blank + '+(--check|--stat|--numstat|--summary)' +
+    # apply reaches no further than the working tree once its index flags are ruled out above.
+    '|apply' +
     '|bisect' + $Blank + '+(log|view|visualize)'
 # A subcommand given nothing to act on only lists, except stash, whose bare form stashes.
 $GitListVerbs = 'branch|tag|remote|worktree|submodule|notes|reflog'
@@ -94,6 +101,7 @@ $GhReadMethods = @('GET', 'HEAD')
 
 $ReasonAllow = 'Auto-approved by permission-gate.'
 $ReasonGit = 'Commands that alter git state are reserved for the user.'
+$ReasonGitApply = 'git apply may not stage what it applies; drop --index, --cached and --3way.'
 $ReasonSudo = 'Elevation is not permitted.'
 $ReasonGh = 'Only read-only gh queries and CI dispatch are permitted.'
 $ReasonBackground = 'Background work belongs in the run_in_background parameter, not in the shell.'
@@ -133,6 +141,10 @@ function Test-GhInvocationsPermitted($command) {
 }
 
 function Get-GateDecision($command) {
+    if ($command -match $GitApplyIndexPattern) {
+        return @{ decision = 'deny'; reason = $ReasonGitApply }
+    }
+
     if (($command -replace $GitReadPattern, ' ') -match $GitWritePattern) {
         return @{ decision = 'deny'; reason = $ReasonGit }
     }
