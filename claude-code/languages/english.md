@@ -5,15 +5,16 @@ Governs prose that outlives the session; conversation is exempt. Agent-executed 
 - Carry a fact the subject cannot state itself, or delete it; deletion is the default fix, rewriting the fallback.
 - Why, never what: never restate the code, the diff, the data, or the prompt.
 - Stop at the surprising fact; never narrate the journey already taken - alternatives tried, bugs chased, earlier drafts. Steps that have not yet been executed (i.e. proposals) are content, not journey.
+- Lead with the conclusion - the verdict, the fix, the finding - then the support; never build toward it.
 - Name a symbol, path, or `file:line` only where that location is itself the news. State what the code does, not which function does it - an identifier dropped in as an aside still costs the reader a lookup.
-- Prefer the doc that cannot go stale: Avoid unnecessarily specific details that couples implementation. Self-describing code beats invariant docs beats narrative docs.
+- Prefer the doc that cannot go stale: self-describing code beats invariant docs beats narrative docs; cut detail specific enough to couple the doc to the implementation.
 - Length follows the information, not the container: never pad to fill a heading or a bullet's siblings
 - Never restate the heading or the question before answering it, and never stub a section to satisfy a template - a section with nothing to say does not appear. No closing paragraph that re-summarizes the body.
 - Plain register: no filler adverbs, grandiose adjectives, reflexive triads, stacked hedges, or the `not only X but Y` flourish.
 
 ## Formatting
 - Never wrap lines to fit a column limit (paragraphs and bullets included)
-- One `#` per file; heading levels never skip. No headings at all in a doc short enough to read whole.
+- One `#` per file; no headings at all in a doc short enough to read whole.
 - `-` for bullets, four spaces per nesting level; inline code for every path, flag, and identifier
 - Bullets that read as continuous prose are a paragraph - write the paragraph.
 - A flat set of parallel facts is a table; reasoning is prose.
@@ -21,7 +22,7 @@ Governs prose that outlives the session; conversation is exempt. Agent-executed 
 - No emoji, no non-ascii: `-` for em and en dashes (never `--`), `...` for the ellipsis, `->` for arrows, `>=`/`<=`, straight quotes, a plain space for the non-breaking space
 
 ## Artifacts
-- Code: prefer no comment - names, types, and structure carry the meaning. The comment that earns its place states why: `timeout = 250  # Cloudflare drops idle connections at 300s`. A docstring gives the contract of a public API - inputs, outputs, invariants - never the implementation.
+- Code: prefer no comment - names, types, and structure carry the meaning. A docstring gives the contract of a public API - inputs, outputs, invariants - never the implementation.
 - README: what the thing is, how to build and run it, then stop. Badges, feature lists, architecture tours, and contribution boilerplate only when asked.
 - PR descriptions: one item per behavior change, never per file or per commit, none at all for a change with no behavioral effect. State what the system now does differently, plus the review risk if there is one.
 - Reports and durable docs: Implementation reports are the one place narrative earns its place - deviations, what was verified and how, what was left undone. Git-tracked documentation, investigations and analyses are written for an agent/reader arriving cold: no session references, no `as discussed`, avoid dates.

@@ -93,5 +93,6 @@
   "prefersReducedMotion": true,
   "precomputeCompactionEnabled": false,
   "terminalProgressBarEnabled": false,
-  "autoMemoryEnabled": false
+  "autoMemoryEnabled": false,
+  "outputStyle": "Concise+"
 }

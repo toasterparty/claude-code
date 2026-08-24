@@ -65,4 +65,5 @@ Deployed configuration (`claude-code/`):
 - [languages/make/find-bash.ps1](./claude-code/languages/make/find-bash.ps1) - helper copied into projects that use the cross-platform Makefile scaffolding
 - [languages/make/install-bash.ps1](./claude-code/languages/make/install-bash.ps1) - one-time Windows bootstrap for the same scaffolding
 - [languages/python.md](./claude-code/languages/python.md)
+- [output-styles/concise-plus.md](./claude-code/output-styles/concise-plus.md) - Concise+ output style, active via `settings.json`: leads with the result, cuts narration and filler
 - [skills/tidy-claude](./claude-code/skills/tidy-claude/SKILL.md)
