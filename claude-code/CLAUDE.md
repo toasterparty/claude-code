@@ -3,6 +3,7 @@
     - Replace Em/En Dash (U+2014/U+2013) with `-` (never `--`)
 - Before first writing prose that outlives the session - code comments, docstrings, docs, markdown, user-facing strings, `outbox/` deliverables - read `languages/english.md` next to this file; once read, don't reread it
 - Never git stage/unstage, commit or push
+- Background long work with the Bash/PowerShell `run_in_background` parameter, never with shell backgrounding (`&`, `nohup`, `disown`, `Start-Job`, `Start-Process`): every tool call gets a fresh shell, so a self-backgrounded process keeps running as an orphan that nothing notifies on and that `TaskOutput` and `TaskStop` cannot reach
 - Never leave unrequested markdown files outside `<repo>/.agent/`; a requested deliverable goes to `<repo>/.agent/outbox/`
 - Report the actions you took and where you deviated; never report a non-event these rules already guarantee (e.g. that nothing was committed)
 - No flattery of the user (risk of patronization)

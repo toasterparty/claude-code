@@ -54,6 +54,25 @@ $GitReadPattern = $WordStart + 'git(\.exe)?' + $GitSafeArgs + $Blank + '+((' + $
 
 $SudoPattern = $WordStart + 'sudo' + $WordEnd
 
+# Backgrounding from inside the shell hides the process from the harness: the next tool call gets a
+# new shell, so the process runs on with nothing to report its exit and no task for TaskOutput or
+# TaskStop to reach. The run_in_background parameter covers every case this does, and being denied
+# here costs one call where an escaped background process costs the whole run.
+$BackgroundLaunchers = 'nohup|disown|setsid|start-job|start-threadjob'
+$BackgroundLauncherPattern = $WordStart + '(' + $BackgroundLaunchers + ')' + $WordEnd
+# Start-Process detaches unless it is told to wait for what it started. Invoke-Item stays open as the
+# way to hand a file to its default application.
+$StartProcessPattern = $WordStart + 'start-process' + $WordEnd
+$StartProcessWaitPattern = $WordStart + '-wait' + $WordEnd
+# The ampersands that redirect or chain, cut before the background operator is looked for.
+$AmpersandNotBackground = '&&|&>>|&>|>&|<&|\|&'
+# An ampersand opening a statement is PowerShell's call operator, which runs its command in the
+# foreground; a background ampersand never opens one.
+$AmpersandCallOperator = '(^|[;(|{&])' + $Blank + '*&'
+# What is left backgrounds only where it stands as its own token, which is what tells it apart from
+# the ampersands inside a URL query string or a quoted name.
+$BackgroundAmpersandPattern = $Blank + '&'
+
 # gh is inverted: only these read-only shapes pass, everything else is a denial.
 $GhInvocationPattern = $WordStart + 'gh\s+([^;&|)]*)'
 $GhBareReads = 'status|version|help|search|api'
@@ -77,6 +96,7 @@ $ReasonAllow = 'Auto-approved by permission-gate.'
 $ReasonGit = 'Commands that alter git state are reserved for the user.'
 $ReasonSudo = 'Elevation is not permitted.'
 $ReasonGh = 'Only read-only gh queries and CI dispatch are permitted.'
+$ReasonBackground = 'Background work belongs in the run_in_background parameter, not in the shell.'
 
 # Method named by the last -X/--method flag in the arguments, empty when none is given.
 function Get-GhMethod($ghArgs) {
@@ -97,6 +117,14 @@ function Test-GhPermitted($ghArgs) {
     return $ghArgs -match $GhReadOnlyPattern
 }
 
+function Test-Backgrounds($command) {
+    if ($command -match $BackgroundLauncherPattern) { return $true }
+    if ($command -match $StartProcessPattern -and $command -notmatch $StartProcessWaitPattern) { return $true }
+
+    $ampersandText = ($command -replace $AmpersandNotBackground, ' ') -replace $AmpersandCallOperator, '$1 '
+    return $ampersandText -match $BackgroundAmpersandPattern
+}
+
 function Test-GhInvocationsPermitted($command) {
     foreach ($invocation in [regex]::Matches($command, $GhInvocationPattern)) {
         if (-not (Test-GhPermitted $invocation.Groups[2].Value)) { return $false }
@@ -111,6 +139,10 @@ function Get-GateDecision($command) {
 
     if ($command -match $SudoPattern) {
         return @{ decision = 'deny'; reason = $ReasonSudo }
+    }
+
+    if (Test-Backgrounds $command) {
+        return @{ decision = 'deny'; reason = $ReasonBackground }
     }
 
     if (-not (Test-GhInvocationsPermitted $command)) {

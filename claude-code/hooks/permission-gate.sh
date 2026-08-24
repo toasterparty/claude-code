@@ -47,6 +47,25 @@ GIT_READ_PATTERN="$WORD_START"'git(\.exe)?'"$GIT_SAFE_ARGS"'[[:blank:]]+(('"$GIT
 
 SUDO_PATTERN="$WORD_START"'sudo'"$WORD_END"
 
+# Backgrounding from inside the shell hides the process from the harness: the next tool call gets a
+# new shell, so the process runs on with nothing to report its exit and no task for TaskOutput or
+# TaskStop to reach. The run_in_background parameter covers every case this does, and being denied
+# here costs one call where an escaped background process costs the whole run.
+BACKGROUND_LAUNCHERS='nohup|disown|setsid|start-job|start-threadjob'
+BACKGROUND_LAUNCHER_PATTERN="$WORD_START"'('"$BACKGROUND_LAUNCHERS"')'"$WORD_END"
+# Start-Process detaches unless it is told to wait for what it started. Invoke-Item stays open as the
+# way to hand a file to its default application.
+START_PROCESS_PATTERN="$WORD_START"'start-process'"$WORD_END"
+START_PROCESS_WAIT_PATTERN="$WORD_START"'-wait'"$WORD_END"
+# The ampersands that redirect or chain, cut before the background operator is looked for.
+AMPERSAND_NOT_BACKGROUND='&&|&>>|&>|>&|<&|\|&'
+# An ampersand opening a statement is PowerShell's call operator, which runs its command in the
+# foreground; a background ampersand never opens one.
+AMPERSAND_CALL_OPERATOR='(^|[;(|{&])[[:blank:]]*&'
+# What is left backgrounds only where it stands as its own token, which is what tells it apart from
+# the ampersands inside a URL query string or a quoted name.
+BACKGROUND_AMPERSAND_PATTERN='[[:blank:]]&'
+
 # gh is inverted: only these read-only shapes pass, everything else is a denial.
 GH_INVOCATION_PATTERN="$WORD_START"'gh[[:space:]]+[^;&|)]*'
 GH_INVOCATION_STRIP='^[^[:alnum:]_-]?gh[[:space:]]+'
@@ -71,9 +90,16 @@ REASON_ALLOW='Auto-approved by permission-gate.'
 REASON_GIT='Commands that alter git state are reserved for the user.'
 REASON_SUDO='Elevation is not permitted.'
 REASON_GH='Only read-only gh queries and CI dispatch are permitted.'
+REASON_BACKGROUND='Background work belongs in the run_in_background parameter, not in the shell.'
 
 matches() {
-    printf '%s' "$1" | grep -Eq "$2"
+    printf '%s' "$1" | grep -Eq -e "$2"
+}
+
+# PowerShell reads its own commands without regard to case, so the shapes it shares with the shell
+# are matched the same way on both platforms.
+matches_ci() {
+    printf '%s' "$1" | grep -Eqi -e "$2"
 }
 
 # Method named by the last -X/--method flag in the arguments, empty when none is given.
@@ -110,6 +136,22 @@ gh_permitted() {
     matches "$gh_args" "$GH_READ_ONLY_PATTERN"
 }
 
+backgrounds() {
+    local command_text="$1"
+
+    if matches_ci "$command_text" "$BACKGROUND_LAUNCHER_PATTERN"; then
+        return 0
+    fi
+
+    if matches_ci "$command_text" "$START_PROCESS_PATTERN" && ! matches_ci "$command_text" "$START_PROCESS_WAIT_PATTERN"; then
+        return 0
+    fi
+
+    local ampersand_text
+    ampersand_text="$(printf '%s' "$command_text" | sed -E "s/$AMPERSAND_NOT_BACKGROUND/ /g" | sed -E "s/$AMPERSAND_CALL_OPERATOR/\1 /g")"
+    matches "$ampersand_text" "$BACKGROUND_AMPERSAND_PATTERN"
+}
+
 gh_invocations_permitted() {
     local invocation gh_args
     while IFS= read -r invocation; do
@@ -133,6 +175,12 @@ gate_decision() {
     if matches "$command_text" "$SUDO_PATTERN"; then
         GATE_DECISION=deny
         GATE_REASON=$REASON_SUDO
+        return
+    fi
+
+    if backgrounds "$command_text"; then
+        GATE_DECISION=deny
+        GATE_REASON=$REASON_BACKGROUND
         return
     fi
 

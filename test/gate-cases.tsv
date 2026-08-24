@@ -107,6 +107,39 @@ deny	bash -c "sudo ls"
 allow	echo "legit push"
 allow	echo "pseudo sudo-less"
 
+# Backgrounding from inside the shell, which run_in_background does where the harness can see it
+deny	npm run dev &
+deny	python server.py & curl localhost:8000
+deny	(sleep 20; echo done > /tmp/x) &
+deny	pytest &
+deny	bash -c './server &'
+deny	nohup ./build.sh > out.log 2>&1 &
+deny	nohup ./build.sh
+deny	setsid ./daemon
+deny	./run.sh & disown
+deny	make 2>&1 | tee build.log &
+deny	Start-Job { Start-Sleep 30 }
+deny	start-job -ScriptBlock { ls }
+deny	Start-ThreadJob { ls }
+deny	Start-Sleep 30 &
+deny	Start-Process node server.js
+deny	Start-Process -FilePath cmake -ArgumentList build
+
+# An ampersand that redirects, chains, calls or belongs to an argument is not backgrounding
+allow	make 2>&1 | tee build.log
+allow	./configure &> config.log
+allow	./configure &>> config.log
+allow	echo hi >&2
+allow	sort <&3
+allow	ls && pwd
+allow	npm test || npm run lint
+allow	curl "https://api.example.com/x?a=1&b=2"
+allow	echo "R&D"
+allow	& "C:\Program Files\App\app.exe" --version
+allow	Get-Content x.txt | & $parser
+allow	Start-Process cmake -ArgumentList build -Wait
+allow	Invoke-Item report.html
+
 # gh reads
 allow	gh pr view 5
 allow	gh pr list
