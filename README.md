@@ -66,4 +66,5 @@ Deployed configuration (`claude-code/`):
 - [languages/make/install-bash.ps1](./claude-code/languages/make/install-bash.ps1) - one-time Windows bootstrap for the same scaffolding
 - [languages/python.md](./claude-code/languages/python.md)
 - [output-styles/concise-plus.md](./claude-code/output-styles/concise-plus.md) - Concise+ output style, active via `settings.json`: leads with the result, cuts narration and filler
-- [skills/tidy-claude](./claude-code/skills/tidy-claude/SKILL.md)
+- [skills/refine](./claude-code/skills/refine/SKILL.md) - deep pass over feature-complete code: close the gaps in validation coverage, then restructure behind that baseline without changing behavior
+- [skills/tidy-claude](./claude-code/skills/tidy-claude/SKILL.md) - bring a repository's `.agent/` directory into the standard `inbox`/`outbox`/`scripts`/`doc` layout
