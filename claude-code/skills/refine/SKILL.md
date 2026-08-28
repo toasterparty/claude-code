@@ -9,7 +9,7 @@ disable-model-invocation: true
 Improve a slice of this project without being told what is wrong with it.
 
 Refinement:
-- Preserves existing behavior
+- Preserves intended behavior, and corrects behavior that contradicts it
 - Maximizes cohesiveness, readability, and maintainability
 - Minimizes unnecessary complexity, regression risk, and contradiction
 
@@ -37,7 +37,7 @@ Adding features, implementing plans, and consequential changes to external-facin
 
 Every pass writes a report to `.agent/outbox/refine-<sha>.md`, where `<sha>` is `git rev-parse --short HEAD`, suffixed `-dirty` when `git status --porcelain` is non-empty. A second pass at the same sha overwrites the file.
 
-It has four sections, filled in as the pass proceeds: `Scope`, `Changed`, `Needs your review`, and `Baseline`. Write the resolved scope now.
+It has five sections, filled in as the pass proceeds: `Scope`, `Fixed`, `Changed`, `Needs your review`, and `Baseline`. `Needs your review` is a numbered list, never bulleted, so the user can answer by number. Write the resolved scope now.
 
 #### Validation the user has to run
 
@@ -67,7 +67,7 @@ Record into the `Baseline` section of the output file:
 - Logged warnings and errors
 - The exact commands that produced all of the above
 
-In the file, not in context: Step 7 reads it back after a long pass, and the failures already present before you touched anything have to stay distinguishable from yours.
+In the file, not in context: Step 7 reads it back after a long pass, and pre-existing failures have to stay distinguishable from yours.
 
 ### 4. Close the gaps in validation coverage
 
@@ -81,7 +81,7 @@ Within the resolved scope, search for what no check currently defends:
 
 Write checks that would expose a regression in each.
 
-A new check can also expose behavior that looks wrong. Pin the current behavior only where something depends on it, and record the suspicion under `Needs your review` either way. A test asserting a bug is a bug with tenure.
+A new check can also expose behavior that looks wrong. Do not assert it - a test asserting a bug is a bug with tenure. Carry it into Step 6 as a bug.
 
 ### 5. Re-establish the baseline
 
@@ -91,27 +91,45 @@ Repeat Step 3 with the added coverage, iterating until every new check passes, a
 
 Deliberately open to interpretation: review the code for constructive changes, using the guidance from Step 2 as inspiration. Be zealous - the baseline is what makes a large restructuring cheaper to attempt than to agonize over.
 
+#### Bugs
+
+Hunt these first and weight them above everything else here. One defect removed is worth more than any number of files made tidier, so a pass that reports only refactors is a pass that did not look hard enough. Go after the crash, the unhandled failure, the off-by-one, the contract the code violates, the case the docstring promises and the implementation does not deliver.
+
+Fix it outright where the correct behavior is not in question - the code contradicts its own documented contract, or no reasonable reading of this project wants what it currently does. Cover each fix with a check that fails before it and passes after, and record it under `Fixed`: the defect, what triggers it, and the corrected behavior.
+
+Where the right behavior is a product decision, where something may already depend on the defect, or where the fix is consequential and external-facing, raise it instead of fixing it. Never sit on one silently.
+
 #### Uncontestable changes
 
-The bar is binary. A change belongs to this pass only if it leaves behavior, output, and every public contract observably identical. Make it, then write it to `Changed`, grouping same-class changes onto one line.
+For everything that is not a bug fix, the bar is binary. A change belongs to this pass only if it leaves behavior, output, and every public contract observably identical. Make it, then write it to `Changed`, grouping same-class changes onto one line.
 
 #### Contestable changes
 
-Anything that fails that bar is worth raising rather than discarding, however good it is. Look for bugs, unoptimized implementations, undesirable product behavior, and refactors of load-bearing code too risky for a pass with no one watching.
+Anything that fails that bar is worth raising rather than discarding, however good it is: the bugs held back above, unoptimized implementations, undesirable product behavior, and refactors of load-bearing code too risky for a pass with no one watching.
 
-Record each under `Needs your review`: the proposed change, what refinement would gain from it, and the functional impact that kept it out.
+Number each entry under `Needs your review`, and give the proposed change, what refinement would gain from it, and the functional impact that kept it out.
 
 ### 7. Verify
 
 Re-run the Step 5 commands and compare against the `Baseline` section. Every signal must come back equal or better.
 
-Some deltas are the point rather than a regression - deleted dead code takes its tests with it, an extracted function splits one test into several. Where a delta is intended, keep the change and record it in `Changed` with its justification. Where it is not, fix it or back the change out.
+Some deltas are the point rather than a regression - a bug fix flips a check that encoded the defect, deleted dead code takes its tests with it, an extracted function splits one test into several. Where a delta is intended, keep the change and record it in `Fixed` or `Changed` with its justification. Where it is not, fix it or back the change out.
 
-### 8. Update documentation
+### 8. Correct documentation, prune comments
 
-Update documentation that describes implementation as it no longer is, or that violates `english.md` - restating code, narrating the journey, duplicating a fact that lives elsewhere.
+Reconcile every document Step 2 flagged as suspect, plus anything this pass invalidated - a renamed symbol, a moved path, a changed command - whether or not that document was itself in the resolved scope.
 
-Always sweep code comments within the resolved scope - comments are documentation, and where excess prose collects.
+A document describing implementation as it no longer is gets corrected to match, not deleted: stale documentation is a defect, and it is fixed like one. Verify the correction rather than assuming it - run the command, follow the path. Delete instead of correcting only where the content should not exist at all, because it violates `english.md` by restating code, narrating the journey, or duplicating a fact that lives elsewhere. Record both under `Changed`.
+
+Then sweep every comment within the resolved scope. Here deletion is the default and rewriting the fallback: expect to delete far more than you write, and a sweep that leaves the comment count roughly where it started did not apply the rule. The rule: a comment survives only by stating a constraint the code cannot show - a reason, an invariant, a caveat, a pointer to why. Delete on sight:
+- A comment restating the line or block beneath it
+- Narration of a change or an address to the reviewer - `now we`, `note that`, `fixed`, a `TODO` naming no owner or condition
+- Section banners and decorative dividers
+- Commented-out code
+- A docstring on a private helper whose name and signature already say it
+- A parameter or return description that repeats the type
+
+Where a comment exists because the code beneath it is unclear, fix the code and delete the comment.
 
 Where this touches code files, re-run the relevant formatting, linting, and validation.
 
