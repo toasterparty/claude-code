@@ -6,18 +6,21 @@ disable-model-invocation: true
 
 # Refine
 
-Improve a slice of this project without being told what is wrong with it.
+The refinement toolkit - what each verb takes as its object here, and the test it has to pass:
+- **Delete** - what no caller needs, and with it the tests, docs, config, and dependencies that existed only to serve it
+- **Extract** - a tightly coupled cluster, out into its own function, class, file, component, or unit. The remainder is the point: extraction succeeded when what was left behind got simpler, not when the file got shorter
+- **Inline** - a pass-through wrapper, a one-caller helper, a single-use variable, back where it was called. The inverse of extraction and equally available; a layer is not load-bearing merely because someone once wrote it
+- **Replace** - a hand-rolled implementation, with one that already exists: the standard library, a dependency already in the manifest, a utility elsewhere in this project
+- **Consolidate** - duplicate and near-duplicate logic onto one implementation, and logic that has to be read together into one place
+- **Unify** - siblings onto one shape, in naming, argument order, error handling, and return convention, so the odd one out stops costing a second look
+- **Narrow** - an interface down to what is actually used: `public` to `private`, file scope to function scope, `#define` to `static const`, a parameter type to what the body touches, an optional that is never absent
+- **Reclassify** - a symbol to the layer that owns its concept, or the file its callers already have open
+- **Organize** - declarations, cases, imports, and sections into the order that reading them follows
+- **Rename** - an identifier, until the comment that explained it can be deleted
+- **Flatten** - nesting and indirection: guard clauses over nested conditionals, a switch or if/else chain over a nested ternary, a direct call over a layer with one implementation
+- **Format** - with the project's formatter and lint autofixes, never to taste
 
-Refinement:
-- Preserves intended behavior, and corrects behavior that contradicts it
-- Maximizes cohesiveness, readability, and maintainability
-- Minimizes unnecessary complexity, regression risk, and contradiction
-
-The toolkit includes, but is not limited to, deleting, refactoring, reclassifying, organizing, consolidating, extracting, and formatting.
-
-Throughout: `<repo>` is the project root, and `<claude home>` is `$CLAUDE_DIR` when set, otherwise `~/.claude`.
-
-Where surveying the project would crowd the orchestrator's context, delegate the fact-finding to Explore subagents and take back only the findings. On a project small enough to hold, read it directly - a spawn costs more than it saves.
+Throughout, `<repo>` is the project root.
 
 ## Procedure
 
@@ -29,13 +32,15 @@ Resolve what is in and out of scope. Bias towards recent work and towards the co
 
 Whatever the user named, or is closely related to it. Expect a branch diff, commits, a commit range, staged or unstaged changes, or the name of a module, component, or code unit. A named scope too large to refine well is still narrowed; absent any input, choose the subset yourself. Either way, `Scope` records what you deliberately left for a later pass.
 
+Earlier passes left their reports in `.agent/outbox/refine/`. Read their `Scope` sections before settling on yours, and where the obvious target is one of them, take a sibling or the older code beneath it instead - a slice nobody has picked over yields more per token than a second look at one already refined.
+
 #### Always out of scope
 
 Adding features, implementing plans, and consequential changes to external-facing product behavior.
 
 #### Output file
 
-Every pass writes a report to `.agent/outbox/refine-<sha>.md`, where `<sha>` is `git rev-parse --short HEAD`, suffixed `-dirty` when `git status --porcelain` is non-empty. A second pass at the same sha overwrites the file.
+Every pass writes a report to `.agent/outbox/refine/<sha>.md`, where `<sha>` is `git rev-parse --short HEAD`, suffixed `-dirty` when `git status --porcelain` is non-empty. A second pass at the same sha overwrites the file.
 
 It has five sections, filled in as the pass proceeds: `Scope`, `Fixed`, `Changed`, `Needs your review`, and `Baseline`. `Needs your review` is a numbered list, never bulleted, so the user can answer by number. Write the resolved scope now.
 
@@ -45,7 +50,7 @@ If validating this scope needs a person - a manual runtime exercise, credentials
 
 ### 2. Load guidance
 
-- `<claude home>/languages/english.md`
+- `<claude home>/languages/english.md`, where `<claude home>` is `$CLAUDE_DIR` when set and `~/.claude` otherwise
 - `<claude home>/languages/*.md`, for each language expecting significant edits this session
 - `<repo>/CLAUDE.md`, `<repo>/.agent/CLAUDE.md`, and `<repo>/.claude/CLAUDE.md`
 - Project documentation that constrains the changes you may make, or that the pass may find to be stale
@@ -81,6 +86,8 @@ Within the resolved scope, search for what no check currently defends:
 
 Write checks that would expose a regression in each.
 
+Bound this to the code you expect Step 6 to touch. Coverage here is the net under planned changes, not an end of its own, and a scope can absorb more test-writing than the refinement it exists to protect. An uncovered gap outside that set is named under `Needs your review` and left alone.
+
 A new check can also expose behavior that looks wrong. Do not assert it - a test asserting a bug is a bug with tenure. Carry it into Step 6 as a bug.
 
 ### 5. Re-establish the baseline
@@ -89,7 +96,11 @@ Repeat Step 3 with the added coverage, iterating until every new check passes, a
 
 ### 6. Refine the implementation
 
-Deliberately open to interpretation: review the code for constructive changes, using the guidance from Step 2 as inspiration. Be zealous - the baseline is what makes a large restructuring cheaper to attempt than to agonize over.
+Review the code for constructive changes, using the guidance from Step 2 as inspiration. Be zealous - the baseline is what makes a large restructuring cheaper to attempt than to agonize over.
+
+A pass that finds nothing goes looking rather than settling. Where the slice turns out to be already refined, do not manufacture churn to justify the run and do not stop either - return to Step 1 once and take the nearest scope that is not already clean: a sibling module, the layer beneath, the older code the recent work was built on. Steps 3 through 5 run again for the new scope, and the tokens that bought the first survey are not wasted on the second. `Scope` records the slice you found clean alongside the one you redirected to.
+
+Report an empty `Changed` only when the redirect also comes back empty.
 
 #### Bugs
 
@@ -99,9 +110,24 @@ Fix it outright where the correct behavior is not in question - the code contrad
 
 Where the right behavior is a product decision, where something may already depend on the defect, or where the fix is consequential and external-facing, raise it instead of fixing it. Never sit on one silently.
 
+#### Clarity
+
+After bugs, this is what the pass is for, and it outranks tidiness of every other kind. Go after:
+- Nesting and branching the language can remove outright - guard clauses, early return, a switch or if/else chain in place of a nested ternary. Never write a nested ternary, and unwind every one you find
+- Abstractions with a single implementation, indirection that forwards and does nothing else, and duplication where reuse was available
+- Identifiers that do not say what the thing is or what it returns
+- Logic that has to be read together but lives apart, and units doing enough unrelated work that no name fits them - consolidate the first, extract from the second
+- Comments the code beneath them already states (Step 8 sweeps what these leave)
+
+Choose clarity over brevity: explicit code that reads in one pass beats compact code that does not. A shorter line that costs the reader a second pass is not a refinement.
+
+Each of these still has to clear one of the two bars below.
+
 #### Uncontestable changes
 
 For everything that is not a bug fix, the bar is binary. A change belongs to this pass only if it leaves behavior, output, and every public contract observably identical. Make it, then write it to `Changed`, grouping same-class changes onto one line.
+
+Renames, extractions, and moves are the common case to rule on, and the boundary decides them: one confined to a module, where every caller is inside the scope you are already changing, clears the bar and belongs here. One that alters what a module, package, or public API exports does not, however much clarity it would buy - that is a contestable change.
 
 #### Contestable changes
 
@@ -121,7 +147,7 @@ Reconcile every document Step 2 flagged as suspect, plus anything this pass inva
 
 A document describing implementation as it no longer is gets corrected to match, not deleted: stale documentation is a defect, and it is fixed like one. Verify the correction rather than assuming it - run the command, follow the path. Delete instead of correcting only where the content should not exist at all, because it violates `english.md` by restating code, narrating the journey, or duplicating a fact that lives elsewhere. Record both under `Changed`.
 
-Then sweep every comment within the resolved scope. Here deletion is the default and rewriting the fallback: expect to delete far more than you write, and a sweep that leaves the comment count roughly where it started did not apply the rule. The rule: a comment survives only by stating a constraint the code cannot show - a reason, an invariant, a caveat, a pointer to why. Delete on sight:
+Then sweep every comment within the resolved scope. Here deletion is the default and rewriting the fallback: on a first sweep of a scope, expect to delete far more than you write, and treat a comment count that barely moved as evidence the rule went unapplied. Where a previous pass already swept this code, that expectation is spent - the survivors earned their place, and deleting them to hit a quota is the failure mode. The rule: a comment survives only by stating a constraint the code cannot show - a reason, an invariant, a caveat, a pointer to why. Delete on sight:
 - A comment restating the line or block beneath it
 - Narration of a change or an address to the reviewer - `now we`, `note that`, `fixed`, a `TODO` naming no owner or condition
 - Section banners and decorative dividers
