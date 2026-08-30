@@ -17,6 +17,7 @@ The refinement toolkit - what each verb takes as its object here, and the test i
 - **Reclassify** - a symbol to the layer that owns its concept, or the file its callers already have open
 - **Organize** - declarations, cases, imports, and sections into the order that reading them follows
 - **Rename** - an identifier, until the comment that explained it can be deleted
+- **Reconcile** - the vocabulary onto one word per concept, the word being the one the code already uses. A "block" for what the code calls a `frame` is a synonym to retire, in comments, tests, and docs as much as in identifiers
 - **Flatten** - nesting and indirection: guard clauses over nested conditionals, a switch or if/else chain over a nested ternary, a direct call over a layer with one implementation
 - **Format** - with the project's formatter and lint autofixes, never to taste
 
@@ -116,6 +117,7 @@ After bugs, this is what the pass is for, and it outranks tidiness of every othe
 - Nesting and branching the language can remove outright - guard clauses, early return, a switch or if/else chain in place of a nested ternary. Never write a nested ternary, and unwind every one you find
 - Abstractions with a single implementation, indirection that forwards and does nothing else, and duplication where reuse was available
 - Identifiers that do not say what the thing is or what it returns
+- One concept under two names, one name over two concepts, and jargon standing where a plain word would do
 - Logic that has to be read together but lives apart, and units doing enough unrelated work that no name fits them - consolidate the first, extract from the second
 - Comments the code beneath them already states (Step 8 sweeps what these leave)
 
@@ -144,6 +146,8 @@ Some deltas are the point rather than a regression - a bug fix flips a check tha
 ### 8. Correct documentation, prune comments
 
 Reconcile every document Step 2 flagged as suspect, plus anything this pass invalidated - a renamed symbol, a moved path, a changed command - whether or not that document was itself in the resolved scope.
+
+Documentation follows the code's vocabulary, not its own: where the two name a thing differently the document is corrected, even when its word is the better one - fix the code first if it is, then bring the document to it.
 
 A document describing implementation as it no longer is gets corrected to match, not deleted: stale documentation is a defect, and it is fixed like one. Verify the correction rather than assuming it - run the command, follow the path. Delete instead of correcting only where the content should not exist at all, because it violates `english.md` by restating code, narrating the journey, or duplicating a fact that lives elsewhere. Record both under `Changed`.
 
