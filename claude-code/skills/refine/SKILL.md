@@ -43,6 +43,8 @@ Adding features, implementing plans, and consequential changes to external-facin
 
 Every pass writes a report to `.agent/outbox/refine/<sha>.md`, where `<sha>` is `git rev-parse --short HEAD`, suffixed `-dirty` when `git status --porcelain -uno` is non-empty. `-uno` matches what `git describe --dirty` counts: an untracked file is scratch, and the sha still describes the code. A second pass at the same sha overwrites the file.
 
+Both commands run once, before the first edit, and the filename is then fixed for the rest of the pass: the suffix reports the tree you inherited, never the one your own edits produce.
+
 It has five sections, filled in as the pass proceeds: `Scope`, `Fixed`, `Changed`, `Needs your review`, and `Baseline`. `Needs your review` is a numbered list, never bulleted, so the user can answer by number. Write the resolved scope now.
 
 #### Validation the user has to run
