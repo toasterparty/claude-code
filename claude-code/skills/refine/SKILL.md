@@ -41,7 +41,7 @@ Adding features, implementing plans, and consequential changes to external-facin
 
 #### Output file
 
-Every pass writes a report to `.agent/outbox/refine/<sha>.md`, where `<sha>` is `git rev-parse --short HEAD`, suffixed `-dirty` when `git status --porcelain` is non-empty. A second pass at the same sha overwrites the file.
+Every pass writes a report to `.agent/outbox/refine/<sha>.md`, where `<sha>` is `git rev-parse --short HEAD`, suffixed `-dirty` when `git status --porcelain -uno` is non-empty. `-uno` matches what `git describe --dirty` counts: an untracked file is scratch, and the sha still describes the code. A second pass at the same sha overwrites the file.
 
 It has five sections, filled in as the pass proceeds: `Scope`, `Fixed`, `Changed`, `Needs your review`, and `Baseline`. `Needs your review` is a numbered list, never bulleted, so the user can answer by number. Write the resolved scope now.
 
@@ -53,6 +53,7 @@ If validating this scope needs a person - a manual runtime exercise, credentials
 
 - `<claude home>/languages/english.md`, where `<claude home>` is `$CLAUDE_DIR` when set and `~/.claude` otherwise
 - `<claude home>/languages/*.md`, for each language expecting significant edits this session
+- `<claude home>/languages/testing.md`, which governs Steps 4 and 6
 - `<repo>/CLAUDE.md`, `<repo>/.agent/CLAUDE.md`, and `<repo>/.claude/CLAUDE.md`
 - Project documentation that constrains the changes you may make, or that the pass may find to be stale
 
@@ -120,6 +121,7 @@ After bugs, this is what the pass is for, and it outranks tidiness of every othe
 - One concept under two names, one name over two concepts, and jargon standing where a plain word would do
 - Logic that has to be read together but lives apart, and units doing enough unrelated work that no name fits them - consolidate the first, extract from the second
 - Comments the code beneath them already states (Step 8 sweeps what these leave)
+- Tests diverging from `testing.md` - implementation knowledge standing in for the declared contract, a sweep where a named example would read better, boilerplate burying the input. Rewrite these in place - the asserted inputs and expected values survive verbatim, only the structure around them changes; a test whose coverage another already provides is raised rather than deleted
 
 Choose clarity over brevity: explicit code that reads in one pass beats compact code that does not. A shorter line that costs the reader a second pass is not a refinement.
 
@@ -131,9 +133,13 @@ For everything that is not a bug fix, the bar is binary. A change belongs to thi
 
 Renames, extractions, and moves are the common case to rule on, and the boundary decides them: one confined to a module, where every caller is inside the scope you are already changing, clears the bar and belongs here. One that alters what a module, package, or public API exports does not, however much clarity it would buy - that is a contestable change.
 
+Identical product behavior is necessary and not sufficient. A change to the manifest, to the developer's tooling, or to the baseline itself is contestable whatever it leaves the product doing: adding or dropping a dependency, editing build, CI, or lint configuration, deleting or merging a check. A check, config entry, or dependency that existed only to serve code this pass deleted goes with that code.
+
 #### Contestable changes
 
-Anything that fails that bar is worth raising rather than discarding, however good it is: the bugs held back above, unoptimized implementations, undesirable product behavior, and refactors of load-bearing code too risky for a pass with no one watching.
+Anything that fails those bars is worth raising rather than discarding, however good it is: the bugs held back above, unoptimized implementations, undesirable product behavior, refactors of load-bearing code too risky for a pass with no one watching, a pick between two conventions the project genuinely uses both of, and a deletion whose callers cannot be enumerated - reflection, string-keyed dispatch, a symbol named only in configuration or exported only for a test.
+
+A change ruled out for size rather than risk belongs here too, not only under `Scope`: where every caller sits inside the module but the work exceeds this pass, the proposal goes to `Needs your review` and `Scope` refers to it by number.
 
 Number each entry under `Needs your review`, and give the proposed change, what refinement would gain from it, and the functional impact that kept it out.
 

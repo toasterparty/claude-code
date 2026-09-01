@@ -34,7 +34,7 @@ Orchestrator behavior by model:
 - Expose only what's strictly necessary in UI and config interfaces
 
 ## Language Guidance
-Before first reviewing or writing code in a language each session, read the matching file in `languages/` next to this file; once read, don't reread it. If no file matches the language, apply only the shared rules below - don't search elsewhere:
+Before first reviewing or writing code in a language each session, read the matching file in `languages/` next to this file; once read, don't reread it. Before first reviewing or writing a test, read `languages/testing.md` as well. If no file matches the language, apply only the shared rules below - don't search elsewhere:
 - Guard clauses for edge cases; keep the success path unindented at the bottom
 - Prefer `return`/`break`/`continue` over `else` blocks
 - Keep indentation to 1-3 levels; never 5+
