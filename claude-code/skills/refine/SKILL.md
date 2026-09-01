@@ -45,7 +45,9 @@ Every pass writes a report to `.agent/outbox/refine/<sha>.md`, where `<sha>` is 
 
 Both commands run once, before the first edit, and the filename is then fixed for the rest of the pass: the suffix reports the tree you inherited, never the one your own edits produce.
 
-It has five sections, filled in as the pass proceeds: `Scope`, `Fixed`, `Changed`, `Needs your review`, and `Baseline`. `Needs your review` is a numbered list, never bulleted, so the user can answer by number. Write the resolved scope now.
+It has five sections, filled in as the pass proceeds: `Scope`, `Fixed`, `Changed`, `Needs your review`, and `Baseline`. `Needs your review` is a numbered list, never bulleted, so the user can answer by number.
+
+Create the file on disk now, before Step 2: all five headings, the resolved scope under `Scope`, the rest empty. Every later section is written as its step completes, never held in context for one write at the end - a pass interrupted at any point leaves a report of what it had done by then. Also before Step 2: Announce the output path and the scope in a few words and no more than a single sentence.
 
 #### Validation the user has to run
 
