@@ -213,3 +213,16 @@ deny	gh run download 1 && gh pr merge 5
 deny	bash -c 'gh pr merge 5'
 deny	echo `gh pr merge 5`
 deny	/usr/bin/gh pr merge 5
+
+# SSH key material, in every path spelling: no settings.json rule covers this one
+deny	cat ~/.ssh/id_rsa
+deny	ls -la /home/blake/.ssh
+deny	cat "$HOME/.ssh/config"
+deny	grep -r ssh-rsa ~/.ssh/
+deny	cp C:\Users\Blake\.ssh\id_ed25519 /tmp
+deny	type C:\Users\Blake\.SSH\id_rsa
+
+# A file merely named for ssh is not the key directory, and reaching a host exposes no key
+allow	cat deploy.ssh
+allow	cat notes.sshconfig
+allow	ssh user@host uptime

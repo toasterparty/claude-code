@@ -53,6 +53,13 @@ GIT_READ_PATTERN="$WORD_START"'git(\.exe)?'"$GIT_SAFE_ARGS"'[[:blank:]]+(('"$GIT
 
 SUDO_PATTERN="$WORD_START"'sudo'"$WORD_END"
 
+# A Read(**/.ssh/**) deny rule covered this until it was removed: any Read deny rule turns every
+# command whose paths cannot be resolved before it runs - a leading cd, a recursive grep - into a
+# prompt, which an unattended session has nobody to answer. This check is the one policy here with
+# no settings.json fallback, so a hook that fails to run leaves the key material reachable.
+# Matched where .ssh opens a path component, which is what separates it from a deploy.ssh file.
+SSH_DIR_PATTERN='(^|[^[:alnum:]_.-])\.ssh([^[:alnum:]_-]|$)'
+
 # Backgrounding from inside the shell hides the process from the harness: the next tool call gets a
 # new shell, so the process runs on with nothing to report its exit and no task for TaskOutput or
 # TaskStop to reach. The run_in_background parameter covers every case this does, and being denied
@@ -96,6 +103,7 @@ REASON_ALLOW='Auto-approved by permission-gate.'
 REASON_GIT='Commands that alter git state are reserved for the user.'
 REASON_GIT_APPLY='git apply may not stage what it applies; drop --index, --cached and --3way.'
 REASON_SUDO='Elevation is not permitted.'
+REASON_SSH='SSH keys are reserved for the user.'
 REASON_GH='Only read-only gh queries and CI dispatch are permitted.'
 REASON_BACKGROUND='Background work belongs in the run_in_background parameter, not in the shell.'
 
@@ -170,6 +178,12 @@ gh_invocations_permitted() {
 # Sets GATE_DECISION and GATE_REASON for the given command text.
 gate_decision() {
     local command_text="$1"
+
+    if matches_ci "$command_text" "$SSH_DIR_PATTERN"; then
+        GATE_DECISION=deny
+        GATE_REASON=$REASON_SSH
+        return
+    fi
 
     if matches "$command_text" "$GIT_APPLY_INDEX_PATTERN"; then
         GATE_DECISION=deny

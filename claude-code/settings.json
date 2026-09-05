@@ -19,7 +19,6 @@
       "Write"
     ],
     "deny": [
-      "Read(~/.ssh/**)",
       "Bash(sudo *)",
       "Bash(git add:*)",
       "Bash(git stage:*)",

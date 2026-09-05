@@ -61,6 +61,13 @@ $GitReadPattern = $WordStart + 'git(\.exe)?' + $GitSafeArgs + $Blank + '+((' + $
 
 $SudoPattern = $WordStart + 'sudo' + $WordEnd
 
+# A Read(**/.ssh/**) deny rule covered this until it was removed: any Read deny rule turns every
+# command whose paths cannot be resolved before it runs - a leading cd, a recursive grep - into a
+# prompt, which an unattended session has nobody to answer. This check is the one policy here with
+# no settings.json fallback, so a hook that fails to run leaves the key material reachable.
+# Matched where .ssh opens a path component, which is what separates it from a deploy.ssh file.
+$SshDirPattern = '(^|[^\w.-])\.ssh([^\w-]|$)'
+
 # Backgrounding from inside the shell hides the process from the harness: the next tool call gets a
 # new shell, so the process runs on with nothing to report its exit and no task for TaskOutput or
 # TaskStop to reach. The run_in_background parameter covers every case this does, and being denied
@@ -103,6 +110,7 @@ $ReasonAllow = 'Auto-approved by permission-gate.'
 $ReasonGit = 'Commands that alter git state are reserved for the user.'
 $ReasonGitApply = 'git apply may not stage what it applies; drop --index, --cached and --3way.'
 $ReasonSudo = 'Elevation is not permitted.'
+$ReasonSsh = 'SSH keys are reserved for the user.'
 $ReasonGh = 'Only read-only gh queries and CI dispatch are permitted.'
 $ReasonBackground = 'Background work belongs in the run_in_background parameter, not in the shell.'
 
@@ -141,6 +149,10 @@ function Test-GhInvocationsPermitted($command) {
 }
 
 function Get-GateDecision($command) {
+    if ($command -match $SshDirPattern) {
+        return @{ decision = 'deny'; reason = $ReasonSsh }
+    }
+
     if ($command -match $GitApplyIndexPattern) {
         return @{ decision = 'deny'; reason = $ReasonGitApply }
     }
