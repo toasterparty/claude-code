@@ -45,7 +45,9 @@ Rewrite surviving scripts and docs so an agent on a different task can use them:
 ### 5a. Mine the session history
 Past sessions in this repo have already done by hand what a script should be doing. Find that work and write the script.
 
-Transcripts for the current repo live at `<claude home>/projects/<repo path with every separator and colon replaced by `-`>/<session-id>.jsonl` - claude home is `$CLAUDE_DIR` when set, otherwise `~/.claude` - with subagent transcripts in a sidecar directory named for the session.
+Transcripts for the current repo live at `<claude home>/projects/<repo path with every separator and colon replaced by `-`>/<session-id>.jsonl`, with subagent transcripts in a sidecar directory named for the session.
+
+Get `<claude home>` by running `echo "$CLAUDE_CONFIG_DIR"` (bash) or `echo $env:CLAUDE_CONFIG_DIR` (PowerShell) and using non-empty stdout; fall back to `~/.claude` only when it prints nothing. `CLAUDE_CONFIG_DIR` is what Claude Code itself reads.
 
 Delegate the skim to an Explore subagent. The transcripts run to megabytes and the findings to a paragraph; none of that bulk belongs in the orchestrator's context. Give it the exact files and byte offsets from the ledger below, and ask it back for only the procedure, the commands that carried it out, and what a script would need to take as arguments.
 

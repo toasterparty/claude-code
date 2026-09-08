@@ -56,6 +56,7 @@ If validating this scope needs a person - a manual runtime exercise, credentials
 ### 2. Load guidance
 
 - `<claude home>/languages/english.md`, where `<claude home>` is `$CLAUDE_DIR` when set and `~/.claude` otherwise
+- `<claude home>/languages/common.md`, which governs code in every language
 - `<claude home>/languages/*.md`, for each language expecting significant edits this session
 - `<claude home>/languages/testing.md`, which governs Steps 4 and 6
 - `<repo>/CLAUDE.md`, `<repo>/.agent/CLAUDE.md`, and `<repo>/.claude/CLAUDE.md`

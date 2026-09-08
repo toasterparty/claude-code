@@ -34,11 +34,7 @@ Orchestrator behavior by model:
 - Expose only what's strictly necessary in UI and config interfaces
 
 ## Language Guidance
-Before first reviewing or writing code in a language each session, read the matching file in `languages/` next to this file; once read, don't reread it. Before first reviewing or writing a test, read `languages/testing.md` as well. If no file matches the language, apply only the shared rules below - don't search elsewhere:
-- Guard clauses for edge cases; keep the success path unindented at the bottom
-- Prefer `return`/`break`/`continue` over `else` blocks
-- Keep indentation to 1-3 levels; never 5+
-- Keep functions small; extract standalone logic into private functions
+Before first reviewing or writing code each session, read `languages/common.md` next to this file, plus the file matching the language if one exists; once read, don't reread them. Before first reviewing or writing a test, read `languages/testing.md` as well. Where no file matches the language, `common.md` is the whole of it - don't search elsewhere.
 
 For green-field projects, prefer a top-level Makefile; dev and CI/CD invoke the same make targets (see `make.md`).
 
