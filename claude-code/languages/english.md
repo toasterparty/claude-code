@@ -21,6 +21,9 @@ Governs prose that outlives the session; conversation is exempt. Agent-executed 
 - Use bold as a scanning aid: a paragraph's lead-in label, or the one value the reader is hunting for. Never a whole sentence, never so often that nothing stands out.
 - No emoji, no non-ascii: `-` for em and en dashes (never `--`), `...` for the ellipsis, `->` for arrows, `>=`/`<=`, straight quotes, a plain space for the non-breaking space
 
+## Meter
+Where the active output style specifies a meter, prose written to disk converges on it opportunistically: a line already being edited for another reason comes back scanning, a line left alone stays as it is, and nothing is touched only to metrify it. The style's own exemptions carry over, plus the whole of `Agent-executed plans` below, where an executor reads for precision.
+
 ## Artifacts
 - Code: prefer no comment - names, types, and structure carry the meaning. A docstring gives the contract of a public API - inputs, outputs, invariants - never the implementation.
 - README: what the thing is, how to build and run it, then stop. Badges, feature lists, architecture tours, and contribution boilerplate only when asked.
