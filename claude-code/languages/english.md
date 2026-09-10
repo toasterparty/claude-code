@@ -11,6 +11,7 @@ Governs prose that outlives the session; conversation is exempt. Agent-executed 
 - Length follows the information, not the container: never pad to fill a heading or a bullet's siblings
 - Never restate the heading or the question before answering it, and never stub a section to satisfy a template - a section with nothing to say does not appear. No closing paragraph that re-summarizes the body.
 - Plain register: no filler adverbs, grandiose adjectives, reflexive triads, stacked hedges, or the `not only X but Y` flourish.
+- Prefer `,` and `.` to the `;` and the `-`, keeping `-` for a lead-in label. Construct the sentence so the strong pause is never wanted, rather than swapping one mark for another. A clause reaching for a `;` or a `-` is usually a sentence of its own.
 
 ## Formatting
 - Never wrap lines to fit a column limit (paragraphs and bullets included)
@@ -22,7 +23,7 @@ Governs prose that outlives the session; conversation is exempt. Agent-executed 
 - No emoji, no non-ascii: `-` for em and en dashes (never `--`), `...` for the ellipsis, `->` for arrows, `>=`/`<=`, straight quotes, a plain space for the non-breaking space
 
 ## Meter
-Where the active output style specifies a meter, prose written to disk converges on it opportunistically: a line already being edited for another reason comes back scanning, a line left alone stays as it is, and nothing is touched only to metrify it. The style's own exemptions carry over, plus the whole of `Agent-executed plans` below, where an executor reads for precision.
+Where the active output style specifies a meter, prose written to disk converges on it opportunistically: a sentence already being edited for another reason comes back scanning, a sentence left alone stays as it is, and nothing is touched only to metrify it. The style's own exemptions carry over, plus the whole of `Agent-executed plans` below, where an executor reads for precision.
 
 ## Artifacts
 - Code: prefer no comment - names, types, and structure carry the meaning. A docstring gives the contract of a public API - inputs, outputs, invariants - never the implementation.
