@@ -148,6 +148,10 @@ A change ruled out for size rather than risk belongs here too, not only under `S
 
 Number each entry under `Needs your review`, and give the proposed change, what refinement would gain from it, and the functional impact that kept it out.
 
+Every entry ends on a `*Recommendation:*` line, a sentence or two deciding what you implement if asked for that entry and told nothing about how.
+
+Where the call is the user's to make, precede it with a `*Decision:*` line lettering the options inline as `(a) ... (b) ... (c) ...`, and have the recommendation name its letter. The user then answers "implement 1a and 3c".
+
 ### 7. Verify
 
 Re-run the Step 5 commands and compare against the `Baseline` section. Every signal must come back equal or better.
