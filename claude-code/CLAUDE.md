@@ -1,51 +1,42 @@
 # AI Rules
-- Never use non-ascii in code comments, user-facing strings, or docs (fine in conversation)
-    - Replace Em/En Dash (U+2014/U+2013) with `-` (never `--`)
-- Before first writing prose that outlives the session - code comments, docstrings, docs, markdown, user-facing strings, `outbox/` deliverables - read `languages/english.md` next to this file; once read, don't reread it
-- Never git stage/unstage, commit or push
-- Background long work with the Bash/PowerShell `run_in_background` parameter, never with shell backgrounding (`&`, `nohup`, `disown`, `Start-Job`, `Start-Process`): every tool call gets a fresh shell, so a self-backgrounded process keeps running as an orphan that nothing notifies on and that `TaskOutput` and `TaskStop` cannot reach
-- Never leave unrequested markdown files outside `<repo>/.agent/`; a requested deliverable goes to `<repo>/.agent/outbox/`
-- Report the actions you took and where you deviated; never report a non-event these rules already guarantee (e.g. that nothing was committed)
-- No flattery of the user (risk of patronization)
+- ASCII only in code comments, user-facing strings, and docs: `-` for em and en dashes, never `--`. Conversation is exempt
+- Before first writing prose that outlives the session (comments, docstrings, docs, user-facing strings, `outbox/` deliverables), read `languages/english.md` beside this file. Once per session
+- Never git stage, unstage, commit, or push
+- Background long work only through the Bash/PowerShell `run_in_background` parameter. Shell backgrounding (`&`, `nohup`, `disown`, `Start-Job`, `Start-Process`) orphans the process: each tool call gets a fresh shell, so nothing notifies on it and `TaskOutput`/`TaskStop` cannot reach it
+- Report what you did and where you deviated; never report a non-event these rules already guarantee (e.g. that nothing was committed)
+- No flattery
 
 # AI Strategy
-User hand-writes plans (often in `<repo>/.agent/inbox/`) for the Orchestrator (main thread agent) to execute.
-
-Executing a plan:
-- Read the whole plan before acting; raise ambiguities and conflicts up front, not mid-run
-- Once underway, work unattended: resolve gaps in line with the plan's intent and list any deviations in the final report
-- On a large task, strip the scaffolding, debug output, and dead code the run introduced, then rerun the project's autonomous validation to prove the cleanup changed no behavior
-- Distill undocumented process the run uncovered (build quirks, deploy steps, gotchas) into `<repo>/.agent/doc/`
+The user hand-writes plans, usually in `<repo>/.agent/inbox/`, for the Orchestrator (the main-thread agent) to execute:
+- Read the whole plan first; raise ambiguities and conflicts up front, not mid-run
+- Then work unattended: resolve gaps in the plan's spirit and list deviations in the final report
+- On a large task, strip the scaffolding, debug output, and dead code the run introduced, then rerun the project's validation to prove the cleanup changed no behavior
+- Distill process the run uncovered (build quirks, deploy steps, gotchas) into `<repo>/.agent/doc/`
 - Verify the result against the plan before reporting done
 
-Orchestrator behavior by model:
-- **Opus and above**: Delegate broad fact-finding (multi-file exploration, codebase surveys) to Explore subagents, passing only the context needed - this keeps bulk reads out of the main context. Do targeted lookups (a known file, a single search) inline; an agent spawn costs more than it saves there.
-- **Sonnet/Haiku**: Never delegate to subagents.
+Delegation: Opus and above hand broad fact-finding (multi-file exploration, codebase surveys) to Explore subagents with only the context they need, keeping bulk reads out of the main context, and do targeted lookups (a known file, a single search) inline. Sonnet and Haiku never delegate.
 
 # Values
-- Prefer iterative development over incremental: rough in the full working path first, then refine - don't perfect one piece at a time
-- Idempotency in setup scripts and interface design: prefer check-before-act, falling back to `-f`-style (force) semantics when that isn't practical
-- Design for unattended operation: nothing should have interactive confirmation as its only path
-- Write self-documenting code (see `languages/english.md`)
-- Minimize unnecessary complexity: every line costs maintenance
-- Prefer immutability
-- Prioritize a single source of truth
-- Minimize symbol scope
-- Expose only what's strictly necessary in UI and config interfaces
+- Iterative over incremental: rough in the full working path first, then refine
+- Idempotent setup scripts and interfaces: check-before-act, falling back to `-f`-style force semantics where that is impractical
+- Unattended operation: nothing has interactive confirmation as its only path
+- Self-documenting code
+- Minimal complexity: every line costs maintenance
+- Immutability, a single source of truth, minimal symbol scope, and only what is strictly necessary exposed in UI and config
 
 ## Language Guidance
-Before first reviewing or writing code each session, read `languages/common.md` next to this file, plus the file matching the language if one exists; once read, don't reread them. Before first reviewing or writing a test, read `languages/testing.md` as well. Where no file matches the language, `common.md` is the whole of it - don't search elsewhere.
+Before first reviewing or writing code each session, read `languages/common.md` beside this file plus the file matching the language, if one exists; before the first test, `languages/testing.md` too. Read each once. Where no file matches the language, `common.md` is the whole of it - do not search elsewhere.
 
-For green-field projects, prefer a top-level Makefile; dev and CI/CD invoke the same make targets (see `make.md`).
+Green-field projects get a top-level Makefile; dev and CI/CD invoke the same targets (see `languages/make.md`).
 
 # Project structure
 Agent working directories live in `<repo>/.agent/`, never `<repo>/.claude/`.
 
-Project memory is `<repo>/CLAUDE.md`, which Claude Code loads natively, kept per-machine by `.git/info/exclude` rather than a tracked ignore rule. Where the repo already tracks a root `CLAUDE.md` of its own, yours falls back to `<repo>/.agent/CLAUDE.md`; **read that fallback first thing in a session, before acting on the prompt** - nothing auto-loads it.
+Project memory is `<repo>/CLAUDE.md`, loaded natively and kept out of git per-machine via `.git/info/exclude`. Where the repo tracks a root `CLAUDE.md` of its own, yours is `<repo>/.agent/CLAUDE.md`: **read it first thing in a session, before acting on the prompt**, since nothing auto-loads it.
 
-Nothing under `<repo>/.agent/` is tracked; it holds a `.gitignore` whose only line is `*`.
-- `inbox/`: User-owned drop point - plans, raw data, design docs, reference implementations. Read-only to you; search it before researching externally.
-- `outbox/`: Yours - deliverables (reports, samples for review). A deliverable the user names without a path belongs here; prefer it to the conversation for large output or anything the user will copy-paste.
-- `scripts/`: Yours - scripts worth keeping, written to be generally reusable rather than task-specific. Executables only; whatever a script reads or writes goes in `scripts/data/<script-name>/`.
-- `doc/`: Yours - durable knowledge that outlives the task that produced it.
-- `scripts/` and `doc/` each keep an `index.md`: one line per entry - the filename, then when a future agent would need it. `scripts/data/` is not indexed.
+`<repo>/.agent/` is untracked (its `.gitignore` is the single line `*`):
+- `inbox/`: the user's - plans, raw data, design docs, reference implementations. Read-only to you; search it before researching externally
+- `outbox/`: yours - deliverables such as reports and samples for review. A deliverable the user names without a path lands here; prefer it to the conversation for large output or anything the user will copy-paste. No unrequested markdown lands anywhere outside `.agent/`
+- `scripts/`: yours - reusable, argument-driven executables, nothing task-specific. Whatever a script reads or writes goes in `scripts/data/<script-name>/`
+- `doc/`: yours - knowledge that outlives the task that produced it
+- `scripts/` and `doc/` each keep an `index.md`: one line per entry, the filename then when a future agent would need it. `scripts/data/` is not indexed

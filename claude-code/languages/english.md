@@ -2,34 +2,34 @@
 Governs prose that outlives the session; conversation is exempt. Agent-executed plans invert the Content rules - see that section.
 
 ## Content
-- Carry a fact the subject cannot state itself, or delete it; deletion is the default fix, rewriting the fallback.
+- Every sentence carries a fact its subject cannot state itself, or it goes. Deletion is the default fix, rewriting the fallback.
 - Why, never what: never restate the code, the diff, the data, or the prompt.
-- Stop at the surprising fact; never narrate the journey already taken - alternatives tried, bugs chased, earlier drafts. Steps that have not yet been executed (i.e. proposals) are content, not journey.
-- Lead with the conclusion - the verdict, the fix, the finding - then the support; never build toward it.
-- Name a symbol, path, or `file:line` only where that location is itself the news. State what the code does, not which function does it - an identifier dropped in as an aside still costs the reader a lookup.
-- Prefer the doc that cannot go stale: self-describing code beats invariant docs beats narrative docs; cut detail specific enough to couple the doc to the implementation.
-- Length follows the information, not the container: never pad to fill a heading or a bullet's siblings
-- Never restate the heading or the question before answering it, and never stub a section to satisfy a template - a section with nothing to say does not appear. No closing paragraph that re-summarizes the body.
-- Plain register: no filler adverbs, grandiose adjectives, reflexive triads, stacked hedges, or the `not only X but Y` flourish.
-- Prefer `,` and `.` to the `;` and the `-`, keeping `-` for a lead-in label. Construct the sentence so the strong pause is never wanted, rather than swapping one mark for another. A clause reaching for a `;` or a `-` is usually a sentence of its own.
+- Lead with the conclusion, then the support. Never build toward it.
+- Stop at the surprising fact. Never narrate the journey (alternatives tried, bugs chased, earlier drafts); a step not yet executed is a proposal and stays.
+- Name a symbol, path, or `file:line` only where that location is itself the news. Otherwise say what the code does, not which function does it.
+- Prefer the doc that cannot go stale: self-describing code beats invariant docs beats narrative docs. Cut detail specific enough to couple the doc to the implementation.
+- Length follows the information, not the container: never pad a heading or match a bullet to its siblings.
+- Never restate the heading before answering it, never stub a section to satisfy a template, never close by re-summarizing the body.
+- Plain register: no filler adverbs, grandiose adjectives, reflexive triads, stacked hedges, or `not only X but Y`.
+- Prefer `,` and `.` over `;` and `-`, keeping `-` for a lead-in label: a clause reaching for either is usually its own sentence.
 
 ## Formatting
-- Never wrap lines to fit a column limit (paragraphs and bullets included)
-- One `#` per file; no headings at all in a doc short enough to read whole.
-- `-` for bullets, four spaces per nesting level; inline code for every path, flag, and identifier
-- Bullets that read as continuous prose are a paragraph - write the paragraph.
-- A flat set of parallel facts is a table; reasoning is prose.
-- Use bold as a scanning aid: a paragraph's lead-in label, or the one value the reader is hunting for. Never a whole sentence, never so often that nothing stands out.
-- No emoji, no non-ascii: `-` for em and en dashes (never `--`), `...` for the ellipsis, `->` for arrows, `>=`/`<=`, straight quotes, a plain space for the non-breaking space
+- Never wrap lines to a column limit, in paragraphs or bullets.
+- One `#` per file; no headings in a doc short enough to read whole.
+- `-` bullets, four spaces per nesting level; inline code for every path, flag, and identifier.
+- Bullets that read as continuous prose are a paragraph. Parallel facts are a table; reasoning is prose.
+- Bold is a scanning aid: a lead-in label, or the one value the reader is hunting for. Never a whole sentence, never so often that nothing stands out.
+- ASCII only: `-` for em and en dashes (never `--`), `...`, `->`, `>=`/`<=`, straight quotes, plain spaces, no emoji.
 
 ## Meter
-Where the active output style specifies a meter, prose written to disk converges on it opportunistically: a sentence already being edited for another reason comes back scanning, a sentence left alone stays as it is, and nothing is touched only to metrify it. The style's own exemptions carry over, plus the whole of `Agent-executed plans` below, where an executor reads for precision.
+Where the active output style specifies a meter, prose on disk converges on it opportunistically: a sentence edited for another reason comes back scanning, a sentence left alone stays as it is, and nothing is touched only to metrify it. The style's exemptions carry over, plus all of `Agent-executed plans`.
 
 ## Artifacts
-- Code: prefer no comment - names, types, and structure carry the meaning. A docstring gives the contract of a public API - inputs, outputs, invariants - never the implementation.
+- Code: prefer no comment, since names, types, and structure carry the meaning. A docstring gives the contract of a public API (inputs, outputs, invariants), never the implementation.
 - README: what the thing is, how to build and run it, then stop. Badges, feature lists, architecture tours, and contribution boilerplate only when asked.
-- PR descriptions: one item per behavior change, never per file or per commit, none at all for a change with no behavioral effect. State what the system now does differently, plus the review risk if there is one.
-- Reports and durable docs: Implementation reports are the one place narrative earns its place - deviations, what was verified and how, what was left undone. Git-tracked documentation, investigations and analyses are written for an agent/reader arriving cold: no session references, no `as discussed`, avoid dates.
+- PR description: one item per behavior change, never per file or commit, none for a change with no behavioral effect. What the system now does differently, plus the review risk if there is one.
+- Implementation report: the one place narrative earns its place, for deviations, what was verified and how, and what was left undone.
+- Tracked docs, investigations, analyses: written for a reader arriving cold. No session references, no `as discussed`, avoid dates.
 - User-facing strings: match the surrounding product voice over this file; final wording is the user's call.
 
 ## Agent-executed plans
@@ -40,6 +40,4 @@ Completeness outranks brevity: state a fact at every step that needs it.
 - State the done condition and the non-goals; decide every choice the plan raises, or mark it the executor's discretion.
 
 ## Audit
-Before reporting done, reread every artifact the session wrote and cut what fails the rules above. Audit a plan for gaps and ambiguity, never length.
-- Hand the pass to a subagent on fresh context wherever the artifact can be judged without the session's history. Opus at medium effort.
-- On a complex task, the pass ends when the writing is two thirds the length it started. Cut the section that restates another, and the detail that survived only because it was expensive to learn.
+Before reporting done, reread every artifact the session wrote and cut what fails the rules above; audit a plan for gaps and ambiguity, never length. Hand the pass to an Opus subagent on fresh context wherever the artifact can be judged without the session's history. On a complex task, expect the pass to end near two thirds of the starting length: cut the section that restates another, and the detail that survived only because it was expensive to learn.
