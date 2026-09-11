@@ -14,7 +14,7 @@ Governs prose that outlives the session; conversation is exempt. Agent-executed 
 - Prefer `,` and `.` over `;` and `-`, keeping `-` for a lead-in label: a clause reaching for either is usually its own sentence.
 
 ## Formatting
-- Never wrap lines to a column limit, in paragraphs or bullets.
+- Never wrap lines to a column limit: a paragraph or bullet is one unbroken line, however long, and the editor soft-wraps it.
 - One `#` per file; no headings in a doc short enough to read whole.
 - `-` bullets, four spaces per nesting level; inline code for every path, flag, and identifier.
 - Bullets that read as continuous prose are a paragraph. Parallel facts are a table; reasoning is prose.
