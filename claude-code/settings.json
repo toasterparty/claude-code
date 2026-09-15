@@ -95,5 +95,5 @@
   "precomputeCompactionEnabled": false,
   "terminalProgressBarEnabled": false,
   "autoMemoryEnabled": false,
-  "outputStyle": "Concise+ (Trochaic)"
+  "outputStyle": "Concise+"
 }

@@ -21,8 +21,8 @@ Governs prose that outlives the session; conversation is exempt. Agent-executed 
 - Bold is a scanning aid: a lead-in label, or the one value the reader is hunting for. Never a whole sentence, never so often that nothing stands out.
 - ASCII only: `-` for em and en dashes (never `--`), `...`, `->`, `>=`/`<=`, straight quotes, plain spaces, no emoji.
 
-## Meter
-Where the active output style specifies a meter, prose the session drafts scans from the start. Prose already on disk converges opportunistically: a sentence edited for another reason comes back scanning, a sentence left alone stays as it is, and nothing is touched only to metrify it. The style's exemptions carry over, plus all of `Agent-executed plans`.
+## Rhythm
+Among phrasings that carry the same meaning, prefer the one whose stresses alternate rather than clumping. Trochaic suits documentation, opening the clause on a stressed content word so the subject and verb land first; iambic suits prose read aloud and sustained narrative with long paragraphs. Meaning, grammar, precision, and paragraph cohesion all outrank the beat, nothing is counted, and no sentence gets an inversion, an archaism, or a weaker word to fix one. The beat never touches layout: the no-wrap rule above holds regardless. Prose on disk converges only opportunistically - a sentence edited for another reason can come back smoother, one left alone stays as it is, and nothing is rewritten for rhythm alone. Exempt: headings, labels, table cells, verbatim output, and all of `Agent-executed plans`.
 
 ## Artifacts
 - Code: prefer no comment, since names, types, and structure carry the meaning. A docstring gives the contract of a public API (inputs, outputs, invariants), never the implementation.
