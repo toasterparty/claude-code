@@ -42,31 +42,3 @@ Windows:
 $env:CLAUDE_DIR = "$HOME\.claude-work"; irm https://claude.toasterparty.net/install.ps1 | iex
 $env:CLAUDE_DIR = "$HOME\.claude-personal"; irm https://claude.toasterparty.net/install.ps1 | iex
 ```
-
-## Contents
-
-Documentation:
-
-- [API Usage Summary](./doc/api-usage.md)
-- [Reusable Prompts](./doc/prompts.md)
-
-Deployed configuration (`claude-code/`):
-
-- [CLAUDE.md](./claude-code/CLAUDE.md) - rules, strategy, and values loaded into every session
-- [settings.json](./claude-code/settings.json)
-- [hooks/permission-gate.ps1](./claude-code/hooks/permission-gate.ps1) - Windows PreToolUse gate: auto-approves tool calls that policy allows, so nothing waits on a prompt
-- [hooks/permission-gate.sh](./claude-code/hooks/permission-gate.sh) - the same gate for Linux/MacOS
-- [hooks/prose-gate.ps1](./claude-code/hooks/prose-gate.ps1) - Windows PreToolUse gate: blocks a markdown or `outbox/` write until `languages/english.md` is in context
-- [hooks/prose-gate.sh](./claude-code/hooks/prose-gate.sh) - the same gate for Linux/MacOS
-- [languages/bash.md](./claude-code/languages/bash.md)
-- [languages/c.md](./claude-code/languages/c.md)
-- [languages/common.md](./claude-code/languages/common.md) - cross-language rules for code, read alongside the language's own file: control flow, error handling, the standard verb and noun vocabulary, best-effort teardown
-- [languages/english.md](./claude-code/languages/english.md)
-- [languages/make.md](./claude-code/languages/make.md)
-- [languages/make/find-bash.ps1](./claude-code/languages/make/find-bash.ps1) - helper copied into projects that use the cross-platform Makefile scaffolding
-- [languages/make/install-bash.ps1](./claude-code/languages/make/install-bash.ps1) - one-time Windows bootstrap for the same scaffolding
-- [languages/python.md](./claude-code/languages/python.md)
-- [languages/testing.md](./claude-code/languages/testing.md) - cross-language rules for tests, read alongside the language's own file
-- [output-styles/concise-plus.md](./claude-code/output-styles/concise-plus.md) - Concise+ output style, active via `settings.json`: leads with the result, cuts narration and filler, prefers an even stress rhythm
-- [skills/refine](./claude-code/skills/refine/SKILL.md) - deep pass over feature-complete code: close the gaps in validation coverage, then restructure behind that baseline without changing behavior
-- [skills/tidy-claude](./claude-code/skills/tidy-claude/SKILL.md) - bring a repository's `.agent/` directory into the standard `inbox`/`outbox`/`scripts`/`doc` layout
