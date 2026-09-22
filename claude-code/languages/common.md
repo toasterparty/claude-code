@@ -15,13 +15,17 @@ One verb per meaning, never a synonym, so one function name tells the reader the
 | --- | --- |
 | `get`/`set` | a value already in memory: cheap, no allocation, no I/O, cannot fail |
 | `fetch` | cross a boundary the process does not own - network, filesystem, peripheral - so slow and fallible |
+| `resolve` | turn an indirect reference into the concrete value it names, pure or boundary-crossing |
 | `calc` | derive from the arguments alone; reads and writes no state |
 | `find` | a search that may legitimately come up empty, where `get` presumes existence |
 | `is`/`has`/`can` | boolean question, no side effects |
+| `check` | report a bool, a status, or a log line, without rejecting or fixing anything - `validate`'s soft sibling |
 | `validate` | reject bad input by raising or returning an error, never a bool |
 | `ensure` | idempotent check-before-act: make the condition true, or return because it already is |
+| `sync` | reconcile two stores to matching state, bidirectional - `load`/`save` move in one direction only |
 | `try` | prefix for the variant that reports failure to the caller instead of aborting: `try_take`, `try_fetch` |
 | `to`/`as` | convert: `as` views the same data, `to` builds a copy |
+| `build` | assemble a compound value from several inputs, where no single one converts directly |
 | `poll`/`wait` | `poll` returns at once with what is ready; `wait` blocks until it is |
 | `on` | prefix for a handler something else invokes on an event; never for a function the code calls directly |
 
@@ -44,7 +48,7 @@ Setup pairs with exactly one teardown, and the pairing is the signal: `init` is 
 | `read`/`write`, `send`/`recv` | bytes through an open handle; messages over a connection |
 | `encode`/`decode`, `parse`/`format` | a representation crossing in and out of the type system |
 
-Never `do`, `handle`, `process`, `manage`, `perform`: a category, not an effect. Never `check`: the reader cannot tell whether it answers or raises - use `is`, `ensure`, or `validate`. A verb an external spec defines - `http_post`, `i2c_probe` - keeps the spec's name. Otherwise, when no verb fits, the function is doing more than one thing.
+Never `do`, `handle`, `process`, `manage`, `perform`: a category, not an effect. A verb an external spec defines - `http_post`, `i2c_probe` - keeps the spec's name. Otherwise, when no verb fits, the function is doing more than one thing.
 
 ## Nouns
 - `cb` suffix on a parameter, field, or variable that holds a function to be called later: `done_cb`. The function stored there is the `on` handler: `register(on_done)` lands in `done_cb`
