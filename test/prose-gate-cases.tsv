@@ -11,7 +11,6 @@ allow	1	/repo/CLAUDE.md
 deny	0	/repo/docs/design.md
 deny	0	README.md
 deny	0	/repo/CLAUDE.md
-deny	0	/repo/.agent/doc/index.md
 deny	0	C:\Users\x\repo\docs\design.md
 
 # Everything the deliverable directory holds is prose, whatever the extension
@@ -25,6 +24,16 @@ deny	0	/repo/.AGENT/Outbox/Report.MD
 allow	0	/repo/src/main.c
 allow	0	/repo/package.json
 allow	0	/repo/.agent/scripts/deploy.sh
+
+# The agent's doc and scripts directories are exempt, even for markdown
+allow	0	/repo/.agent/doc/index.md
+allow	0	/repo/.agent/doc/notes/build.md
+allow	0	/repo/.agent/scripts/index.md
+allow	0	C:\Users\x\repo\.agent\doc\gotchas.md
+allow	0	/repo/.AGENT/Doc/Index.MD
+deny	0	/repo/.agent/docs/index.md
+deny	0	/repo/notagent/doc/index.md
+
 allow	0	/repo/.agent/inbox/plan.md.bak
 allow	0	/repo/settings.json
 

@@ -4,7 +4,8 @@
 # model reads the file and retries, so the cost is one blocked call per session.
 #
 # Scope is markdown plus everything under .agent/outbox/. Source files are out: gating them would
-# block the first mechanical edit of every session for the sake of the occasional comment.
+# block the first mechanical edit of every session for the sake of the occasional comment. The
+# agent's own working notes under .agent/doc/ and .agent/scripts/ are exempt.
 #
 # Policy lives in the constants below and is mirrored in prose-gate.sh; test/run-prose-gate-tests.ps1
 # and its .sh twin assert both against the same cases.
@@ -16,6 +17,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $ProsePathPattern = '(\.md$|(^|/)\.agent/outbox/)'
+$AgentExemptPattern = '(^|/)\.agent/(doc|scripts)/'
 # Read, Write and Edit are the only tools whose input carries file_path, and each of them leaves the
 # file in context, so any of the three counts. Glob and Grep name their target `path` and do not.
 $EnglishReadPattern = '"file_path":"[^"]*english\.md"'
@@ -27,6 +29,7 @@ function Get-ProseGateDecision($filePath, $englishInContext) {
 
     # The twin runs against POSIX paths, so both hooks compare one separator.
     $normalized = ([string]$filePath).Replace('\', '/')
+    if ($normalized -match $AgentExemptPattern) { return @{ decision = 'allow'; reason = '' } }
     if ($normalized -match $ProsePathPattern) { return @{ decision = 'deny'; reason = $ReasonUnread } }
 
     return @{ decision = 'allow'; reason = '' }

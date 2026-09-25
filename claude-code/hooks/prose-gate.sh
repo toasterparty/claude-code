@@ -5,6 +5,7 @@
 # model reads the file and retries, so the cost is one blocked call per session.
 
 PROSE_PATH_PATTERN='(\.md$|(^|/)\.agent/outbox/)'
+AGENT_EXEMPT_PATTERN='(^|/)\.agent/(doc|scripts)/'
 ENGLISH_READ_PATTERN='"file_path":"[^"]*english\.md"'
 
 REASON_UNREAD='Read languages/english.md (beside CLAUDE.md in the Claude home directory) before writing prose that outlives the session, then retry this write.'
@@ -18,6 +19,9 @@ prose_gate_decision() {
     fi
 
     local normalized="${file_path//\\//}"
+    if printf '%s' "$normalized" | grep -Eqi "$AGENT_EXEMPT_PATTERN"; then
+        return
+    fi
     if printf '%s' "$normalized" | grep -Eqi "$PROSE_PATH_PATTERN"; then
         GATE_DECISION=deny
     fi
