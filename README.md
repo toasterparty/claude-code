@@ -26,6 +26,20 @@ curl -fsSL https://claude.toasterparty.net/install.sh | bash
 irm https://claude.toasterparty.net/install.ps1 | iex
 ```
 
+### Remote Control Server (Headless Linux)
+
+Runs `install.sh`, then serves a directory to claude.ai/code and the Claude app through a systemd user service that survives reboots. Every session started from the cloud runs in that directory. Repeat with another `--dir` to serve more repos. Logging in takes a terminal the first time.
+
+```sh
+curl -fsSL https://claude.toasterparty.net/start-server.sh | bash -s -- --dir ~/git/repo
+```
+
+`--uninstall` removes the service for one `--dir`, or every one when `--dir` is omitted. Login, workspace trust, and linger stay in place.
+
+```sh
+curl -fsSL https://claude.toasterparty.net/start-server.sh | bash -s -- --uninstall [--dir ~/git/repo]
+```
+
 ### Custom Claude Code Home Directory
 
 Set `CLAUDE_DIR` to deploy into a directory other than the default `~/.claude/`.

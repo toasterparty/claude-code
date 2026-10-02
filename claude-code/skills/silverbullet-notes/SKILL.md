@@ -46,5 +46,15 @@ sb script -s <name> --file script.lua
 ```
 `sb describe --text` lists the queryable types and query syntax, and `sb describe <type> --text` one type's fields; without `--text` it dumps every schema as JSON. An empty result is not proof of absence: a misnamed field matches nothing without an error. For the rest of the API, the docs are raw markdown at `https://silverbullet.md/.fs/<Page>.md` (`API.md`, `Space%20Lua.md`, `HTTP%20API.md`); fetch them with `curl`, since the rendered site is a client-side app.
 
+## Configuring a space
+Behavior changes go in `space-lua` and `space-style` blocks on `CONFIG.md`, applied with `sb fs edit` anchored on a heading.
+- `eval` takes one expression; anything with statements or `return` goes through `script --file`.
+- The headless client keeps its old config until `sb eval -s <name> 'system.invokeCommand("System: Reload")'`, and the reload takes 10-20 seconds. Reading state sooner returns the stale config (nil globals, old keys) and looks like a failed edit. Open browser tabs need their own reload.
+- The built-in `Library/Std/` pages are bundled in the server image, absent from the data folder, so SSH grep finds nothing. Fetch them with `sb fs read`; they hold the defaults, view definitions, and Lua for most built-in behavior.
+- `system.listCommands()` shows the effective key bindings, built-ins included. `config.get("commands")` omits built-ins. A key that does nothing is usually shadowed by another command's alias on it, so search that list for the key before blaming the browser.
+- `command.update` rebinds a built-in command's keys, `config.set("view.defaults", {[view] = {open = false}})` closes a built-in panel by default, and `widget.new {markdown = ...}` returns rendered markdown from a `${...}` call.
+- Plug event handlers (the built-in completion popups, for one) cannot be unregistered, and redefining a syscall in Lua does not reach plug calls. Space Lua can reach the browser through `js.window` and `js.new`, so a `MutationObserver` calling `editor.closeCompletion()` suppresses a popup. CSS alone only hides it, and Enter still accepts the hidden suggestion.
+- Reading an anonymous-read space needs no login, but writing to it does.
+
 ## SSH
 `sb fs` has no content search. To grep or bulk-read a saved space, run the search over SSH inside that space's `folder` from `spaces.json`. Treat it as read-only: SSH writes skip the conflict checks `sb` applies.
