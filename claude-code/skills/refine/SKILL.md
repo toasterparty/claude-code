@@ -1,155 +1,159 @@
 ---
 name: refine
-description: Refine a slice of this project without being told what is wrong with it. Establishes a validation baseline and closes its gaps first, so that deleting, restructuring, and consolidating behind it is safe; changes no observable behavior. Use `/code-review` to hunt bugs in a diff, `/simplify` for a quick quality pass, and this for a deep pass over feature-complete code.
+description: Simplify a slice of this project behind a strengthened test baseline, fixing only unambiguous bugs and asking before any other behavior change. Best on feature-complete code before review.
 disable-model-invocation: true
 ---
 
 # Refine
 
-The refinement toolkit - each verb, its object, and the test it has to pass:
-- **Delete** - what no caller needs, with the tests, docs, config, and dependencies that existed only to serve it
-- **Extract** - a coupled cluster into its own function, or a separable concern into its own file, class, component, or unit. A first-class move, not a last resort. It succeeded when what was left behind got simpler, not when the file got shorter
-- **Inline** - a pass-through wrapper, a one-caller helper, a single-use variable. A layer is not load-bearing merely because someone once wrote it
-- **Replace** - a hand-rolled implementation with the standard library, a dependency already in the manifest, or a utility elsewhere in this project
-- **Consolidate** - duplicate and near-duplicate logic onto one implementation, and logic read together into one place
-- **Unify** - siblings onto one shape in naming, argument order, error handling, and return convention
-- **Narrow** - an interface to what is actually used: `public` to `private`, file scope to function scope, `#define` to `static const`, a parameter type to what the body touches, an optional that is never absent
-- **Reclassify** - a symbol to the layer that owns its concept, or the file its callers already have open
-- **Organize** - declarations, cases, imports, and sections into reading order
-- **Rename** - an identifier, until the comment that explained it can be deleted
-- **Reconcile** - vocabulary onto one word per concept, the one the code already uses, in comments, tests, and docs as much as identifiers
-- **Flatten** - guard clauses over nested conditionals, a switch or if/else chain over a nested ternary, a direct call over a layer with one implementation
-- **Format** - with the project's formatter and lint autofixes, never to taste
+Target the simplest code that works: the least surface for bugs, the least to review and maintain. Simple is not short: a line that costs the reader a second pass is not simpler.
 
-`<repo>` is the project root.
+- Report directory: `.agent/outbox/refine/`
+- Report path: `<report directory>/<YYYYMMDDHHMM>-<sha>.md`, where the timestamp is local time, so names sort by creation, and `<sha>` is `git rev-parse --short HEAD`, suffixed `-dirty` when `git status --porcelain -uno` is non-empty. Resolve it before the first edit and keep it, since it describes the tree you inherited
+- Base branch: `main`
 
-## Procedure
+## 1. Scope
 
-### 1. Establish scope
+Scope is what this pass may touch. File and directory scope is absolute. Diff scope is loose: include the neighboring code and files it relates to. Diff against a commit from the working tree (`git diff <commit>`), never from `HEAD`. Steer away from code a recent report in the report directory refined, unless it has changed since that report's commit. Each report's `Scope` section says what it covered, so read no further.
 
-Bias towards recent work and the code that would benefit most, and narrow without asking: one intercorrelated subset refined well beats the whole repository refined mediocrely. Take the module, layer, or dependency cluster you can carry through every step with room to spare.
+Scope given with the invocation is used as-is. Otherwise resolve it with `AskUserQuestion`, omitting empty options, and merging staged and unstaged into one uncommitted option if more than four remain:
+- The staged diff
+- The unstaged diff
+- This branch against the base branch
+- The previous commit, unless it equals the branch diff
+- A component, feature, or set of files of your choosing, topical to recent work, small enough to carry through every step. Name it in the option
 
-**In scope:** whatever the user named - a branch diff, commits, a range, staged or unstaged changes, a module or component - or what is closely related to it. A named scope too large to refine well is still narrowed. Absent any input, choose the subset yourself.
+Free text through `Other` covers anything else.
 
-Earlier reports live in `.agent/outbox/refine/`. Read their `Scope` sections first, and where the obvious target was already refined, take a sibling or the older code beneath it.
+**Always out of scope:** adding features and implementing plans.
 
-**Always out of scope:** adding features, implementing plans, and consequential changes to external-facing product behavior.
+## 2. Load guidance
 
-The report path is `.agent/outbox/refine/<sha>.md`, where `<sha>` is `git rev-parse --short HEAD`, suffixed `-dirty` when `git status --porcelain -uno` is non-empty. Resolve it once, before the first edit, and keep it fixed: the suffix describes the tree you inherited. A second pass at the same sha overwrites the file. Announce the path and scope in one sentence.
+Find and read the user's and the project's standards that apply to the files in scope: coding, testing, and writing rules, `CLAUDE.md` files, style guides, lint config. Step 5 converges the code on them.
 
-If validating this scope needs a person - a manual runtime exercise, credentials, hardware - ask once with `AskUserQuestion` before the first edit. Absent an answer, run the automated subset and name the uncovered surface in the report. Nothing between here and Step 9 blocks on the user.
+## 3. Baseline
 
-### 2. Load guidance
+Find the validation the scope warrants: build, lint, test, static analysis, runtime exercise, whatever the project prescribes.
+- None exists: continue without validation, and Step 5 runs conservative
+- It exists but is unreachable for now or needs the user (credentials, hardware, a manual exercise): resolve with `AskUserQuestion`
 
-- `<claude home>/languages/english.md`, where `<claude home>` is `$CLAUDE_DIR` when set and `~/.claude` otherwise
-- `<claude home>/languages/common.md`
-- `<claude home>/languages/<language>.md` for each language expecting significant edits
-- `<claude home>/languages/testing.md`, which governs Steps 4 and 6
-- `<repo>/CLAUDE.md`, `<repo>/.agent/CLAUDE.md`, and `<repo>/.claude/CLAUDE.md`
-- Project documentation that constrains your changes, or that the pass may find stale
+Run it and record the exact commands, warnings and errors, passing test count, and checksums of outputs that should stay invariant, so pre-existing failures stay distinguishable from yours.
 
-### 3. Establish the validation baseline
+## 4. Close the gaps in validation coverage
 
-As far as the scope warrants and the project supports: build, lint, test, static analysis, runtime exercise, and any validation the project's docs or `CLAUDE.md` describe. Note compiler warnings and errors, passing test count, checksums of outputs expected to stay invariant, logged warnings and errors, and the exact commands, so pre-existing failures stay distinguishable from yours.
-
-### 4. Close the gaps in validation coverage
-
-Within the code you expect Step 6 to touch, find what no check defends and write a check that would expose a regression:
+Within the code Step 5 will likely touch, find what no check defends and add a check that would expose a regression. Common gaps, not the full list:
 - Untested lines, via the project's coverage tooling
 - Behavior, contracts, and invariant outputs
 - Failure cases that go unraised or unasserted
 - Claims made by documentation or a docstring
 - Suppressed errors
-- A boundary that only ever sees well-formed input - a parser given only valid text, a loader given only files it wrote
+- A boundary that only sees well-formed input, like a parser given only valid text or a loader given only files it wrote
 
-Coverage is the net under planned changes, not an end of its own. A gap outside that set goes to review and is left alone.
+Coverage is the net under planned changes, not a goal: gaps outside them go to review.
 
-A new check that exposes behavior that looks wrong is not asserted - a test asserting a bug is a bug with tenure. Carry it into Step 6.
+A new check exposing behavior that looks wrong still asserts what the code does today, with a one-line comment marking it suspect: the suspicion may be mistaken, and the pin keeps any refactor from changing the behavior by accident. Carry it into Step 5 as a bug candidate, where a fix rewrites the check.
 
-### 5. Re-establish the baseline
+Iterate on the new checks alone until they pass, then repeat Step 3's full run. That is the baseline.
 
-Repeat Step 3 until every new check passes. Write the report with `# Refine <sha>`, a `Scope` section, and a `Baseline` section holding the commands and a table of the counts and checksums. This is the only write before Step 8: it gives Step 7 a record to read back and survives an interrupted pass.
+## 5. Refine
 
-### 6. Refine the implementation
+One rule: every change preserves observable behavior (output, side effects, public contracts) or is a bug fix the Bugs section permits outright. Any other behavior change is raised, never made. Within the rule, make any change that leaves the code simpler, with whatever new files, build entries, and config it needs. Merge or delete a check only where another still defends its behavior.
 
-Use the Step 2 guidance as inspiration and be zealous: the baseline makes a large restructuring cheaper to attempt than to agonize over. Where the slice turns out already clean, do not manufacture churn.
+With a solid baseline, be zealous: the user consented to the scope and the validation, and a large restructure is cheaper to attempt than to agonize over. Without validation, be conservative: only high-confidence changes verifiable by reading. Either way, do not manufacture churn in already clean code. After each change, run the narrowest checks covering it, so a failure points at one change, and save the full run for Step 7.
 
-#### Bugs
+Interrogate every piece of complexity: each layer, option, branch, type, and file must be something the behavior needs, or it goes.
 
-Hunt these first and weight them above everything else: a pass that reports only refactors did not look hard enough. Go after the crash, the unhandled failure, the off-by-one, the violated contract, the case the docstring promises and the code does not deliver.
+### Bugs
 
-Fix it outright where the correct behavior is not in question - the code contradicts its own documented contract, or no reasonable reading of the project wants what it does. Cover each fix with a check that fails before and passes after.
+Hunt these first and weight them highest: crashes, unhandled failures, off-by-ones, violated contracts, and docstring promises the code breaks. Code can be free of them, and a pass that finds none says so rather than promoting a surprise into a defect.
 
-Where the right behavior is a product decision, where something may depend on the defect, or where the fix is consequential and external-facing, raise it for review. Never sit on one silently.
+Externally observable behavior is whatever anything outside the code can see: a public API's results, CLI output and exit codes, file and wire formats, persisted data, error text, and ordering or timing a caller could notice. Something may depend on any of it, however wrong it looks, and the repo does not show who.
 
-#### Clarity
+Fix outright only where both hold:
+- Correct behavior is not in question: the code contradicts its documented contract, or no reasonable reading of the project wants what it does
+- The fix changes nothing externally observable on a path that succeeds today: only internal state, or inputs that currently crash, hang, corrupt data, or fail unhandled
 
-After bugs, clarity outranks every other kind of tidiness. Go after:
-- Nesting the language can remove. Never write a nested ternary, and unwind every one you find
-- Long functions: extract the steps into named helpers until the body reads as a summary of them
-- Files carrying several concerns: extract each into its own file, so a reader opens only the one they need
-- Single-implementation abstractions, forwarding-only indirection, and duplication where reuse was available
-- Identifiers that do not say what the thing is or returns
-- One concept under two names, one name over two concepts, jargon where a plain word would do
-- Comments the code already states (Step 8 sweeps the rest)
-- Tests diverging from `testing.md` - implementation knowledge standing in for the contract, a sweep where a named example reads better, boilerplate burying the input. Rewrite the structure in place with asserted inputs and expected values kept verbatim. Raise, rather than delete, a test whose coverage another already provides
+Cover each fix with a check that fails before and passes after. Raise every other bug, including a doc contradicting external behavior, since either side may be the error. Never sit on one silently.
 
-Choose clarity over brevity: a shorter line that costs the reader a second pass is not a refinement. Each change still has to clear one of the two bars below.
+### Toolkit
 
-#### Uncontestable changes
+These moves are where simplification usually hides, not the limit of what is allowed:
+- **Delete** - what no caller needs, with the tests, docs, config, and dependencies that only served it
+- **Prune comments** - across the scope, touched or not. A comment survives only by warning of a pitfall or recording an expensive-to-learn fact, in one line where possible. Delete the self-evident, what a better name would say, decision history, commented-out code, banners, narration, and docstring text beyond a public API's contract. Where a comment props up unclear code, fix the code instead. Expect comment words to fall by over half on a first sweep
+- **Document** - docs and docstrings tied to the scope, and anything this pass invalidated (a renamed symbol, moved path, changed command): simplify them, align them with the code's vocabulary (or fix the code where the doc's word is better), and fix stale content and grammar outright, never raised. Verify a correction by running the command or following the path
+- **Conform** - code to the Step 2 standards: verbs and nouns, error handling, structure, test style. Every departure is a target. Where they are silent, siblings take the project's most mature and common shape. Tests keep asserted inputs and expected values verbatim
+- **Consolidate** - each fact defined in several places (a constant, default, list, schema, mirrored enum, doc restating code) onto one source of truth, and duplicate logic onto one implementation
+- **Extract** - a separable concern into its own file, and a long function's steps into named helpers until its body reads as their summary
+- **Inline** - pass-through wrappers, single-implementation abstractions, one-caller helpers, single-use variables. A layer is not load-bearing merely because someone wrote it
+- **Flatten** - depth in any form: nested conditionals, loops, ternaries, callbacks, data, type or directory hierarchies
+- **Replace** - hand-rolled code with the standard library, an existing dependency, or a project utility
+- **Narrow** - an interface to what is used: `public` to `private`, file to function scope, a parameter type to what the body touches, an optional never absent. Each value takes the least powerful type or structure that does the job: a constant over a macro, an enum over a string, an array over a map, a function over a class
+- **Optimize** - time, memory, and CPU cost, as a refactor along another axis: a better algorithm or structure, redundant work removed, where the result reads no worse
+- **Rename** - an identifier until it says what the thing is or returns, and each concept onto the one word the code already uses, in code, comments, tests, and docs
+- **Move** - a symbol to the layer owning its concept or the file its callers already open, and declarations, imports, and sections into reading order
+- **Format** - with the project's formatter and lint autofixes, never to taste
 
-A change belongs to this pass only if behavior, output, and every public contract stay observably identical.
+### Raise for review
 
-Renames, extractions, and moves are decided by the boundary: one confined to a module, with every caller inside the scope you are already changing, clears the bar. So does a new file inside the module, including the one-line source-list addition the build needs to see it. One that alters what a module, package, or public API exports is contestable.
+Raise rather than make, however good:
+- A bug fix the Bugs section does not permit outright, and any other change to externally observable behavior
+- A deletion, rename, or signature change whose callers cannot all be found and updated (external consumers, reflection, string-keyed dispatch, a symbol named only in config)
+- A change safe by every rule above that a reviewer could reasonably reject on taste, where neither the standards nor simplicity settle it: a new abstraction or layout, a naming scheme, a departure from a pattern the authors evidently chose, a pick between two conventions the project uses
+- A risky restructure of load-bearing code
+- Work too large for this pass
 
-Identical product behavior is necessary, not sufficient. Adding or dropping a dependency, editing build, CI, or lint configuration beyond that source-list line, or deleting or merging a check is contestable whatever the product does. A check, config entry, or dependency that existed only to serve code this pass deleted goes with that code.
+## 6. Review
 
-#### Contestable changes
+Open items that earlier reports left under `Needs your review` and that fall in scope join the raised items: grep the report directory for the scope's paths, skipping items already closed with a `[<status>: ...]` tag. Check each against the current code first, locating it by its description since line numbers drift. An item already addressed, or whose code is gone, is closed as `resolved` rather than raised.
 
-Anything failing those bars is raised for review, however good it is: held-back bugs, unoptimized implementations, undesirable product behavior, refactors of load-bearing code too risky with no one watching, a pick between two conventions the project genuinely uses, a deletion whose callers cannot be enumerated (reflection, string-keyed dispatch, a symbol named only in config or exported only for a test), and work confined to the module but too large for this pass.
+Walk the user through every raised item now with `AskUserQuestion`, one question per item, up to four per call, behavior changes first. The user often did not write or recently see this code, so each question explains in plain terms what the code does and why, what is wrong, and the risk.
 
-### 7. Verify
+Options are the item's alternatives, the recommended one first with `(Recommended)` on its label and each description stating what it changes, or a single `Implement` where there is no real alternative. The last option is always `Skip for now`, and a re-raised item offers `Drop` just before it, closing the item for good. Use `preview` for a short before/after where the choice is between code shapes.
 
-Re-run the Step 5 commands and compare against `Baseline`. Every signal must come back equal or better.
+Implement what the user chose.
 
-Some deltas are the point - a bug fix flips a check that encoded the defect, deleted code takes its tests, an extraction splits one test into several. Keep an intended delta and note it on the change's line. Fix or back out anything else.
+## 7. Validate
 
-### 8. Correct documentation, prune comments, write the report
+Re-run the baseline. Every signal must match it or improve.
 
-Reconcile every document Step 2 flagged, plus anything this pass invalidated - a renamed symbol, moved path, changed command - whether or not it was in scope. Documentation takes the code's vocabulary: where the two differ, correct the document, or fix the code first if the document's word is better. Correct stale documentation rather than deleting it, and verify the correction by running the command or following the path. Delete only content that should not exist at all under `english.md`.
+Some deltas are the point: a fix flips a check that encoded the defect, deleted code takes its tests, an extraction splits a test. Note each intended delta in the report, and fix or back out anything else. A backed-out item the user approved goes under `Needs your review` with the failure.
 
-Then sweep every comment in scope, touched by Step 6 or not. The target is zero. A comment survives only by stating a constraint the code cannot show - a reason, an invariant, a caveat - cut to the fewest words that carry it, one line where possible. Delete on sight:
-- A comment restating the code beneath it, or explaining what a better name would
-- Narration and reviewer address - `now we`, `note that`, `fixed`, a `TODO` naming no owner or condition
-- Background, history, and rationale that no longer constrains an edit
-- Section banners and dividers
-- Commented-out code
-- A docstring on a private helper whose signature already says it, and any docstring text beyond a public API's contract
-- A parameter or return description that repeats the type or name
+Then audit every prose file this session wrote against the writing standards.
 
-Where a comment exists because the code is unclear, fix the code and delete the comment. Expect the comment word count in scope to fall by well over half on a first sweep.
+## 8. Report
 
-Re-run formatting, linting, and validation over touched code files, then run the `english.md` audit over every repo file this session wrote.
-
-Finally, write the whole report in one `Write`: `Scope`, `Fixed`, `Changed`, `Needs your review`, `Baseline`. It is a terse log - fragments, one line per item, no justification unless a baseline delta needs one, no restating what a diff shows:
-- `Scope` - the slice taken, and what was deliberately left for a later pass
-- `Fixed` - one line per bug: defect, trigger, fix
-- `Changed` - one line per change class, never per file (`Inlined 4 one-caller helpers in parser/`)
-- `Needs your review` - one numbered line per entry, shaped as below. List options only where two or more real ones exist, never inaction. `Rec:` is always present and says what you implement if the user answers "implement 1"
-- `Baseline` - the commands, then a before/after table
+Write the report in one `Write` from this template: a terse log of fragments, one line per item, no restating the diff. Keep the headings and the `Needs your review` instruction line verbatim and in this order, omitting a section only when it is empty. Give options only where two or more real ones exist.
 
 ```
-1. **<Title>** (`path:line`) - <proposed change>. (a) <option> (b) <option>. Rec: (a)
+# Refine <sha>
+
+## Scope
+<the slice taken, and what was left for a later pass>
+
+## Fixed
+- <defect>, <trigger>, <fix>
+
+## Changed
+- <one line per change class, never per file, like: Inlined 4 one-caller helpers in parser/>
+
+## Changed in review
+- <one line per item the user approved in Step 6>
+
+## Needs your review
+Append `[resolved: <commit or report>]` to an item's first line when you address it.
+
+1. **<Title>** (`path:line`) - <proposed change>.
+
+- (a) <option>
+- (b) <option>
+
+Recommendation: (a)
+
+## Baseline
+- `<command>` - <anything noteworthy>
+- <each intended delta from Step 7, like: 3 tests deleted with parser/legacy.py>
 ```
 
-### 9. Report done
+Then close each earlier item this pass settled by appending `[<status>: <this report's path>]` to its first line in its own report: `resolved` when implemented or found addressed, `dropped` on `Drop`, and `moved` when it lands in this report's `Needs your review`. Each open item thus lives in exactly one report.
 
-Name the report by its path relative to `<repo>` and give the highlights in a sentence or two.
-
-Where `Needs your review` has entries, walk the user through them with `AskUserQuestion`. The user often did not write this code or has not seen it in a long time, so each question carries the context the report omits: what the code does and why it exists, what is wrong or improvable, what each option changes, and the risk, in plain terms before the ask.
-- One question per entry with options. Options are its lettered choices, the recommended one first with `(Recommended)` on its label, each description giving that option's consequence. Use `preview` for a short before/after excerpt where the choice is between code shapes
-- Entries without options share `multiSelect` questions of up to four entries, one option per entry, asking which to implement
-- Never offer inaction as an option: skipping is choosing nothing in a `multiSelect`, or answering `Other`
-- Up to four questions per call. Repeat until every entry has been asked
-
-Then implement what was chosen, repeat Step 7, and append `- implemented` or `- declined` to each entry in place. Close with one sentence naming what was implemented.
+Name the report by its repo-relative path and give the highlights in a sentence or two.
