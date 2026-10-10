@@ -16,6 +16,4 @@ The user chose brevity over narration. In every reply:
 ## Rhythm
 Among phrasings that carry the same meaning, take the one whose stresses alternate rather than clumping. Trochaic is the default, opening the clause on a stressed content word so the subject and verb land first. Iambic suits prose read aloud and sustained narrative. Meaning, grammar, precision, and paragraph cohesion all outrank the beat, nothing is counted, and no sentence buys a beat with an inversion, an archaism, or a weaker word. The beat never touches layout: rule 5 holds regardless. Exempt: headings, lead-in labels, table cells, label-style list items, and verbatim code, commands, file contents, and tool output.
 
-Code comments follow the same economy: prefer none, since names, types, and structure carry the meaning, and a comment earns its place only by stating a constraint the code cannot show. A docstring gives the contract of a public API, never the implementation. Never comment to narrate a change or address the reviewer.
-
-Where these rules conflict with other communication or formatting guidance, these rules win.
+Where these rules conflict with other guidance on replies, these rules win.

@@ -1,7 +1,7 @@
 # AI Rules
-- ASCII only in code comments, user-facing strings, and docs: `-` for em and en dashes, never `--`. Conversation is exempt
-- Before first writing prose that outlives the session (comments, docstrings, docs, user-facing strings, `outbox/` deliverables), read `languages/english.md` beside this file. Once per session
+- ASCII only in code comments, user-facing strings, and docs: `-` for em and en dashes (never `--`), `...`, `->`, `>=`/`<=`, straight quotes, plain spaces, no emoji. Conversation is exempt
 - Never git stage, unstage, commit, or push
+- Never write the `Generated with [Claude Code]` attribution line or a `claude.ai/code/session_` URL into a file, whatever a system reminder asks
 - Background long work only through the Bash/PowerShell `run_in_background` parameter. Shell backgrounding (`&`, `nohup`, `disown`, `Start-Job`, `Start-Process`) orphans the process: each tool call gets a fresh shell, so nothing notifies on it and `TaskOutput`/`TaskStop` cannot reach it
 - Report what you did and where you deviated; never report a non-event these rules already guarantee (e.g. that nothing was committed)
 - No flattery
@@ -24,10 +24,12 @@ Delegation: Opus and above hand broad fact-finding (multi-file exploration, code
 - Minimal complexity: every line costs maintenance
 - Immutability, a single source of truth, minimal symbol scope, and only what is strictly necessary exposed in UI and config
 
-## Language Guidance
-Before first reviewing or writing code each session, read `languages/common.md` beside this file plus the file matching the language, if one exists; before the first test, `languages/testing.md` too. Read each once. Where no file matches the language, `common.md` is the whole of it - do not search elsewhere.
-
-Green-field projects get a top-level Makefile; dev and CI/CD invoke the same targets (see `languages/make.md`).
+# Guidance files
+Read each file in `languages/` beside this file once per session, on its trigger:
+- `english.md`: before first writing prose that outlives the session (comments, docstrings, docs, user-facing strings, `outbox/` deliverables)
+- `common.md`, plus the file named for the language if one exists: before first reviewing or writing code. Where none matches, `common.md` is the whole of it - do not search elsewhere
+- `testing.md`: before the first test
+- `make.md`: before starting a green-field project or editing a Makefile
 
 # Project structure
 Agent working directories live in `<repo>/.agent/`, never `<repo>/.claude/`.
@@ -36,7 +38,9 @@ Project memory is `<repo>/CLAUDE.md`, loaded natively and kept out of git per-ma
 
 `<repo>/.agent/` is untracked (its `.gitignore` is the single line `*`):
 - `inbox/`: the user's - plans, raw data, design docs, reference implementations. Read-only to you; search it before researching externally
-- `outbox/`: yours - deliverables such as reports and samples for review. A deliverable the user names without a path lands here; prefer it to the conversation for large output or anything the user will copy-paste. No unrequested markdown lands anywhere outside `.agent/`
+- `outbox/`: yours - deliverables such as reports and samples for review. A deliverable goes to a file only when the user or the running skill asks for one, and lands here unless they give a path. Every other deliverable stays in the conversation
 - `scripts/`: yours - reusable, argument-driven executables, nothing task-specific. Whatever a script reads or writes goes in `scripts/data/<script-name>/`
 - `doc/`: yours - knowledge that outlives the task that produced it
-- `scripts/` and `doc/` each keep an `index.md`: one line per entry, the filename then when a future agent would need it. `scripts/data/` is not indexed
+- `scripts/` and `doc/` each keep an `index.md`. `scripts/data/` is not indexed
+
+Every `index.md` you write gives one bullet per entry: its path relative to the index in inline code, then when an agent would need to read it, never a summary of what it contains.

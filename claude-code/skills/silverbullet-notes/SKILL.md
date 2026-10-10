@@ -13,17 +13,12 @@ The server `https://notes.toasterparty.net` hosts several spaces, one per path p
 ## Tool
 Use the official SilverBullet CLI through `bash ${CLAUDE_SKILL_DIR}/sb.sh`, written `sb` below; never run a bare `sb`. The wrapper installs the CLI on first use and keeps its saved spaces and encrypted credentials in `<claude home>/silverbullet/`, so each Claude home has its own set. `sb --help` and `sb <command> --help` are authoritative where this file disagrees. Never use WebFetch on the notes: it summarizes content and cannot write.
 
-## Scope and setup
+## Scope
 `sb space ls` is the only record of which spaces this skill may touch. Never read or write a space missing from it, over SSH included. A request naming no space covers every saved one. Never ask for a token in chat or store one anywhere else.
 
-When `sb space ls` lists no space on this server:
-1. Read the space names and prefixes from `spaces.json` over SSH. If SSH fails, ask the user for the space URLs.
-2. Ask with `AskUserQuestion` (`multiSelect`, split across questions past four options) which spaces the skill should use.
-3. Add each chosen space with `printf '<prefix>\nhttps://notes.toasterparty.net/<prefix>\nbrowser\n' | sb space add --no-browser`, run in the background. It prints a confirmation code and link: relay both to the user, and the command exits once they approve. A space with anonymous access finishes without sign-in.
+When `sb space ls` lists no space on this server, or a request names an unsaved one, follow `setup.md` beside this file before anything else.
 
-A request for an unsaved space is refused until the user confirms adding it through step 3.
-
-Exit code 4 or `authentication_required` means the login is missing or expired: run `sb space login <name> --no-browser` the same way, then retry.
+Exit code 4 or `authentication_required` means the login is missing or expired: run `sb space login <name> --no-browser` in the background. It prints a confirmation code and link: relay both to the user, and the command exits once they approve. Then retry. Reading an anonymous-read space needs no login, but writing to it does.
 
 ## Files
 Plain HTTP, no Runtime API needed. Paths are space-relative and include `.md`.
@@ -51,15 +46,9 @@ sb script -s <name> --file script.lua
 ```
 `sb describe --text` lists the queryable types and query syntax, and `sb describe <type> --text` one type's fields; without `--text` it dumps every schema as JSON. An empty result is not proof of absence: a misnamed field matches nothing without an error. For the rest of the API, the docs are raw markdown at `https://silverbullet.md/.fs/<Page>.md` (`API.md`, `Space%20Lua.md`, `HTTP%20API.md`); fetch them with `curl`, since the rendered site is a client-side app.
 
-## Configuring a space
-Behavior changes go in `space-lua` and `space-style` blocks on `CONFIG.md`, applied with `sb fs edit` anchored on a heading.
-- `eval` takes one expression; anything with statements or `return` goes through `script --file`.
-- The headless client keeps its old config until `sb eval -s <name> 'system.invokeCommand("System: Reload")'`, and the reload takes 10-20 seconds. Reading state sooner returns the stale config (nil globals, old keys) and looks like a failed edit. Open browser tabs need their own reload.
-- The built-in `Library/Std/` pages are bundled in the server image, absent from the data folder, so SSH grep finds nothing. Fetch them with `sb fs read`; they hold the defaults, view definitions, and Lua for most built-in behavior.
-- `system.listCommands()` shows the effective key bindings, built-ins included. `config.get("commands")` omits built-ins. A key that does nothing is usually shadowed by another command's alias on it, so search that list for the key before blaming the browser.
-- `command.update` rebinds a built-in command's keys, `config.set("view.defaults", {[view] = {open = false}})` closes a built-in panel by default, and `widget.new {markdown = ...}` returns rendered markdown from a `${...}` call.
-- Plug event handlers (the built-in completion popups, for one) cannot be unregistered, and redefining a syscall in Lua does not reach plug calls. Space Lua can reach the browser through `js.window` and `js.new`, so a `MutationObserver` calling `editor.closeCompletion()` suppresses a popup. CSS alone only hides it, and Enter still accepts the hidden suggestion.
-- Reading an anonymous-read space needs no login, but writing to it does.
+`eval` takes one expression; anything with statements or `return` goes through `script --file`.
+
+Before changing or debugging a space's behavior (`CONFIG.md`, `space-lua`, `space-style`, key bindings, panels), read `config.md` beside this file.
 
 ## SSH
 `sb fs` has no content search. To grep or bulk-read a saved space, run the search over SSH inside that space's `folder` from `spaces.json`. Treat it as read-only: SSH writes skip the conflict checks `sb` applies.

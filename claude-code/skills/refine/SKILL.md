@@ -20,7 +20,7 @@ Scope given with the invocation is used as-is. Otherwise resolve it with `AskUse
 - The staged diff
 - The unstaged diff
 - This branch against the base branch
-- The previous commit, unless it equals the branch diff
+- The previous commit, unless `HEAD~1` is the merge base of `HEAD` and the base branch, which makes it the branch diff
 - A component, feature, or set of files of your choosing, topical to recent work, small enough to carry through every step. Name it in the option
 
 Free text through `Other` covers anything else.

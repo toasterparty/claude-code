@@ -1,6 +1,6 @@
 # GNU Make (Makefile)
 
-A top-level Makefile is the application-developer interface for a project: it normalizes details that vary project-to-project (language, framework, buildsystem) behind a few memorable, hand-typed targets. Treat it as living introductory documentation - keep it simple and free of clutter.
+Every green-field project gets a top-level Makefile as its application-developer interface: it normalizes details that vary project-to-project (language, framework, buildsystem) behind a few memorable, hand-typed targets. Treat it as living introductory documentation - keep it simple and free of clutter.
 
 ## Purpose & scope
 - Expose intent (`install`, `run`, `test`, ...), not implementation; hide the underlying commands behind targets.

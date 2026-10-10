@@ -1,6 +1,6 @@
 # Common
-Language-independent rules, read alongside the file for the language in hand.
-
+- Prefer no comment: names, types, and structure carry the meaning. A comment earns its place only by stating a constraint the code cannot show, and never narrates a change or addresses the reviewer
+- A docstring gives the contract of a public API (inputs, outputs, invariants), never the implementation
 - Guard clauses for edge cases; the success path sits unindented at the bottom
 - `return`/`break`/`continue` over `else`
 - Indent 1-3 levels; never 5+

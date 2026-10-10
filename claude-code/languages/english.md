@@ -1,31 +1,33 @@
 # English
-Governs prose that outlives the session; conversation is exempt. Agent-executed plans invert the Content rules - see that section.
+Prose that outlives the session follows the Concise+ output style's rules on leading with the result, narration, length, register, structure, and rhythm, plus this file. Read `output-styles/concise-plus.md` in the Claude home directory unless Concise+ is already your output style. Agent-executed plans invert the Content rules and the inherited rules on leading with the result, narration, and length - see that section.
 
 ## Content
+- Name the reader and what they arrive needing to do before writing: that need decides what goes in.
 - Every sentence carries a fact its subject cannot state itself, or it goes. Deletion is the default fix, rewriting the fallback.
-- Why, never what: never restate the code, the diff, the data, or the prompt.
-- Lead with the conclusion, then the support. Never build toward it.
-- Stop at the surprising fact. Never narrate the journey (alternatives tried, bugs chased, earlier drafts); a step not yet executed is a proposal and stays.
+- Why, never what: never restate the diff or the data either.
+- Stop at the surprising fact. A step not yet executed is a proposal and stays.
 - Name a symbol, path, or `file:line` only where that location is itself the news. Otherwise say what the code does, not which function does it.
 - Prefer the doc that cannot go stale: self-describing code beats invariant docs beats narrative docs. Cut detail specific enough to couple the doc to the implementation.
-- Length follows the information, not the container: never pad a heading or match a bullet to its siblings.
-- Never restate the heading before answering it, never stub a section to satisfy a template, never close by re-summarizing the body.
-- Plain register: no filler adverbs, grandiose adjectives, reflexive triads, stacked hedges, or `not only X but Y`.
-- Prefer `,` and `.` over `;` and `-`, keeping `-` for a lead-in label: a clause reaching for either is usually its own sentence.
+- Never restate the heading before answering it or stub a section to satisfy a template.
+- Prefer the familiar word and the active voice.
+- One term per concept and one concept per term, the code's word where it has one. Never a synonym for variety.
+- Define a term the reader may not know where it first appears: the class it belongs to, then what sets it apart. A definition never uses the term itself and never says only what the thing is not.
+
+## Progressive disclosure
+Layer instructions and docs so each reader pays only for the depth their task needs: an agent saves context, a human saves reading.
+- The always-loaded layer (a `CLAUDE.md`, a skill's description, a README) holds what every reader needs, plus a trigger for each deeper file: when to read it, never a summary of it.
+- A deeper file loads only on its trigger and never restates the layer above it.
+- Within a file, the common case comes first and detail follows in order of how few readers need it.
 
 ## Formatting
-- Never wrap lines to a column limit: a paragraph or bullet is one unbroken line, however long, and the editor soft-wraps it.
 - One `#` per file; no headings in a doc short enough to read whole.
 - `-` bullets, four spaces per nesting level; inline code for every path, flag, and identifier.
-- Bullets that read as continuous prose are a paragraph. Parallel facts are a table; reasoning is prose.
-- Bold is a scanning aid: a lead-in label, or the one value the reader is hunting for. Never a whole sentence, never so often that nothing stands out.
-- ASCII only: `-` for em and en dashes (never `--`), `...`, `->`, `>=`/`<=`, straight quotes, plain spaces, no emoji.
+- Dates and times in ISO 8601: `2026-10-09`, `2026-10-09T14:30`.
 
 ## Rhythm
-Among phrasings that carry the same meaning, prefer the one whose stresses alternate rather than clumping. Trochaic suits documentation, opening the clause on a stressed content word so the subject and verb land first; iambic suits prose read aloud and sustained narrative with long paragraphs. Meaning, grammar, precision, and paragraph cohesion all outrank the beat, nothing is counted, and no sentence gets an inversion, an archaism, or a weaker word to fix one. The beat never touches layout: the no-wrap rule above holds regardless. Prose on disk converges only opportunistically - a sentence edited for another reason can come back smoother, one left alone stays as it is, and nothing is rewritten for rhythm alone. Exempt: headings, labels, table cells, verbatim output, and all of `Agent-executed plans`.
+Prose that outlives the session converges only opportunistically: a sentence edited for another reason can come back smoother, one left alone stays as it is, and nothing is rewritten for rhythm alone. Agent-executed plans are exempt.
 
 ## Artifacts
-- Code: prefer no comment, since names, types, and structure carry the meaning. A docstring gives the contract of a public API (inputs, outputs, invariants), never the implementation.
 - README: what the thing is, how to build and run it, then stop. Badges, feature lists, architecture tours, and contribution boilerplate only when asked.
 - PR description: one item per behavior change, never per file or commit, none for a change with no behavioral effect. What the system now does differently, plus the review risk if there is one.
 - Implementation report: the one place narrative earns its place, for deviations, what was verified and how, and what was left undone.

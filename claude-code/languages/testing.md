@@ -1,5 +1,4 @@
 # Tests
-Applies in every language; read alongside the file for the language under test.
 - A test discloses behavior as much as it guards against regression. Write it to be read cold, by someone who has not read the implementation
 - Prefer a named example - one concrete input and its expected result, both visible in the test body - to a parametrized sweep over cases no reader can name
 - Name a test for the behavior it pins, so a failure reads as a sentence describing what broke
