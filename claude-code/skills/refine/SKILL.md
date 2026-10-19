@@ -10,7 +10,7 @@ Target the best implementation of the behavior already there, weighing simplicit
 Observable behavior is whatever anything outside the code can see: a public API's results, CLI output and exit codes, file and wire formats, persisted data, error text, side effects, and ordering or timing a caller could notice. Something may depend on any of it, however wrong it looks, and the repo does not show who. Every change made without asking preserves it; Step 5 names the one exception.
 
 - Report directory: `.agent/outbox/refine/`
-- Report path: `<report directory>/<YYYYMMDDHHMM>-<sha>.md`, local time so names sort by creation, `<sha>` from `git rev-parse --short HEAD`, suffixed `-dirty` when `git status --porcelain -uno` prints anything. Resolve it before the first edit and keep it: it names the tree you inherited
+- Report path: `<report directory>/<YYYYMMDDHHMM>-<sha>.md`, `<sha>` from `git rev-parse --short HEAD`, suffixed `-dirty` when `git status --porcelain -uno` prints anything. Resolve it before the first edit and keep it: it names the tree you inherited
 - Base branch: `main`
 
 ## 1. Scope
