@@ -120,7 +120,7 @@ Then audit every prose file this session wrote against the writing standards.
 
 ## 8. Report
 
-When the scope is the staged, unstaged, or uncommitted diff and `Needs your review` would be empty, give the report in chat instead of a file. Otherwise write it in one `Write`. Either way, use this template: a terse log of fragments, one line per item, no restating the diff. Keep the headings and the `Needs your review` instruction line verbatim and in this order, omitting a section only when it is empty. Give options only where two or more real ones exist.
+When the scope is the staged, unstaged, or uncommitted diff, or files git does not track, give the report in chat instead of a file. Otherwise write it in one `Write`. Either way, use this template: a terse log of fragments, one line per item, no restating the diff. Keep the headings and the `Needs your review` instruction line verbatim and in this order, omitting a section only when it is empty. Give options only where two or more real ones exist.
 
 ```
 # Refine <sha>
