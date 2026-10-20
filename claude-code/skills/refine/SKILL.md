@@ -11,6 +11,7 @@ Observable behavior is whatever anything outside the code can see: a public API'
 
 - Report directory: `.agent/outbox/refine/`
 - Report path: `<report directory>/<YYYYMMDDHHMM>-<sha>.md`, `<sha>` from `git rev-parse --short HEAD`, suffixed `-dirty` when `git status --porcelain -uno` prints anything. Resolve it before the first edit and keep it: it names the tree you inherited
+- Branch: `git branch --show-current`, or `detached` where it prints nothing. Resolve it with the report path
 - Base branch: `main`
 
 ## 1. Scope
@@ -120,10 +121,10 @@ Then audit every prose file this session wrote against the writing standards.
 
 ## 8. Report
 
-When the scope is the staged, unstaged, or uncommitted diff, or files git does not track, give the report in chat instead of a file. Otherwise write it in one `Write`. Either way, use this template: a terse log of fragments, one line per item, no restating the diff. Keep the headings and the `Needs your review` instruction line verbatim and in this order, omitting a section only when it is empty. Give options only where two or more real ones exist.
+When the scope is the staged, unstaged, or uncommitted diff, or files git does not track, give the report in chat instead of a file, unless `Needs your review` is non-empty (a skipped or unanswered item, a backed-out fix, deferred work): then write it as a file, since a chat report is lost with the session. Otherwise write it in one `Write`. Either way, use this template: a terse log of fragments, one line per item, no restating the diff. Keep the headings and the `Needs your review` instruction line verbatim and in this order, omitting a section only when it is empty. Give options only where two or more real ones exist.
 
 ```
-# Refine <sha>
+# Refine <branch> <sha>
 
 ## Scope
 <the slice taken, and what was left for a later pass>
