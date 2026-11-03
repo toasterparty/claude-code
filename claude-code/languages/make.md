@@ -39,9 +39,17 @@ Start a cross-platform Makefile by forcing every recipe to run under bash:
 
 ifeq ($(OS),Windows_NT)
     # Guard via BASH, not SHELL: make silently falls back to cmd.exe on an empty SHELL.
-    BASH := $(shell powershell -NoProfile -File tools/find-bash.ps1)
-    ifeq ($(BASH),)
-        $(error Could not locate Git bash - run tools/install-bash.ps1 (open a new terminal if you just installed it))
+    BASH_CACHE := build/.bash-path
+    BASH := $(file < $(BASH_CACHE))
+    space := $() $()
+    ifeq ($(wildcard $(subst $(space),\$(space),$(BASH))),)
+        BASH := $(shell powershell -NoProfile -ExecutionPolicy Bypass -File tools/find-bash.ps1)
+        ifeq ($(BASH),)
+            $(error Could not locate Git bash - run tools/install-bash.ps1 (open a new terminal if you just installed it))
+        endif
+        ifneq ($(wildcard build),)
+            $(file > $(BASH_CACHE),$(BASH))
+        endif
     endif
     SHELL := $(BASH)
 else
@@ -52,4 +60,4 @@ endif
 
 On Windows this relies on two helper scripts. Copy them verbatim from the `make/` directory beside this file into the project's `tools/`:
 - `find-bash.ps1` prints the path to Git bash (never the System32 WSL launcher), or nothing if not found. No side effects, so it is safe to run on every make invocation.
-- `install-bash.ps1` installs Git and make via winget, then persists bash on PATH. Run once to bootstrap; idempotent.
+- `install-bash.ps1` installs Git and make via winget where missing, then persists bash on PATH. Run once to bootstrap; idempotent. `-Update` upgrades both to latest.
