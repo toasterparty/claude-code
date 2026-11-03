@@ -15,6 +15,7 @@ while IFS=$'\t' read -r expected command_text; do
     fi
 
     total=$((total + 1))
+    command_text=${command_text//'<NL>'/$'\n'}
     gate_decision "${command_text:-}"
     if [[ $GATE_DECISION != "$expected" ]]; then
         failed=$((failed + 1))

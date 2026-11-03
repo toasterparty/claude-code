@@ -1,5 +1,6 @@
 # Expected permission-gate decision, tab, command text. Both hooks must agree on every line.
 # Blank lines and # lines are skipped. An empty command stands for a tool call with no command field.
+# The token <NL> stands for a newline, which lets a case carry a heredoc.
 allow
 allow	ls -la
 allow	python -m pytest
@@ -179,6 +180,8 @@ allow	unzip $(gh run download 1 --dir out; echo out)/a.zip
 # An explicit read method makes field flags read-only again
 allow	gh api -X GET search/issues -f q=repo:o/r
 allow	gh api --method=GET repos/o/r
+allow	gh api -X get search/issues -f q=repo:o/r
+allow	gh api -X HEAD repos/o/r
 
 # Driving CI is a write, but destroys nothing durable
 allow	gh workflow run ci.yml
@@ -213,11 +216,19 @@ deny	gh run download 1 && gh pr merge 5
 deny	bash -c 'gh pr merge 5'
 deny	echo `gh pr merge 5`
 deny	/usr/bin/gh pr merge 5
+deny	gh pr view 5<NL>gh pr merge 5
+
+# Program names fold case, as on the macOS and Windows filesystems that resolve them
+deny	GIT push
+deny	Git.exe commit -m x
+deny	SUDO ls
+deny	GH pr merge 5
+allow	GH pr view 5
 
 # SSH key material, in every path spelling: no settings.json rule covers this one
 deny	cat ~/.ssh/id_rsa
 deny	ls -la /home/blake/.ssh
-deny	cat "$HOME/.ssh/config"
+deny	cat "$HOME/.ssh/id_rsa"
 deny	grep -r ssh-rsa ~/.ssh/
 deny	cp C:\Users\Blake\.ssh\id_ed25519 /tmp
 deny	type C:\Users\Blake\.SSH\id_rsa
@@ -226,3 +237,76 @@ deny	type C:\Users\Blake\.SSH\id_rsa
 allow	cat deploy.ssh
 allow	cat notes.sshconfig
 allow	ssh user@host uptime
+
+# The client config and host list name hosts and options, never keys
+allow	cat "$HOME/.ssh/config"
+allow	grep -n bitbucket ~/.ssh/known_hosts ~/.ssh/config
+allow	type C:\Users\Blake\.ssh\config
+allow	cat ~/.ssh/known_hosts.old
+deny	cat ~/.ssh/config ~/.ssh/id_rsa
+deny	cat ~/.ssh/known_hosts/../id_rsa
+deny	cat ~/.ssh/config*
+deny	cat ~/.ssh/config.bak
+deny	cat ~/.ssh/authorized_keys
+deny	ls ~/.ssh
+
+# A config key given no value is read back, and a value sets it
+allow	git config core.autocrlf
+allow	git config core.autocrlf; git status
+allow	git -C /repo config core.filemode
+deny	git config core.autocrlf true
+deny	git config core.autocrlf && git commit -m x
+deny	git config core.autocrlf; git config core.editor vim
+
+# Only options stand between git and its subcommand, so a verb used as a name is not the subcommand
+allow	git ls-files config
+allow	git diff -- config.yaml
+allow	git diff HEAD stash@{0}^
+allow	git log --oneline -- stash
+deny	git -c core.editor=true commit -m x
+deny	git --git-dir .git push
+deny	git --no-pager -C /repo commit -m x
+deny	git -C "/my repo" commit -m x
+deny	git -C '/my repo' push
+allow	git -C "$r" remote -v
+allow	git -C '/my repo' remote -v
+deny	git -C "$r" remote add o url
+
+# gh named without a subcommand, or asked for its version
+allow	gh --version
+allow	command -v gh >/dev/null 2>&1
+allow	which gh 2>&1
+deny	gh >/dev/null pr merge 5
+deny	gh 2>&1 pr merge 5
+
+# A job the same command waits for cannot outlive the call
+allow	./a.sh & P1=$!; ./b.sh; wait $P1
+allow	(sleep 1; echo x) & wait
+deny	./a.sh & echo wait
+deny	nohup ./a.sh & wait
+allow	$p = Start-Process node app.js -PassThru; $p.WaitForExit(60000)
+allow	Start-Process node app.js | Wait-Process
+
+# An ampersand inside a quoted string is data, unless the string is handed to a shell as its command
+allow	python -c "print(1 & 2)"
+allow	grep -E "a & b" file.txt
+allow	ls "Snakes & Ladders (2023)"
+deny	bash -c "./server &"
+deny	sh -c './server &'
+deny	powershell -Command "Start-Sleep 30 &"
+
+# A heredoc body fed to a reader or an interpreter is text, not the command
+allow	python3 - <<'EOF'<NL>if flags & MASK: pass<NL>EOF
+allow	python3 - <<'EOF'<NL>print("git push")<NL>EOF
+allow	cat > notes.md <<'EOF'<NL>Run sudo apt-get install, then gh pr merge, then read ~/.ssh/id_rsa<NL>EOF
+allow	cat <<'EOF'<NL>sudo reboot<NL>EOF<NL>ls
+allow	cat > run.sh <<'EOF'<NL>sudo apt-get install -y x<NL>EOF
+deny	python3 - <<'EOF'<NL>x = 1<NL>EOF<NL>git push
+deny	cat <<'EOF'<NL>x<NL>EOF<NL>sudo reboot
+
+# A heredoc body fed to a shell, or left unclosed, stays in view
+deny	bash <<'EOF'<NL>git push<NL>EOF
+deny	cat <<'EOF' | bash<NL>git push<NL>EOF
+deny	ssh host <<'EOF'<NL>sudo reboot<NL>EOF
+deny	python3 - <<'EOF'<NL>git push
+deny	echo $((1<<N))<NL>git push
