@@ -25,11 +25,11 @@ Delegation: Opus and above hand broad fact-finding (multi-file exploration, code
 - Immutability, a single source of truth, minimal symbol scope, and only what is strictly necessary exposed in UI and config
 
 # Guidance files
-Read each file in `languages/` beside this file once per session, on its trigger:
-- `english.md`: before first writing prose that outlives the session (comments, docstrings, docs, user-facing strings, `outbox/` deliverables)
-- `common.md`, plus the file named for the language if one exists: before first reviewing or writing code. Where none matches, `common.md` is the whole of it - do not search elsewhere
-- `testing.md`: before the first test
-- `make.md`: before starting a green-field project or editing a Makefile
+Read each file below, relative to this file, once per session on its trigger. Each names deeper files on their own triggers, by the same relative path:
+- `languages/english.md`: before first writing prose that outlives the session (comments, docstrings, docs, user-facing strings, `outbox/` deliverables)
+- `languages/common.md`, plus the file in `languages/` named for the language if one exists (`make.md` for a Makefile): before first reviewing or writing code. Where none matches, `common.md` is the whole of it - do not search elsewhere
+- `practices/plans.md`: before writing a plan another agent will execute, in a file or a subagent prompt
+- `practices/project-setup.md`: before starting a green-field project
 
 # Project structure
 Agent working directories live in `<repo>/.agent/`, never `<repo>/.claude/`.

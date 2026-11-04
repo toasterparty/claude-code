@@ -1,4 +1,6 @@
 # Common
+Before writing a test, read `practices/testing.md` in the Claude home directory. Before writing teardown or an error, warning, or failure message, read `practices/failures.md` there.
+
 - Prefer no comment: names, types, and structure carry the meaning. A comment earns its place only by stating a constraint the code cannot show, and never narrates a change or addresses the reviewer
 - A docstring gives the contract of a public API (inputs, outputs, invariants), never the implementation
 - Guard clauses for edge cases; the success path sits unindented at the bottom
@@ -58,8 +60,3 @@ Never `do`, `handle`, `process`, `manage`, `perform`: a category, not an effect.
 - A boolean reads as a predicate - `is_ready`, `has_data` - never `ready_flag` or `status`
 - A literal other than 0 or 1 gets a name unless the call site already says what it is
 - Name length scales with scope: `i` in a loop and `data` in a short function are fine because the surrounding code says what they are; a symbol read far from its definition carries its meaning in full
-
-## Best-effort teardown
-Teardown - `free`, `deinit`, `destroy`, `close`, `give`, `stop`, `disconnect`, `unregister`, `cancel`, `reset` - returns nothing and reports nothing: it swallows what it cannot fix and logs at most. A fallible teardown has no answer to a cleanup path whose own cleanup fails, and that path is already running because something else went wrong.
-- Accept every state, partly constructed or already torn down; teardown of an empty handle is a no-op, so a caller unwinds from any point without tracking how far setup got
-- Where teardown does work whose failure the caller must act on - flushing writes, committing a transaction - split it: a fallible `flush` or `commit` the caller may run first, and an infallible `close` that still flushes best effort
