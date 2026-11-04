@@ -5,9 +5,9 @@ description: Refine a slice of this project behind a strengthened test baseline,
 
 # Refine
 
-Target the best implementation of the behavior already there, weighing simplicity, readability, maintainability, scalability, safety, and security against each other. Simplicity is the usual lever, not the goal: some refinements earn their extra lines. Simple is not short either: a line that costs the reader a second pass is not simpler.
+Target the best implementation of the behavior already there, weighing simplicity, readability, maintainability, scalability, safety, and security against each other. Simplicity is the usual lever, not the goal: some refinements earn their extra lines, and a line that costs the reader a second pass is not simpler.
 
-Observable behavior is whatever anything outside the code can see: a public API's results, CLI output and exit codes, file and wire formats, persisted data, error text, side effects, and ordering or timing a caller could notice. Something may depend on any of it, however wrong it looks, and the repo does not show who. Every change made without asking preserves it; Step 5 names the one exception.
+Observable behavior is whatever anything outside the code can see: a public API's results, CLI output and exit codes, file and wire formats, persisted data, error text, side effects, and ordering or timing a caller could notice. Every change made without asking preserves it, however wrong it looks; Step 5 names the one exception.
 
 - Report directory: `.agent/outbox/refine/`
 - Report path: `<report directory>/<YYYYMMDDHHMM>-<sha>.md`, `<sha>` from `git rev-parse --short HEAD`, suffixed `-dirty` when `git status --porcelain -uno` prints anything. Resolve it before the first edit and keep it: it names the tree you inherited
@@ -55,7 +55,7 @@ Survey the scope and list the changes Step 5 will likely make, noting bug candid
 
 Coverage is the net under planned changes, not a goal: gaps outside them go to review.
 
-A new check exposing behavior that looks wrong still asserts what the code does today, with a one-line comment marking it suspect: the suspicion may be mistaken, and the pin keeps any refactor from changing the behavior by accident. Carry it into Step 5 as a bug candidate; an approved fix rewrites the check.
+A new check exposing behavior that looks wrong still asserts what the code does today, with a one-line comment marking it suspect. Carry it into Step 5 as a bug candidate; an approved fix rewrites the check.
 
 Iterate on the new checks alone until they pass, then repeat Step 3's full run. That is the baseline.
 
@@ -63,26 +63,26 @@ Iterate on the new checks alone until they pass, then repeat Step 3's full run. 
 
 One rule: every change preserves observable behavior, except a **Harden** move from the Toolkit, which touches only paths that fail today. Every other behavior change, bug fixes included, goes to `Raise for review`. Within the rule, make any change that leaves the code better by the balance at the top of this skill, with whatever new files, build entries, and config it needs. Merge or delete a check only where another still defends its behavior.
 
-With a solid baseline, be zealous: the user consented to the scope and the validation, and a large restructure is cheaper to attempt than to agonize over. Without validation, be conservative: only high-confidence changes verifiable by reading. Either way, do not manufacture churn in already clean code. After each change, run the narrowest checks covering it, so a failure points at one change, and save the full run for Step 7. Where a safe change depends on a raised one, hold it and fold it into that item's options.
+With a solid baseline, be zealous: attempt a large restructure rather than agonize over it. Without validation, be conservative: only high-confidence changes verifiable by reading. Either way, do not manufacture churn in already clean code. After each change, run the narrowest checks covering it, and save the full run for Step 7. Where a safe change depends on a raised one, hold it and fold it into that item's options.
 
 Interrogate every piece of complexity: each layer, option, branch, type, and file must be something the behavior, its maintenance, its safety, or a plausible scale needs, or it goes.
 
 ### Bugs
 
-A bug is a defect that plausibly harms observable behavior: a crash, an unhandled failure, an off-by-one, a violated contract, a disputed doc (see **Document**). Hunt bugs first, since they head the review, and raise every one: never fix one without asking, never sit on one silently. Code can be free of them, and a pass that finds none says so rather than promoting a surprise into a defect. Cover each approved fix with a check that fails before and passes after.
+A bug is a defect that plausibly harms observable behavior: a crash, an unhandled failure, an off-by-one, a violated contract, a disputed doc (see **Document**). Hunt bugs first and raise every one: never fix one without asking, never sit on one silently. Code can be free of them, and a pass that finds none says so rather than promoting a surprise into a defect. Cover each approved fix with a check that fails before and passes after.
 
 ### Toolkit
 
 These moves are where refinement usually hides, not the limit of what is allowed:
 - **Delete** - what no caller needs, with the tests, docs, config, and dependencies that only served it
 - **Prune comments** - across the scope, touched or not. A comment survives by warning of a pitfall, recording an expensive-to-learn fact, or giving a why the code cannot say, in one line where possible. Delete the self-evident, what a better name would say, decision history, commented-out code, banners, narration, and docstring text beyond a public API's contract. Where a comment props up unclear code, fix the code instead. Expect comment words to fall by over half on a first sweep
-- **Document** - docs and docstrings tied to the scope, and anything this pass invalidated (a renamed symbol, moved path, changed command): simplify them, align them with the code's vocabulary (or fix the code where the doc's word is better), and fix grammar and verifiably stale content outright: a path that no longer exists, a command that fails, a symbol since renamed, a description of behavior the code has since changed. Verify a correction by running the command or following the path. A doc or docstring that disagrees with behavior is stale, fixed to match the code without review, unless something besides the doc backs its side (a plan, spec, test, commit message, or caller relying on it): only then is it disputed, and a disputed doc is a bug
+- **Document** - docs and docstrings tied to the scope, and anything this pass invalidated (a renamed symbol, moved path, changed command): simplify them, align them with the code's vocabulary (or fix the code where the doc's word is better), and fix grammar and stale content outright: a path that no longer exists, a command that fails, a symbol since renamed, a description the behavior contradicts. Verify a correction by running the command or following the path. Where something besides the doc backs its side (a plan, spec, test, commit message, or caller relying on it), the doc is disputed instead, and a disputed doc is a bug
 - **Align** - code with the Step 2 standards and, where they are silent, with the project's established patterns: verbs and nouns, error handling, structure, file layout, test style. Every departure is a target, and code doing the same job in two ways converges on the project's most mature and common shape. Tests keep asserted inputs and expected values verbatim
 - **Consolidate** - each fact defined in several places (a constant, default, list, schema, mirrored enum, doc restating code) onto one source of truth, and duplicate logic onto one implementation
 - **Model** - a concept the code spells out ad hoc (scattered literals, parallel lists, flag combinations) into a type, such as an enum, table, or record, so the next case costs one line. Only where the code already repeats the concept, never for a case nobody has asked for
 - **Harden** - handle a failure mode the code leaves unhandled, and validate untrusted input at its boundary, where no plausible input reaches the failure today and every path that succeeds today stays unchanged. A failure plausible today is a bug
 - **Extract** - a separable concern into its own file, and a long function's steps into named helpers until its body reads as their summary. Stop before a helper's name says no more than its body, or one idea scatters across files
-- **Inline** - pass-through wrappers, single-implementation abstractions, one-caller helpers, single-use variables. A layer is not load-bearing merely because someone wrote it, nor deadweight merely because it is thin: keep one that names a concept, isolates a dependency, or serves as a test seam
+- **Inline** - pass-through wrappers, single-implementation abstractions, one-caller helpers, single-use variables. Keep a thin layer that names a concept, isolates a dependency, or serves as a test seam
 - **Flatten** - depth in any form: nested conditionals, loops, ternaries, callbacks, data, type or directory hierarchies. Stop at dense one-liners and chained ternaries, and at structure that mirrors the domain
 - **Replace** - hand-rolled code with the standard library, an existing dependency, or a project utility
 - **Narrow** - an interface to what is used: `public` to `private`, file to function scope, a parameter type to what the body touches, an optional never absent. Each value takes the least powerful type or structure that does the job: a constant over a macro, an enum over a string, an array over a map, a function over a class
@@ -105,7 +105,7 @@ Raise rather than make, however good:
 
 Open items earlier reports left under `Needs your review` that fall in scope join the raised items: grep the report directory for the scope's paths, skipping items already closed with a `[<status>: ...]` tag. Check each against the current code first, locating it by its description since line numbers drift. An item already addressed, or whose code is gone, closes as `resolved` instead of being raised again.
 
-Walk the user through every raised item with `AskUserQuestion`, one question per item, up to four per call, bugs and other behavior changes first. The user often did not write or recently see this code, so each question explains in plain terms what the code does and why, what is wrong, and the risk.
+Walk the user through every raised item with `AskUserQuestion`, one question per item, up to four per call, bugs and other behavior changes first. Each question explains in plain terms, for a user who may not know this code, what it does and why, what is wrong, and the risk.
 
 Options are the item's alternatives, the recommended one first with `(Recommended)` on its label and each description stating what it changes, or a single `Implement` where there is no real alternative. The last option is always `Skip for now`, and a re-raised item offers `Drop` just before it, closing the item for good. Use `preview` for a short before/after where the choice is between code shapes.
 
@@ -121,7 +121,7 @@ Then audit every prose file this session wrote against the writing standards.
 
 ## 8. Report
 
-When the scope is the staged, unstaged, or uncommitted diff, or files git does not track, give the report in chat instead of a file, unless `Needs your review` is non-empty (a skipped or unanswered item, a backed-out fix, deferred work): then write it as a file, since a chat report is lost with the session. Otherwise write it in one `Write`. Either way, use this template: a terse log of fragments, one line per item, no restating the diff. Keep the headings and the `Needs your review` instruction line verbatim and in this order, omitting a section only when it is empty. Give options only where two or more real ones exist.
+When the scope is the staged, unstaged, or uncommitted diff, or files git does not track, give the report in chat instead of a file, unless `Needs your review` is non-empty (a skipped or unanswered item, a backed-out fix, deferred work): then write it as a file. Otherwise write it in one `Write`. Either way, use this template: a terse log of fragments, one line per item, no restating the diff. Keep the headings and the `Needs your review` instruction line verbatim and in this order, omitting a section only when it is empty. Give options only where two or more real ones exist.
 
 ```
 # Refine <branch> <sha>

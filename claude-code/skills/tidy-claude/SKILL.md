@@ -9,12 +9,12 @@ Bring `<repo>/.agent/` into the layout the user CLAUDE.md defines, running the p
 Survey with one recursive listing carrying sizes and dates, and open a file only when its name, size, and location leave its fate open. Batch moves and deletes into as few shell calls as possible rather than one tool call per file.
 
 ## Scope
-Touch only the four layout dirs under `.agent/` and the legacy locations they replace: `<repo>/.claude/{inbox,outbox,scripts,doc}/` and the older `plans/`, `reference/`, `agent/`. Everything else in `<repo>/.claude/` is Claude Code's own config, and every write there costs a permission prompt no rule can suppress. Remove a legacy dir from `.claude/` only once its contents are safely moved.
+Touch only the four layout dirs under `.agent/` and the legacy locations they replace: `<repo>/.claude/{inbox,outbox,scripts,doc}/` and the older `plans/`, `reference/`, `agent/`. Leave everything else in `<repo>/.claude/` alone. Remove a legacy dir from `.claude/` only once its contents are safely moved.
 
 Never edit a file under `inbox/`. Moving a whole file out of a legacy location is the one change allowed against user content.
 
 ## 1. Create the layout
-Create whichever of the four layout dirs are missing, and keep them even when empty: an empty `inbox/` tells the user where to drop the next plan. Subdirectories, `_archive/` and `scripts/data/` included, appear only on first use.
+Create whichever of the four layout dirs are missing, and keep them even when empty. Subdirectories, `_archive/` and `scripts/data/` included, appear only on first use.
 
 ## 2. Migrate legacy layouts
 - `.claude/{inbox,outbox,scripts,doc}/*` -> the matching dir under `.agent/`, subdirectories intact
@@ -41,20 +41,18 @@ Rewrite surviving scripts and docs so an agent on another task can use them: str
 Move stray data files out of `scripts/` into `scripts/data/<script-name>/` and repoint the scripts that read them.
 
 ### 5a. Mine the session history
-Past sessions have done by hand what a script should do. Find that work and script it.
+Script the work past sessions did by hand.
 
 Transcripts live at `<claude home>/projects/<repo path with every separator and colon replaced by `-`>/<session-id>.jsonl`, with subagent transcripts in a sidecar directory named for the session. `<claude home>` is `$CLAUDE_CONFIG_DIR` when set, otherwise `~/.claude`.
 
-Delegate the skim to an Explore subagent, handing it the exact files and byte offsets from the ledger. Have it filter the JSONL down to user messages and tool-call inputs before reading, since tool results are the bulk and rarely matter. Ask back for only each procedure, the commands that carried it out, and the arguments a script would take.
+Opus and above delegate the skim to an Explore subagent, handing it the exact files and byte offsets from the ledger. Filter the JSONL down to user messages and tool-call inputs before reading. Collect only each procedure, the commands that carried it out, and the arguments a script would take.
 
 Worth a script: a multi-command procedure repeated across sessions or rebuilt each time, an invocation that took several attempts (quoting, platform differences, pagination, auth), anything the user had to correct. Not worth one: anything a single tool call solves.
 
 Write each new script under the same rules as the generalized ones: argument-driven, idempotent, non-interactive, no repo-specific path.
 
 ### 5b. Skim ledger
-Cost must track new conversation, not accumulated history, so nothing is skimmed twice.
-
-The ledger is `scripts/data/tidy-claude/skimmed.tsv`: one line per transcript, `<session-id>`, tab, its size in bytes when skimmed. List the transcript directory with sizes and compare:
+Never skim the same bytes twice. The ledger is `scripts/data/tidy-claude/skimmed.tsv`: one line per transcript, `<session-id>`, tab, its size in bytes when skimmed. List the transcript directory with sizes and compare:
 
 - absent, or smaller than recorded (rotated) - skim the whole file
 - larger - skim only the tail, from `tail -c +<recorded + 1>`

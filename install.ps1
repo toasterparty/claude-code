@@ -2,9 +2,11 @@
 #Requires -Version 5
 $ErrorActionPreference = 'Stop'
 
-$RepoArchive = 'https://github.com/toasterparty/claude-code/archive/refs/heads/main.zip'
+$LatestCommitUrl = 'https://api.github.com/repos/toasterparty/claude-code/commits/main'
+$RepoArchiveUrl = 'https://github.com/toasterparty/claude-code/archive/{0}.zip'
 $ClaudeDir = if ($env:CLAUDE_DIR) { $env:CLAUDE_DIR } else { Join-Path $HOME '.claude' }
 $script:TempDir = $null
+$script:Commit = $null
 
 function Write-Step($msg) { Write-Host "==> $msg" }
 
@@ -19,15 +21,18 @@ function Install-ClaudeCode {
     }
 }
 
-# Download the repo and return the config directory within it.
+# Download the repo at the commit main points at and return the config directory within it.
+# Pinning the commit lets the session-start hook compare the deployed config against main.
 function Resolve-Source {
-    Write-Step "Downloading config from $RepoArchive"
+    $script:Commit = [string](Invoke-RestMethod -Uri $LatestCommitUrl -UseBasicParsing).sha
+    $archive = $RepoArchiveUrl -f $script:Commit
+    Write-Step "Downloading config from $archive"
     $script:TempDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
     New-Item -ItemType Directory -Path $script:TempDir | Out-Null
     $zip = Join-Path $script:TempDir 'repo.zip'
-    Invoke-WebRequest -Uri $RepoArchive -OutFile $zip -UseBasicParsing
+    Invoke-WebRequest -Uri $archive -OutFile $zip -UseBasicParsing
     Expand-Archive -Path $zip -DestinationPath $script:TempDir -Force
-    return (Join-Path $script:TempDir 'claude-code-main\claude-code')
+    return (Join-Path $script:TempDir "claude-code-$($script:Commit)\claude-code")
 }
 
 # Recursively merge $overlay into $base in place (overlay wins on conflicts).
@@ -48,6 +53,7 @@ function Resolve-HookPlaceholders($json) {
     $gates = [ordered]@{
         '{{PERMISSION_GATE}}' = 'permission-gate.ps1'
         '{{PROSE_GATE}}'      = 'prose-gate.ps1'
+        '{{SESSION_START}}'   = 'session-start.ps1'
     }
     foreach ($placeholder in $gates.Keys) {
         $gate = 'powershell -NoProfile -NonInteractive -File "{0}"' -f (Join-Path $ClaudeDir "hooks\$($gates[$placeholder])")
@@ -79,6 +85,7 @@ function Sync-Config($src) {
         Copy-Item -Path $_.FullName -Destination $dest -Recurse -Force
     }
     Merge-Settings (Join-Path $srcFull 'settings.json') (Join-Path $ClaudeDir 'settings.json')
+    [System.IO.File]::WriteAllText((Join-Path $ClaudeDir '.deployed-commit'), $script:Commit)
 }
 
 try {

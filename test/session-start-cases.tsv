@@ -1,0 +1,13 @@
+# Deployed commit, tab, commit main points at, tab, expected drift warning. Both hooks must agree on
+# every line. Blank lines and # lines are skipped. A - field stands for empty.
+
+# Up to date
+0123456789abcdef0123456789abcdef01234567	0123456789abcdef0123456789abcdef01234567	-
+
+# Behind main
+0123456789abcdef0123456789abcdef01234567	fedcba9876543210fedcba9876543210fedcba98	claude-code config deployed from 0123456, main is at fedcba9
+
+# An install that predates the stamp, or main unreachable, warns nothing
+-	fedcba9876543210fedcba9876543210fedcba98	-
+0123456789abcdef0123456789abcdef01234567	-	-
+-	-	-

@@ -58,6 +58,17 @@
     ]
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{SESSION_START}}",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "^(?!(Read|Glob|Grep|Edit|Write|NotebookEdit|TodoWrite)$).*",

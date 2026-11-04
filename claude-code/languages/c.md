@@ -4,25 +4,25 @@ Assume modern GCC, C99+, unless evidence says otherwise. Prefer data-oriented de
 
 ## Language & safety
 - Keep the preprocessor to header guards, constants, and small helpers like `BIT`/`ARRAY_LEN`; avoid macros containing logic and conditional-compilation feature gates.
-- Do not use bit fields (use `BIT` macros instead).
+- No bit fields; use `BIT` macros.
 - Prefer a compiler error over a runtime failure, and a runtime failure over a panic.
-- Fix all compiler warnings before release; treat each as a TODO.
-- Prefer fixed-width integers (`stdint.h`) for I/O-bound data (wire formats, `packed` structs); plain `int`/`size_t` remain fine for loop counters and other transient values.
-- Use `_Static_assert` for compile-time invariants; GCC supports it as an extension even before C11.
+- Fix every compiler warning within the current task's scope.
+- Fixed-width integers (`stdint.h`) for I/O-bound data (wire formats, `packed` structs); plain `int`/`size_t` elsewhere.
+- `_Static_assert` for compile-time invariants, which GCC accepts before C11.
 
 ## Functions & control flow
 - Declare zero-arg functions with `(void)`.
-- Test pointers and counts by truthiness (`if (data)`, `if (!data)`) rather than comparing against `NULL` or `0`.
-- On error, `goto EXIT` a single cleanup block rather than duplicating cleanup at each early return:
+- Test pointers and counts by truthiness (`if (data)`, `if (!data)`), never against `NULL` or `0`.
+- On error, `goto EXIT` a single cleanup block:
 ```c
 int foo(void) {
     int ret = -1;
-    resource_t *r = acquire();
-    if (!r) goto EXIT;
-    if (do_work(r) != 0) goto EXIT;
+    bar_t *bar = bar_create();
+    if (!bar) goto EXIT;
+    if (bar_fetch(bar) != 0) goto EXIT;
     ret = 0;
 EXIT:
-    release(r);
+    bar_destroy(bar);
     return ret;
 }
 ```
@@ -39,15 +39,7 @@ EXIT:
 Order: includes -> preprocessor -> typedefs -> extern vars -> static vars -> static functions -> public functions.
 
 ## Header files (`.h`)
-- Guard with `#ifndef`/`#define` (not `#pragma once`), named `<FILENAME>__` (e.g. `event_db.h` -> `EVENT_DB__`):
-```c
-#ifndef FILENAME__
-#define FILENAME__
-
-// ...
-
-#endif // FILENAME__
-```
+- Guard with `#ifndef`/`#define`, never `#pragma once`, named for the file and closed by a matching comment: `event_db.h` opens with `#ifndef EVENT_DB__` / `#define EVENT_DB__` and ends with `#endif // EVENT_DB__`.
 
 ## Structs
 - Always `typedef`; prefer anonymous.
@@ -88,7 +80,7 @@ _Static_assert(ARRAY_LEN(FOO_DATA) == FOO_COUNT, "FOO_DATA/FOO_COUNT mismatch");
 ```
 
 ## Style
-- Projects typically ship with a `.clang-format` file codifying stylistic preferences. Use it to format large sections of newly written code before reporting done.
-- Avoid explicit casts unless absolutely necessary. Use intermediate variables, preferably `const`, to invoke casting implicitly instead.
+- Before reporting done, format large sections of new code with the project's `.clang-format`.
+- Avoid explicit casts; convert implicitly through an intermediate variable, preferably `const`.
 - Head a section of code or a block of documentation with a `/* */` comment; `//` stays fine inline and trailing.
 - Spread a designated initializer over multiple lines whenever it sets more than one field: `{` opens on the designator's line, one field per line, trailing comma (see `FOO_DATA` above).

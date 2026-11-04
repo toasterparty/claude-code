@@ -10,6 +10,6 @@ Layout:
 - `test/` - not deployed; each hook has a `.sh`/`.ps1` runner pair asserting both twins against one shared `*-cases.tsv`. Run both runners after any edit to a hook - the two twins must decide identically
 - `install.sh` / `install.ps1` - idempotent deploy scripts; each replaces every top-level entry of `claude-code/` wholesale and key-merges `settings.json` (tracked keys win)
 
-The install scripts download the repo archive from GitHub `main`, so an edit here changes nothing live until the user pushes and reruns install.
+The install scripts download the repo archive at the commit `main` points at and stamp it into `<claude home>/.deployed-commit`, which the session-start hook compares against `main`. An edit here changes nothing live until the user pushes and reruns install.
 
 Update the README contents list whenever a file under `doc/` or `claude-code/` is added or removed.

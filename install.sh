@@ -2,10 +2,12 @@
 # Install/upgrade Claude Code and deploy this repo's config into ~/.claude.
 set -euo pipefail
 
-REPO_ARCHIVE="https://github.com/toasterparty/claude-code/archive/refs/heads/main.tar.gz"
+LATEST_COMMIT_URL="https://api.github.com/repos/toasterparty/claude-code/commits/main"
+REPO_ARCHIVE_URL="https://github.com/toasterparty/claude-code/archive"
 CLAUDE_DIR="${CLAUDE_DIR:-$HOME/.claude}"
 TMP_DIR=""
 SRC=""
+COMMIT=""
 
 log() { printf '==> %s\n' "$*" >&2; }
 cleanup() { [ -n "$TMP_DIR" ] && rm -rf "$TMP_DIR"; }
@@ -35,12 +37,15 @@ install_claude_code() {
     fi
 }
 
-# Download the repo and set SRC to the config directory within it.
+# Download the repo at the commit main points at and set SRC to the config directory within it.
+# Pinning the commit lets the session-start hook compare the deployed config against main.
 resolve_source() {
-    log "Downloading config from $REPO_ARCHIVE"
+    COMMIT="$(curl -fsSL "$LATEST_COMMIT_URL" | jq -r '.sha')"
+    local archive="$REPO_ARCHIVE_URL/$COMMIT.tar.gz"
+    log "Downloading config from $archive"
     TMP_DIR="$(mktemp -d)"
-    curl -fsSL "$REPO_ARCHIVE" | tar -xz -C "$TMP_DIR"
-    SRC="$TMP_DIR/claude-code-main/claude-code"
+    curl -fsSL "$archive" | tar -xz -C "$TMP_DIR"
+    SRC="$TMP_DIR/claude-code-$COMMIT/claude-code"
 }
 
 # Enforce the keys from the tracked settings.json onto the user's existing file,
@@ -67,7 +72,8 @@ merge_settings() {
 resolve_hook_placeholders() {
     jq --arg permission_gate "bash \"$CLAUDE_DIR/hooks/permission-gate.sh\"" \
         --arg prose_gate "bash \"$CLAUDE_DIR/hooks/prose-gate.sh\"" \
-        'walk(if . == "{{PERMISSION_GATE}}" then $permission_gate elif . == "{{PROSE_GATE}}" then $prose_gate else . end)' "$1"
+        --arg session_start "bash \"$CLAUDE_DIR/hooks/session-start.sh\"" \
+        'walk(if . == "{{PERMISSION_GATE}}" then $permission_gate elif . == "{{PROSE_GATE}}" then $prose_gate elif . == "{{SESSION_START}}" then $session_start else . end)' "$1"
 }
 
 # Replace each top-level entry of $CLAUDE_DIR that this repo owns with a fresh copy from $src,
@@ -84,6 +90,7 @@ sync_config() {
         cp -rf "$f" "$dest"
     done < <(find "$src" -mindepth 1 -maxdepth 1 -print0)
     merge_settings "$src/settings.json" "$CLAUDE_DIR/settings.json"
+    printf '%s\n' "$COMMIT" > "$CLAUDE_DIR/.deployed-commit"
 }
 
 check_requirements

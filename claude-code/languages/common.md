@@ -1,5 +1,5 @@
 # Common
-Before writing a test, read `practices/testing.md` in the Claude home directory. Before writing teardown or an error, warning, or failure message, read `practices/failures.md` there.
+Before writing a test, read `practices/testing.md`. Before writing teardown or an error, warning, or failure message, read `practices/failures.md`.
 
 - Prefer no comment: names, types, and structure carry the meaning. A comment earns its place only by stating a constraint the code cannot show, and never narrates a change or addresses the reviewer
 - A docstring gives the contract of a public API (inputs, outputs, invariants), never the implementation
@@ -11,7 +11,7 @@ Before writing a test, read `practices/testing.md` in the Claude home directory.
 - Every fallible call is checked, and its failure returned, asserted, logged, raised or remembered with what was being attempted. Discard a result only where failure is nominal - a `find` that comes up empty, a `try` variant the caller retries - or in teardown
 
 ## Verbs
-One verb per meaning, never a synonym, so one function name tells the reader the shape of the rest. Casing and separators follow the language; the verb does not change.
+One verb per meaning, never a synonym. Casing and separators follow the language; the verb does not change.
 
 | Verb | Means |
 | --- | --- |
@@ -21,17 +21,17 @@ One verb per meaning, never a synonym, so one function name tells the reader the
 | `calc` | derive from the arguments alone; reads and writes no state |
 | `find` | a search that may legitimately come up empty, where `get` presumes existence |
 | `is`/`has`/`can` | boolean question, no side effects |
-| `check` | report a bool, a status, or a log line, without rejecting or fixing anything - `validate`'s soft sibling |
+| `check` | report a bool, a status, or a log line, without rejecting or fixing anything |
 | `validate` | reject bad input by raising or returning an error, never a bool |
 | `ensure` | idempotent check-before-act: make the condition true, or return because it already is |
-| `sync` | reconcile two stores to matching state, bidirectional - `load`/`save` move in one direction only |
+| `sync` | reconcile two stores to matching state, bidirectional |
 | `try` | prefix for the variant that reports failure to the caller instead of aborting: `try_take`, `try_fetch` |
 | `to`/`as` | convert: `as` views the same data, `to` builds a copy |
 | `build` | assemble a compound value from several inputs, where no single one converts directly |
 | `poll`/`wait` | `poll` returns at once with what is ready; `wait` blocks until it is |
 | `on` | prefix for a handler something else invokes on an event; never for a function the code calls directly |
 
-Setup pairs with exactly one teardown, and the pairing is the signal: `init` is undone by `deinit`, never `free`; a reader who sees `open` looks for `close`.
+Setup pairs with exactly one teardown: `init` is undone by `deinit`, never `free`.
 
 | Pair | Applies to |
 | --- | --- |
@@ -59,4 +59,4 @@ Never `do`, `handle`, `process`, `manage`, `perform`: a category, not an effect.
 - Plural for a collection, singular for one of its elements
 - A boolean reads as a predicate - `is_ready`, `has_data` - never `ready_flag` or `status`
 - A literal other than 0 or 1 gets a name unless the call site already says what it is
-- Name length scales with scope: `i` in a loop and `data` in a short function are fine because the surrounding code says what they are; a symbol read far from its definition carries its meaning in full
+- Name length scales with scope: `i` in a loop and `data` in a short function are fine; a symbol read far from its definition carries its meaning in full
