@@ -5,6 +5,7 @@
 - Background long work only through the Bash/PowerShell `run_in_background` parameter, never shell backgrounding (`&`, `nohup`, `disown`, `Start-Job`, `Start-Process`)
 - Report what you did and where you deviated; never report a non-event these rules already guarantee (e.g. that nothing was committed)
 - No flattery
+- North American English spelling, conversation included
 
 # AI Strategy
 When executing a plan the user wrote, usually in `<repo>/.agent/inbox/`:
