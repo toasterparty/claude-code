@@ -2,7 +2,9 @@
 # PreToolUse gate (Linux/MacOS): auto-approve every tool call except the policy denials below.
 # Bash allow rules are matched against literal command text, so a generated command using shell
 # variables or substitution falls through them and prompts; deciding here bypasses that matcher.
-# permissions.deny in settings.json is kept as the fallback for when this hook fails to run.
+# permissions.deny in settings.json is kept as the fallback for when this hook fails to run. It omits
+# the verbs that also have read forms (branch, stash, reflog, worktree, submodule, bisect), because a
+# deny rule outranks this hook's allow and would block `git branch --show-current`.
 # The gate stops mistakes, not evasion: a command assembled at run time, such as `x=git; $x push`
 # or `subprocess.run(['git', 'push'])`, passes unseen.
 #

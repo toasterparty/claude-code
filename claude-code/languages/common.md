@@ -9,6 +9,7 @@ Before writing a test, read `practices/testing.md`. Before writing teardown or a
 - Small functions; standalone logic moves to a private function
 - Validate input once, where it enters the process; inside, assert invariants rather than re-checking
 - Every fallible call is checked, and its failure returned, asserted, logged, raised or remembered with what was being attempted. Discard a result only where failure is nominal - a `find` that comes up empty, a `try` variant the caller retries - or in teardown
+- Make invalid states unrepresentable: bools that do not vary independently are one enum, as is a bool return paired with an out-flag or `last_error`
 
 ## Verbs
 One verb per meaning, never a synonym. Casing and separators follow the language; the verb does not change.
