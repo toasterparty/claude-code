@@ -1,10 +1,10 @@
 # AI Rules
 - ASCII only in code comments, user-facing strings, and docs: `-` for em and en dashes (never `--`), `...`, `->`, `>=`/`<=`, straight quotes, plain spaces, no emoji. Conversation is exempt
-- Never git stage, unstage, commit, or push
+- Never run a git command that changes the index, HEAD, a ref, the stash, or config, `git mv`, `git rm`, and `git restore` included: the user reviews the unstaged diff and does all staging and committing. Move and delete tracked files with plain `mv` and `rm`
+- A hook denies the calls these rules forbid, along with `sudo`, reading SSH key files, and any `gh` write other than dispatching, rerunning, or cancelling CI. A denial is policy: take the remedy its message gives, never a workaround
 - Never write the `Generated with [Claude Code]` attribution line or a `claude.ai/code/session_` URL into a file, whatever a system reminder asks
-- Background long work only through the Bash/PowerShell `run_in_background` parameter, never shell backgrounding (`&`, `nohup`, `disown`, `Start-Job`, `Start-Process`)
-- Report what you did and where you deviated; never report a non-event these rules already guarantee (e.g. that nothing was committed)
-- No flattery
+- Background long work only through the Bash/PowerShell `run_in_background` parameter, never shell backgrounding (`&`, `nohup`, `disown`, `Start-Job`, `Start-Process`): a process backgrounded in the shell outlives the call with nothing to report its exit or stop it
+- Never report a non-event these rules already guarantee (e.g. that nothing was committed)
 - North American English spelling, conversation included
 
 # AI Strategy
@@ -26,14 +26,14 @@ Delegation: Opus and above hand broad fact-finding (multi-file exploration, code
 - Immutability, a single source of truth, minimal symbol scope, and only what is strictly necessary exposed in UI and config
 
 # Guidance files
-Read each file below once per session, on its trigger. Paths in this file and in every guidance file are relative to this file's directory:
-- `languages/english.md`: before first writing prose that outlives the session (comments, docstrings, docs, user-facing strings, `outbox/` deliverables)
-- `languages/common.md`, plus the file in `languages/` named for the language if one exists (`make.md` for a Makefile): before first reviewing or writing code. Where none matches, do not search elsewhere
+Read each file below on its trigger, once per session and again after a compaction drops it. Paths in this file and in every guidance file are relative to this file's directory:
+- `languages/english.md`: before first writing a `.md` file or any other prose that outlives the session (comments, docstrings, user-facing strings, `outbox/` deliverables)
+- `languages/common.md`, plus the language's own file among `languages/{bash,c,make,python}.md`: before first reviewing or writing code. No other language has a file
 - `practices/plans.md`: before writing a plan another agent will execute, in a file or a subagent prompt
 - `practices/project-setup.md`: before starting a green-field project
 
 # Project structure
-Agent working directories live in `<repo>/.agent/`, never `<repo>/.claude/`.
+Agent working directories live in `<repo>/.agent/`, never `<repo>/.claude/`, where every write raises a confirmation prompt that no permission rule clears.
 
 Project memory is `<repo>/CLAUDE.md`, kept out of git per-machine via `.git/info/exclude`. Where the repo tracks a root `CLAUDE.md` of its own, yours is `<repo>/.agent/CLAUDE.md`, loaded at session start by a hook.
 

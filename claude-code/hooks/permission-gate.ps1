@@ -121,7 +121,7 @@ $GhFieldPattern = '(^|\s)(-f|-F|--field|--raw-field|--input)(\s|=|$)'
 $GhReadMethods = @('GET', 'HEAD')
 
 $ReasonAllow = 'Auto-approved by permission-gate.'
-$ReasonGit = 'Commands that alter git state are reserved for the user.'
+$ReasonGit = 'Commands that alter git state (index, HEAD, refs, stash, config) are reserved for the user. Move or delete tracked files with plain mv and rm.'
 $ReasonGitApply = 'git apply may not stage what it applies; drop --index, --cached and --3way.'
 $ReasonSudo = 'Elevation is not permitted.'
 $ReasonSsh = 'SSH keys are reserved for the user.'

@@ -116,7 +116,7 @@ GH_FIELD_PATTERN='(^|[[:space:]])(-f|-F|--field|--raw-field|--input)([[:space:]]
 GH_READ_METHODS='GET|HEAD'
 
 REASON_ALLOW='Auto-approved by permission-gate.'
-REASON_GIT='Commands that alter git state are reserved for the user.'
+REASON_GIT='Commands that alter git state (index, HEAD, refs, stash, config) are reserved for the user. Move or delete tracked files with plain mv and rm.'
 REASON_GIT_APPLY='git apply may not stage what it applies; drop --index, --cached and --3way.'
 REASON_SUDO='Elevation is not permitted.'
 REASON_SSH='SSH keys are reserved for the user.'

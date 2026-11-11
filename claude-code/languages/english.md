@@ -3,13 +3,13 @@ Prose that outlives the session follows the Concise+ output style, plus this fil
 
 Before writing one of these, also read its file:
 - A README, PR description, implementation report, or tracked doc: `practices/artifacts.md`
-- Instructions or docs layered across files - a `CLAUDE.md`, a skill, guidance files, a doc tree: `practices/progressive-disclosure.md`
+- Instructions for an agent, or docs layered across files - a `CLAUDE.md`, a skill, a guidance file, a doc tree: `practices/progressive-disclosure.md`
 
 ## Content
 - Name the reader and what they arrive needing to do before writing: that need decides what goes in.
-- Every sentence carries a fact its subject cannot state itself, or it goes. Deletion is the default fix, rewriting the fallback.
+- Every sentence tells the reader something that the code, diff, or data it describes does not already show, or it goes. Fix a failing sentence by deleting it, and rewrite it only when deletion loses a fact.
 - Why, never what: never restate the diff or the data.
-- Stop at the surprising fact, but never cut a step not yet executed: it is a proposal.
+- Stop once the reader has the facts they would not have guessed. The exception is a step not yet executed: keep every one, because the reader has to see a proposal in full to approve it.
 - Name a symbol, path, or `file:line` only where the location itself is the news; otherwise describe the behavior.
 - Prefer the doc that cannot go stale: self-describing code beats invariant docs beats narrative docs. Cut detail specific enough to couple the doc to the implementation.
 - Never restate the heading before answering it or stub a section to satisfy a template.
@@ -27,4 +27,4 @@ Before writing one of these, also read its file:
 - Dates and times in ISO 8601: `2026-10-09`, `2026-10-09T14:30`.
 
 ## Audit
-Before reporting done, reread every artifact the session wrote and cut what fails the rules above. Opus and above hand the pass to an Opus subagent on fresh context wherever the artifact can be judged without the session's history. On a complex task, expect the pass to end near two thirds of the starting length: cut the section that restates another, and the detail that survived only because it was expensive to learn.
+Before reporting done, reread every artifact the session wrote and cut what fails the rules above. Opus and above hand the pass to an Opus subagent on fresh context for an artifact over 100 lines that can be judged without the session's history. On a complex task, expect the pass to end near two thirds of the starting length: cut the section that restates another, and the detail that survived only because it was expensive to learn.
