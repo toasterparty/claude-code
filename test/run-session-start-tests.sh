@@ -36,10 +36,10 @@ done < "$SCRIPT_DIR/session-start-cases.tsv"
 FIXTURE_DIR="$(mktemp -d)"
 trap 'rm -rf "$FIXTURE_DIR"' EXIT
 mkdir -p "$FIXTURE_DIR/with/.agent" "$FIXTURE_DIR/without"
-printf 'memory\n' > "$FIXTURE_DIR/with/.agent/CLAUDE.md"
+printf 'memory\n' > "$FIXTURE_DIR/with/.agent/AGENTS.md"
 
-check "$FIXTURE_DIR/with/.agent/CLAUDE.md" "$(find_project_memory "$FIXTURE_DIR/with")" 'directory holding .agent/CLAUDE.md'
-check '' "$(find_project_memory "$FIXTURE_DIR/without")" 'directory without .agent/CLAUDE.md'
+check "$FIXTURE_DIR/with/.agent/AGENTS.md" "$(find_project_memory "$FIXTURE_DIR/with")" 'directory holding .agent/AGENTS.md'
+check '' "$(find_project_memory "$FIXTURE_DIR/without")" 'directory without .agent/AGENTS.md'
 
 for source in startup clear compact; do
     check 1 "$([[ $source =~ $MEMORY_SOURCES ]] && echo 1 || echo 0)" "memory loads on $source"

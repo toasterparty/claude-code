@@ -31,15 +31,18 @@ Read each file below on its trigger, once per session and again after a compacti
 - `languages/common.md`, plus the language's own file among `languages/{bash,c,make,python}.md`: before first reviewing or writing code. No other language has a file
 - `practices/plans.md`: before writing a plan another agent will execute, in a file or a subagent prompt
 - `practices/project-setup.md`: before starting a green-field project
+- `practices/agenda.md`: before first reading or editing a project's agenda
 
 # Project structure
 Agent working directories live in `<repo>/.agent/`, never `<repo>/.claude/`, where every write raises a confirmation prompt that no permission rule clears.
 
-Project memory is `<repo>/CLAUDE.md`, kept out of git per-machine via `.git/info/exclude`. Where the repo tracks a root `CLAUDE.md` of its own, yours is `<repo>/.agent/CLAUDE.md`, loaded at session start by a hook.
+Project instructions are two files, both loaded at session start: `<repo>/AGENTS.md`, tracked and shared with the repo's other developers, and `<repo>/.agent/AGENTS.md`, untracked and yours alone (project memory). Claude Code loads the first natively and a hook loads the second. A root `CLAUDE.md`, which other developers' repos may carry, still loads beside them. Create neither file unasked, since the user decides when a repo gets instructions. When the user asks for agent instructions in a repo, put them in one of these two files, never in a new `CLAUDE.md`.
+
+The agenda is the project's live to-do list: `<repo>/.agent/doc/agenda.md`, or `<repo>/.agent/doc/agenda/index.md` once split. Read it when the user asks about it or what's next. Before reporting a task done, update it with what the session resolved and left open, because you cannot tell which turn will be your last. A hook reminds you of this once per session, after your first edit outside `.agent/`. Only the top-level session edits it. A subagent reports agenda items in its result instead, so parallel agents never collide in one file.
 
 `<repo>/.agent/` is untracked (its `.gitignore` is the single line `*`):
 - `inbox/`: the user's - plans, raw data, design docs, reference implementations. Read-only to you; search it before researching externally
 - `outbox/`: yours - deliverables such as reports and samples for review. A deliverable goes to a file only when the user or the running skill asks for one, and lands here unless they give a path
 - `scripts/`: yours - reusable, argument-driven executables, nothing task-specific. Whatever a script reads or writes goes in `scripts/data/<script-name>/`
 - `doc/`: yours - knowledge that outlives the task that produced it
-- `scripts/` and `doc/` each keep an `index.md`, one bullet per entry: its path relative to the index in inline code, then when an agent would need to read it, never a summary of what it contains. `scripts/data/` is not indexed
+- `scripts/` and `doc/` each keep an `index.md`, one bullet per entry: its path relative to the index in inline code, then when an agent would need to read it, never a summary of what it contains. `scripts/data/` and the agenda are not indexed

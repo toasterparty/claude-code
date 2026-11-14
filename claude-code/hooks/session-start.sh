@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# SessionStart hook (Linux/MacOS): load the project memory in <repo>/.agent/CLAUDE.md, which Claude
+# SessionStart hook (Linux/MacOS): load the project memory in <repo>/.agent/AGENTS.md, which Claude
 # Code itself loads only once a file under .agent/ is read, and warn the user when the deployed
-# config lags main. Install stamps the deployed commit beside hooks/.
+# config lags main. Install stamps the deployed commit beside hooks/. The root AGENTS.md loads
+# natively through pluginConfigs in settings.json, so printing it here would load it twice.
 #
 # Every change here is mirrored in session-start.ps1, and test/session-start-cases.tsv must pass on both.
 
@@ -19,7 +20,7 @@ DRIFT_SOURCES='^startup$'
 find_project_memory() {
     local cwd="$1" top
     top="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$cwd")"
-    [[ -f $top/.agent/CLAUDE.md ]] && printf '%s' "$top/.agent/CLAUDE.md"
+    [[ -f $top/.agent/AGENTS.md ]] && printf '%s' "$top/.agent/AGENTS.md"
     return 0
 }
 

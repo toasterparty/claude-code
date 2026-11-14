@@ -1,6 +1,7 @@
-# SessionStart hook (Windows): load the project memory in <repo>/.agent/CLAUDE.md, which Claude
+# SessionStart hook (Windows): load the project memory in <repo>/.agent/AGENTS.md, which Claude
 # Code itself loads only once a file under .agent/ is read, and warn the user when the deployed
-# config lags main. Install stamps the deployed commit beside hooks/.
+# config lags main. Install stamps the deployed commit beside hooks/. The root AGENTS.md loads
+# natively through pluginConfigs in settings.json, so printing it here would load it twice.
 #
 # Every change here is mirrored in session-start.sh, and test/session-start-cases.tsv must pass on both.
 param(
@@ -24,7 +25,7 @@ function Find-ProjectMemory($cwd) {
     $top = $null
     try { $top = git -C $cwd rev-parse --show-toplevel 2>$null } catch {}
     if (-not $top) { $top = $cwd }
-    $path = Join-Path $top '.agent/CLAUDE.md'
+    $path = Join-Path $top '.agent/AGENTS.md'
     if (Test-Path -LiteralPath $path -PathType Leaf) { return $path }
 }
 

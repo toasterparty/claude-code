@@ -34,10 +34,10 @@ foreach ($line in Get-Content (Join-Path $PSScriptRoot 'session-start-cases.tsv'
 $fixtureDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
 New-Item -ItemType Directory -Path (Join-Path $fixtureDir 'with\.agent'), (Join-Path $fixtureDir 'without') | Out-Null
 try {
-    Set-Content -LiteralPath (Join-Path $fixtureDir 'with\.agent\CLAUDE.md') -Value 'memory'
+    Set-Content -LiteralPath (Join-Path $fixtureDir 'with\.agent\AGENTS.md') -Value 'memory'
 
-    Test-Case (Join-Path (Join-Path $fixtureDir 'with') '.agent/CLAUDE.md') (Find-ProjectMemory (Join-Path $fixtureDir 'with')) 'directory holding .agent/CLAUDE.md'
-    Test-Case '' (Find-ProjectMemory (Join-Path $fixtureDir 'without')) 'directory without .agent/CLAUDE.md'
+    Test-Case (Join-Path (Join-Path $fixtureDir 'with') '.agent/AGENTS.md') (Find-ProjectMemory (Join-Path $fixtureDir 'with')) 'directory holding .agent/AGENTS.md'
+    Test-Case '' (Find-ProjectMemory (Join-Path $fixtureDir 'without')) 'directory without .agent/AGENTS.md'
 }
 finally {
     Remove-Item -Recurse -Force $fixtureDir

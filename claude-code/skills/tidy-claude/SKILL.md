@@ -1,6 +1,6 @@
 ---
 name: tidy-claude
-description: Tidy the current repository's .agent/ directory into the standard inbox/outbox/scripts/doc layout - scaffold the dirs, migrate legacy ones including the old .claude/ layout, archive finished work, purge regenerable junk, repair the indexes.
+description: Tidy the current repository's .agent/ directory into the standard inbox/outbox/scripts/doc layout - scaffold the dirs, migrate legacy ones including the old .claude/ layout and CLAUDE.md project memory, archive finished work, purge regenerable junk, repair the indexes.
 disable-model-invocation: true
 ---
 
@@ -9,7 +9,7 @@ Bring `<repo>/.agent/` into the layout the user CLAUDE.md defines, running the p
 Survey with one recursive listing carrying sizes and dates, and open a file only when its name, size, and location leave its fate open. Batch moves and deletes into as few shell calls as possible rather than one tool call per file.
 
 ## Scope
-Touch only the four layout dirs under `.agent/` and the legacy locations they replace: `<repo>/.claude/{inbox,outbox,scripts,doc}/` and the older `plans/`, `reference/`, `agent/`. Leave everything else in `<repo>/.claude/` alone. Remove a legacy dir from `.claude/` only once its contents are safely moved.
+Touch only the four layout dirs under `.agent/`, the project instruction files, and the legacy locations they replace: `<repo>/.claude/{inbox,outbox,scripts,doc}/`, the older `plans/`, `reference/`, `agent/`, and `CLAUDE.md` at the repo root, in `.agent/`, or in `.claude/`. Leave everything else in `<repo>/.claude/` alone. Remove a legacy dir from `.claude/` only once its contents are safely moved.
 
 Never edit a file under `inbox/`. Moving a whole file out of a legacy location is the one change allowed against user content.
 
@@ -18,7 +18,8 @@ Create whichever of the four layout dirs are missing, and keep them even when em
 
 ## 2. Migrate legacy layouts
 - `.claude/{inbox,outbox,scripts,doc}/*` -> the matching dir under `.agent/`, subdirectories intact
-- `.claude/CLAUDE.md` -> project memory, at the path the user CLAUDE.md gives
+- `.agent/CLAUDE.md`, `.claude/CLAUDE.md`, and an untracked root `CLAUDE.md` -> `.agent/AGENTS.md`, appending to it where it already exists
+- a tracked root `CLAUDE.md` -> `AGENTS.md`, only on the user's answer in step 3, appending to a tracked `AGENTS.md` where one exists. Move it with plain `mv`, leaving the rename for the user to stage
 - `reference/*` -> `inbox/`
 - `plans/*` -> `inbox/`, and its `archive/` or `_archive/` subdirs -> `inbox/_archive/`
 - `agent/` scripts -> `scripts/` if worth reusing, otherwise delete
@@ -27,6 +28,8 @@ Create whichever of the four layout dirs are missing, and keep them even when em
 
 ## 3. Resolve ambiguity
 A file is archived once its work is finished. Ambiguous means neither the file, the repo, nor git history settles that: a plan with unchecked boxes, a report on an unmerged branch, a script whose target still exists.
+
+A tracked root `CLAUDE.md` always counts as ambiguous: rename it only in a repo the user owns, and only the user can say whether they own it, since a work repo's remote names an org rather than an owner. Other developers' repos keep their `CLAUDE.md`.
 
 Collect these during the survey and ask them in one AskUserQuestion batch before the first destructive move, one question per file or related group, each option stating the action it triggers. Whatever the user leaves unresolved stays where it is. Never archive or delete on a guess.
 
@@ -68,7 +71,7 @@ Create or repair `scripts/index.md` and `doc/index.md` in the format the user CL
 ## 7. Ignore rules
 Make `.agent/.gitignore` the single line `*`, dropping any un-ignore exceptions a legacy layout left behind, `!CLAUDE.md` included.
 
-If `git ls-files --error-unmatch CLAUDE.md` fails, append `CLAUDE.md` to `.git/info/exclude` unless already present. If it succeeds, the root `CLAUDE.md` is the team's: leave it and the ignore rules untouched.
+Once an untracked root `CLAUDE.md` has moved, delete its line from `.git/info/exclude`, which an older layout added to keep it out of git.
 
 Files already committed stay tracked until the user untracks them. Never touch the git index.
 

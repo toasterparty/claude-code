@@ -31,7 +31,7 @@ Free text through `Other` covers anything else. A scope too large to carry throu
 
 ## 2. Load guidance
 
-Find and read the user's and the project's standards that apply to the files in scope: coding, testing, and writing rules, `CLAUDE.md` files, style guides, lint config. Step 5 converges the code on them.
+Find and read the user's and the project's standards that apply to the files in scope: coding, testing, and writing rules, `CLAUDE.md` and `AGENTS.md` files, style guides, lint config. Step 5 converges the code on them.
 
 Find the plan behind the scope, if one exists: a document the branch or commit implemented, matched by commit message, branch name, or topic. Read it for the intent the change serves. What it asked for is deliberate however odd it looks.
 
@@ -151,5 +151,9 @@ Recommendation: (a)
 ```
 
 Then close each earlier item this pass settled by appending `[<status>: <this report's path, or chat>]` to its first line in its own report: `resolved` when implemented or found addressed, `dropped` on `Drop`, and `moved` when it lands in this report's `Needs your review`. Each open item thus lives in exactly one report.
+
+Archive an earlier report this pass left with no open item: `mv` it into `_archive/` in the report directory, creating the directory on first use.
+
+Then update the agenda. Add one item for each open item in this report's `Needs your review`, grouping the ones that would be resolved together, each linking the report. Remove the agenda item of every earlier item this pass closed, and any item asking for this scope to be refined.
 
 Name a written report by its repo-relative path and give the highlights in a sentence or two.

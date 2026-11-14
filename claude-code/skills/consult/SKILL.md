@@ -35,14 +35,14 @@ Each question:
 - **Stays neutral** - mark `(Recommended)`, with the reason, only where one option is strongly advisable
 - **Shows its history** - revisiting a decision quotes it, from a report or the session, and says why it is back
 
-Where `AskUserQuestion` is unavailable (a headless run, a subagent), write the questions and your lean on each under `Open` at the report path, then stop.
+Where `AskUserQuestion` is unavailable (a headless run, a subagent), write the questions and your lean on each under `Open` at the report path, add an agenda item linking the report (as a subagent, name the item in your result instead), then stop.
 
 ## 4. Close
 Flag answers that conflict with each other, the standards, or research findings, and ask the user to resolve them.
 
 State the conclusions in chat, then ask with a `multiSelect` `AskUserQuestion` for any of the following, carried out in this order:
 - Write a report to the report path, in the format below
-- Capture the conclusions in the project's documentation, naming the file in the option: the doc where the topic lives, and `CLAUDE.md` only for what every session needs
+- Capture the conclusions in the project's documentation, naming the file in the option: the doc where the topic lives, and `AGENTS.md` only for what every session needs
 - Implement all conclusions now, without further confirmation
 
 ```
@@ -57,3 +57,7 @@ State the conclusions in chat, then ask with a `multiSelect` `AskUserQuestion` f
 ## Open
 - <question left unanswered, with your lean if the user never saw it>
 ```
+
+Then update the agenda. Remove any item asking for this subject to be consulted. Add one item for each question left open, and one for the conclusions unless they were implemented, grouping the ones that would be resolved together and linking the report where one was written.
+
+Archive a report once nothing in it remains open, this one included: `mv` it into `.agent/outbox/consult/_archive/`, creating the directory on first use, and drop its agenda items.

@@ -73,7 +73,8 @@ resolve_hook_placeholders() {
     jq --arg permission_gate "bash \"$CLAUDE_DIR/hooks/permission-gate.sh\"" \
         --arg prose_gate "bash \"$CLAUDE_DIR/hooks/prose-gate.sh\"" \
         --arg session_start "bash \"$CLAUDE_DIR/hooks/session-start.sh\"" \
-        'walk(if . == "{{PERMISSION_GATE}}" then $permission_gate elif . == "{{PROSE_GATE}}" then $prose_gate elif . == "{{SESSION_START}}" then $session_start else . end)' "$1"
+        --arg agenda_reminder "bash \"$CLAUDE_DIR/hooks/agenda-reminder.sh\"" \
+        'walk(if . == "{{PERMISSION_GATE}}" then $permission_gate elif . == "{{PROSE_GATE}}" then $prose_gate elif . == "{{SESSION_START}}" then $session_start elif . == "{{AGENDA_REMINDER}}" then $agenda_reminder else . end)' "$1"
 }
 
 # Replace each top-level entry of $CLAUDE_DIR that this repo owns with a fresh copy from $src,

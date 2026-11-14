@@ -84,6 +84,18 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "^(Write|Edit|NotebookEdit)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{AGENDA_REMINDER}}",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   },
   "disableArtifact": true,
@@ -100,5 +112,10 @@
   "precomputeCompactionEnabled": false,
   "terminalProgressBarEnabled": false,
   "autoMemoryEnabled": false,
+  "pluginConfigs": {
+    "cc-plugin-agents-md@builtin": {
+      "options": { "instructionFiles": "claude-md-and-agents-md" }
+    }
+  },
   "outputStyle": "Concise+"
 }

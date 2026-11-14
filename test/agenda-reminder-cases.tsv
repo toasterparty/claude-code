@@ -1,0 +1,25 @@
+# Expected agenda-reminder decision, tab, 1 when a subagent made the edit, tab, 1 when the session
+# was already reminded, tab, edited file. Both hooks must agree on every line. Blank lines and
+# # lines are skipped. A missing fourth field stands for a tool call with no file path.
+
+# The first edit to a project file reminds
+remind	0	0	/repo/src/main.c
+remind	0	0	/repo/README.md
+remind	0	0	C:\Users\x\repo\src\main.c
+remind	0	0
+
+# One reminder per session
+skip	0	1	/repo/src/main.c
+
+# Only the top-level session edits the agenda
+skip	1	0	/repo/src/main.c
+
+# The agent's working files are not project work
+skip	0	0	/repo/.agent/doc/agenda.md
+skip	0	0	/repo/.agent/outbox/report.md
+skip	0	0	C:\Users\x\repo\.agent\doc\agenda.md
+skip	0	0	.agent/scripts/build.sh
+
+# A name that only resembles the working directory is project work
+remind	0	0	/repo/my.agent/notes.md
+remind	0	0	/repo/.agents/notes.md
