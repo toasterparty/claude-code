@@ -42,9 +42,30 @@ try {
 {"type":"assistant","message":{"content":[{"type":"tool_use","name":"Grep","input":{"path":"/repo/languages","pattern":"english.md"}}]}}
 '@
 
-    Test-Case $true (Test-EnglishMdInContext (Join-Path $fixtureDir 'read.jsonl')) 'transcript holding a read of english.md'
-    Test-Case $false (Test-EnglishMdInContext (Join-Path $fixtureDir 'mention.jsonl')) 'transcript that only names english.md'
-    Test-Case $true (Test-EnglishMdInContext (Join-Path $fixtureDir 'absent.jsonl')) 'unreadable transcript fails open'
+    $englishText = Get-Content -LiteralPath $EnglishPath -Raw
+    $sentinel = Get-EnglishSentinel $englishText
+
+    # A shell read leaves the file's text in a tool_result, never a file_path.
+    function Write-ToolResultFixture($name, $text) {
+        $line = ConvertTo-Json @{ type = 'user'; message = @{ content = @(@{ type = 'tool_result'; content = $text }) } } -Depth 5 -Compress
+        Set-Content -LiteralPath (Join-Path $fixtureDir $name) -Value $line
+    }
+    Write-ToolResultFixture 'cat.jsonl' $englishText
+    Write-ToolResultFixture 'denial.jsonl' "PreToolUse:Write hook error: $(Get-DenialReason $englishText)"
+
+    $mention = Join-Path $fixtureDir 'mention.jsonl'
+    Test-Case $true ($sentinel.Length -ge 40) 'sentinel is a distinctive line of english.md'
+    Test-Case $true (Test-EnglishMdInContext (Join-Path $fixtureDir 'read.jsonl') $sentinel) 'transcript holding a read of english.md'
+    Test-Case $true (Test-EnglishMdInContext (Join-Path $fixtureDir 'cat.jsonl') $sentinel) 'transcript holding english.md read through a shell'
+    Test-Case $true (Test-EnglishMdInContext (Join-Path $fixtureDir 'denial.jsonl') $sentinel) 'transcript holding an earlier denial'
+    Test-Case $false (Test-EnglishMdInContext $mention $sentinel) 'transcript that only names english.md'
+    Test-Case $false (Test-EnglishMdInContext $mention '') 'missing english.md leaves no empty sentinel matching everything'
+    Test-Case $true (Test-EnglishMdInContext (Join-Path $fixtureDir 'absent.jsonl') $sentinel) 'unreadable transcript fails open'
+    Test-Case $ReasonUnread (Get-DenialReason '') 'missing english.md falls back to asking for a read'
+
+    $request = ConvertTo-Json @{ tool_input = @{ file_path = '/repo/README.md' }; transcript_path = $mention } -Compress
+    $denial = ($request | pwsh -NoProfile -File (Join-Path $TopDir 'claude-code\hooks\prose-gate.ps1') | ConvertFrom-Json).hookSpecificOutput.permissionDecisionReason
+    Test-Case $true ($denial.Contains($sentinel)) 'hook denial is valid JSON carrying english.md'
 }
 finally {
     Remove-Item -Recurse -Force $fixtureDir

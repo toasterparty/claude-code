@@ -42,13 +42,32 @@ cat >"$FIXTURE_DIR/mention.jsonl" <<'EOF'
 {"type":"assistant","message":{"content":[{"type":"tool_use","name":"Grep","input":{"path":"/repo/languages","pattern":"english.md"}}]}}
 EOF
 
+english_text="$(cat -- "$ENGLISH_PATH")"
+sentinel="$(english_sentinel "$english_text")"
+
+# A shell read leaves the file's text in a tool_result, never a file_path.
+jq -cn --arg text "$english_text" \
+    '{type: "user", message: {content: [{type: "tool_result", content: $text}]}}' >"$FIXTURE_DIR/cat.jsonl"
+jq -cn --arg text "PreToolUse:Write hook error: $(build_denial_reason "$english_text")" \
+    '{type: "user", message: {content: [{type: "tool_result", content: $text}]}}' >"$FIXTURE_DIR/denial.jsonl"
+
 in_context() {
-    if english_md_in_context "$1"; then echo 1; else echo 0; fi
+    if english_md_in_context "$1" "$2"; then echo 1; else echo 0; fi
 }
 
-check 1 "$(in_context "$FIXTURE_DIR/read.jsonl")" 'transcript holding a read of english.md'
-check 0 "$(in_context "$FIXTURE_DIR/mention.jsonl")" 'transcript that only names english.md'
-check 1 "$(in_context "$FIXTURE_DIR/absent.jsonl")" 'unreadable transcript fails open'
+check 1 "$([[ ${#sentinel} -ge 40 ]] && echo 1 || echo 0)" 'sentinel is a distinctive line of english.md'
+check 1 "$(in_context "$FIXTURE_DIR/read.jsonl" "$sentinel")" 'transcript holding a read of english.md'
+check 1 "$(in_context "$FIXTURE_DIR/cat.jsonl" "$sentinel")" 'transcript holding english.md read through a shell'
+check 1 "$(in_context "$FIXTURE_DIR/denial.jsonl" "$sentinel")" 'transcript holding an earlier denial'
+check 0 "$(in_context "$FIXTURE_DIR/mention.jsonl" "$sentinel")" 'transcript that only names english.md'
+check 0 "$(in_context "$FIXTURE_DIR/mention.jsonl" '')" 'missing english.md leaves no empty sentinel matching everything'
+check 1 "$(in_context "$FIXTURE_DIR/absent.jsonl" "$sentinel")" 'unreadable transcript fails open'
+check "$REASON_UNREAD" "$(build_denial_reason '')" 'missing english.md falls back to asking for a read'
+
+denial="$(jq -cn --arg file_path /repo/README.md --arg transcript "$FIXTURE_DIR/mention.jsonl" \
+    '{tool_input: {file_path: $file_path}, transcript_path: $transcript}' \
+    | bash "$TOP_DIR/claude-code/hooks/prose-gate.sh" | jq -r '.hookSpecificOutput.permissionDecisionReason')"
+check 1 "$([[ $denial == *"$sentinel"* ]] && echo 1 || echo 0)" 'hook denial is valid JSON carrying english.md'
 
 printf '%s/%s passed\n' "$((total - failed))" "$total"
 [[ $failed -eq 0 ]]
