@@ -1,6 +1,6 @@
 ---
-name: tidy-claude
-description: Tidy the current repository's .agent/ directory into the standard inbox/outbox/scripts/doc layout - scaffold the dirs, migrate legacy ones including the old .claude/ layout and CLAUDE.md project memory, archive finished work, purge regenerable junk, repair the indexes.
+name: tidy
+description: Tidy the current repository's .agent/ directory into the standard inbox/outbox/scripts/doc layout - scaffold the dirs, migrate legacy ones including the old .claude/ layout and CLAUDE.md project memory, archive finished work, drop agenda items already addressed, add agenda items for unaddressed inbox assets, purge regenerable junk, repair the indexes.
 disable-model-invocation: true
 ---
 
@@ -9,7 +9,7 @@ Bring `<repo>/.agent/` into the layout the user CLAUDE.md defines, running the p
 Survey with one recursive listing carrying sizes and dates, and open a file only when its name, size, and location leave its fate open. Batch moves and deletes into as few shell calls as possible rather than one tool call per file.
 
 ## Scope
-Touch only the four layout dirs under `.agent/`, the project instruction files, and the legacy locations they replace: `<repo>/.claude/{inbox,outbox,scripts,doc}/`, the older `plans/`, `reference/`, `agent/`, and `CLAUDE.md` at the repo root, in `.agent/`, or in `.claude/`. Leave everything else in `<repo>/.claude/` alone. Remove a legacy dir from `.claude/` only once its contents are safely moved.
+Touch only the four layout dirs under `.agent/`, the agenda, the project instruction files, and the legacy locations they replace: `<repo>/.claude/{inbox,outbox,scripts,doc}/`, the older `plans/`, `reference/`, `agent/`, and `CLAUDE.md` at the repo root, in `.agent/`, or in `.claude/`. Leave everything else in `<repo>/.claude/` alone. Remove a legacy dir from `.claude/` only once its contents are safely moved.
 
 Never edit a file under `inbox/`. Moving a whole file out of a legacy location is the one change allowed against user content.
 
@@ -20,6 +20,7 @@ Create whichever of the four layout dirs are missing, and keep them even when em
 - `.claude/{inbox,outbox,scripts,doc}/*` -> the matching dir under `.agent/`, subdirectories intact
 - `.agent/CLAUDE.md`, `.claude/CLAUDE.md`, and an untracked root `CLAUDE.md` -> `.agent/AGENTS.md`, appending to it where it already exists
 - a tracked root `CLAUDE.md` -> `AGENTS.md`, only on the user's answer in step 3, appending to a tracked `AGENTS.md` where one exists. Move it with plain `mv`, leaving the rename for the user to stage
+- `scripts/data/tidy-claude/` -> `scripts/data/tidy/`, merging into it where it exists
 - `reference/*` -> `inbox/`
 - `plans/*` -> `inbox/`, and its `archive/` or `_archive/` subdirs -> `inbox/_archive/`
 - `agent/` scripts -> `scripts/` if worth reusing, otherwise delete
@@ -31,12 +32,19 @@ A file is archived once its work is finished. Ambiguous means neither the file, 
 
 A tracked root `CLAUDE.md` always counts as ambiguous: rename it only in a repo the user owns, and only the user can say whether they own it, since a work repo's remote names an org rather than an owner. Other developers' repos keep their `CLAUDE.md`.
 
-Collect these during the survey and ask them in one AskUserQuestion batch before the first destructive move, one question per file or related group, each option stating the action it triggers. Whatever the user leaves unresolved stays where it is. Never archive or delete on a guess.
+Collect these during the survey, agenda items of unproven status and inbox assets of unclear status (step 4a) among them, and ask them in one AskUserQuestion batch before the first destructive move, one question per file or related group, each option stating the action it triggers. Whatever the user leaves unresolved stays where it is. Never archive or delete on a guess.
 
 ## 4. Purge and archive
 Delete regenerable artifacts outright: caches, `__pycache__`, virtualenvs, build outputs, logs, re-downloadable binaries. `scripts/data/` collects them fastest.
 
 Everything else keeps its bytes. Never delete non-regenerable data (captured baselines, recorded measurements, one-off datasets), whatever its size. Files tied to a resolved issue move into an `_archive/` inside their current directory.
+
+## 4a. Reconcile the agenda
+Read `practices/agenda.md` first. Then check the agenda both ways against `inbox/`, `outbox/`, `doc/`, the repo, and git history.
+
+Drop an item once the evidence proves it addressed: a commit containing its change, the described behavior or file present in the repo, a plan whose boxes are all checked and whose changes landed, a decision recorded in a doc or plan. An item with only partial or circumstantial evidence goes to step 3, and is dropped on the user's confirmation. Never drop on a guess.
+
+Add an item for each asset that shows open work and has none: an `inbox/` plan or design doc nobody executed, raw data nobody analyzed, an `outbox/` report with open questions, a TODO left in a doc. Skip an asset that is archived, already linked from an item, or reference material, and an asset the evidence shows was executed or absorbed. Where it is unclear whether an asset still wants action, ask in step 3. Insert each new item by its priority, per the agenda rules, and move no existing item.
 
 ## 5. Generalize
 Rewrite surviving scripts and docs so an agent on another task can use them: strip one-off paths, task-specific names, and hardcoded inputs in favor of arguments. Leave files that are already general unedited.
@@ -55,7 +63,7 @@ Worth a script: a multi-command procedure repeated across sessions or rebuilt ea
 Write each new script under the same rules as the generalized ones: argument-driven, idempotent, non-interactive, no repo-specific path.
 
 ### 5b. Skim ledger
-Never skim the same bytes twice. The ledger is `scripts/data/tidy-claude/skimmed.tsv`: one line per transcript, `<session-id>`, tab, its size in bytes when skimmed. List the transcript directory with sizes and compare:
+Never skim the same bytes twice. The ledger is `scripts/data/tidy/skimmed.tsv`: one line per transcript, `<session-id>`, tab, its size in bytes when skimmed. List the transcript directory with sizes and compare:
 
 - absent, or smaller than recorded (rotated) - skim the whole file
 - larger - skim only the tail, from `tail -c +<recorded + 1>`
@@ -79,4 +87,4 @@ Files already committed stay tracked until the user untracks them. Never touch t
 Update project memory to match the tidied directory and cut its bloat: stale paths, rules the user CLAUDE.md already carries, prose that restates itself.
 
 ## Report
-List the moves, deletions, and generalized files. Name each step 5 script and the procedure it replaces, give transcripts skimmed against transcripts skipped, and flag anything left in place because its fate was unclear.
+List the moves, deletions, and generalized files, the agenda items dropped with their evidence, and the items added with their source asset. Name each step 5 script and the procedure it replaces, give transcripts skimmed against transcripts skipped, and flag anything left in place because its fate was unclear.

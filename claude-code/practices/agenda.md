@@ -33,7 +33,7 @@ Add a review item only for a change that is controversial, or whose details the 
 - Remove what the session resolved and add what it left open. A session that changed nothing open leaves the agenda alone.
 - Check older items against `inbox/`, `outbox/` reports and their open questions, and recent git history. A commit containing an item's change resolves it, and so does a deliverable that finished it.
 - Remove an item whose linked document is gone, unless the work it named is still open.
-- Archive only your own reports in `outbox/`, as the skill that wrote them directs. A finished plan in `inbox/` loses its item and stays where it is, because `inbox/` is the user's: `/tidy-claude` archives it on their answer.
+- Archive only your own reports in `outbox/`, as the skill that wrote them directs. A finished plan in `inbox/` loses its item and stays where it is, because `inbox/` is the user's: `/tidy` archives it on their answer.
 
 ## What's next
 Answer "What's next on the agenda?" with the top item: what resolving it takes and why it ranks first, then a line each for the next two. Stop there. The user agrees or reorders, then asks next turn to implement it or to walk through its decisions.
