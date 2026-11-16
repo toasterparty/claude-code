@@ -14,20 +14,26 @@ Observable behavior is whatever anything outside the code can see: a public API'
 - Branch: `git branch --show-current`, or `detached` where it prints nothing. Resolve it with the report path
 - Base branch: `main`
 
-## 1. Scope
+## 1. Scope and mode
 
 Scope is what this pass may touch. File and directory scope is absolute. Diff scope is loose: the diff plus the neighboring code and files it relates to. Diff a commit against the working tree (`git diff <commit>`), never against `HEAD`, so uncommitted work counts. Steer away from code a recent report in the report directory refined, unless it has changed since that report's commit; each report's `Scope` section says what it covered, so read no further.
 
 Scope given with the invocation is used as-is. Otherwise resolve it with `AskUserQuestion` from these options, omitting empty ones and merging staged and unstaged into one uncommitted option when more than four remain:
+- A component, feature, or set of files of your choosing, topical to recent work. Name it in the option
 - The staged diff
 - The unstaged diff
 - This branch against the base branch
 - The previous commit, unless `HEAD~1` is the merge base with the base branch, which makes it the branch diff
-- A component, feature, or set of files of your choosing, topical to recent work. Name it in the option
+
+Mark exactly one option `(Recommended)`: the scope most worth refining now, judged by how much unrefined code it holds and how recently it changed. List it first, then the rest in the order above. Unlike the other questions in this skill, scope always gets a recommendation, because some scope has to be picked and you have already surveyed the candidates.
 
 Free text through `Other` covers anything else. A scope too large to carry through every step is cut to a slice, and the report's `Scope` section names the rest.
 
 **Always out of scope:** adding features and implementing plans.
+
+Mode is whether the pass may stop for the user. Resolve it immediately after scope. A mode given with the invocation (`autonomous` or `guided`, in any wording) is used as-is. Otherwise ask with `AskUserQuestion`, offering `Guided` (the user stays on hand to answer questions and review raised items) and `Autonomous` (the user steps away, and the pass ends in a report and agenda items).
+- **Guided** - interview the user with `AskUserQuestion` at any step where their answer would settle something faster or more surely than you could alone, such as the intent behind odd code, which validation route to take, or whether a bug candidate's behavior is deliberate. Items raised for review still wait for Step 6, so the user answers them together
+- **Autonomous** - ask nothing after the mode question, because the user is not there to answer and a pending question stalls the whole pass. Steps 3, 6, and 8 say what changes
 
 ## 2. Load guidance
 
@@ -39,7 +45,9 @@ Find the plan behind the scope, if one exists: a document the branch or commit i
 
 Find the validation the scope warrants: build, lint, test, static analysis, runtime exercise, whatever the project prescribes.
 - None exists: continue without validation, and Step 5 runs conservative
-- It exists but is unreachable for now or needs the user (credentials, hardware, a manual exercise): resolve with `AskUserQuestion`
+- It exists but is unreachable for now or needs the user (credentials, hardware, a manual exercise): in guided mode, resolve with `AskUserQuestion`
+
+In autonomous mode, never troubleshoot validation with the user or rely on validation that needs their cooperation. Fix what you can alone, and otherwise fall back to the strongest validation that runs unattended, like a test subset, a build, or a runtime exercise you can drive yourself. Reach for static analysis alone (lint, type checks, compiler warnings, reading) only when nothing stronger runs. List each validation you could not run in the report's `Baseline`, so the user knows what still needs exercising.
 
 Run it and record the exact commands, warnings and errors, passing test count, and, where the project produces reproducible artifacts, checksums of those that should stay invariant, so pre-existing failures stay distinguishable from yours.
 
@@ -107,9 +115,11 @@ Open items earlier reports left under `Needs your review` that fall in scope joi
 
 Walk the user through every raised item with `AskUserQuestion`, one question per item, up to four per call, bugs and other behavior changes first. Each question explains in plain terms, for a user who may not know this code, what it does and why, what is wrong, and the risk.
 
-Options are the item's alternatives, the recommended one first with `(Recommended)` on its label and each description stating what it changes, or a single `Implement` where there is no real alternative. The last option is always `Skip for now`, and a re-raised item offers `Drop` just before it, closing the item for good. Use `preview` for a short before/after where the choice is between code shapes.
+Options are the item's alternatives, each description stating what it changes. Mark one `(Recommended)` and list it first only where it is strongly advisable over the rest, giving the reason in its description, because a mark on a close call steers the user away from a judgment that is theirs. Otherwise leave every option unmarked. Where there is no real alternative, offer a single `Implement`. The last option is always `Skip for now`, and a re-raised item offers `Drop` just before it, closing the item for good. Use `preview` for a short before/after where the choice is between code shapes.
 
 Implement what the user chose. An item that gets no answer stays raised in the report.
+
+In autonomous mode, skip the walkthrough: still close earlier items as `resolved` where the check above finds them addressed, and carry every other raised item, with its options and any recommendation, into the report's `Needs your review`.
 
 ## 7. Validate
 
@@ -121,7 +131,7 @@ Then audit every prose file this session wrote against the writing standards.
 
 ## 8. Report
 
-When the scope is the staged, unstaged, or uncommitted diff, or files git does not track, give the report in chat instead of a file, unless `Needs your review` is non-empty (a skipped or unanswered item, a backed-out fix, deferred work): then write it as a file. Otherwise write it in one `Write`. Either way, use this template: a terse log of fragments, one line per item, no restating the diff. Keep the headings and the `Needs your review` instruction line verbatim and in this order, omitting a section only when it is empty. Give options only where two or more real ones exist.
+When the scope is the staged, unstaged, or uncommitted diff, or files git does not track, give the report in chat instead of a file, unless `Needs your review` is non-empty (a skipped or unanswered item, a backed-out fix, deferred work) or the mode is autonomous: then write it as a file. Otherwise write it in one `Write`. Either way, use this template: a terse log of fragments, one line per item, no restating the diff. Keep the headings and the `Needs your review` instruction line verbatim and in this order, omitting a section only when it is empty. Give options only where two or more real ones exist, and a `Recommendation` line only where Step 6 would mark one `(Recommended)`.
 
 ```
 # Refine <branch> <sha>
