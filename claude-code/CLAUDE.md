@@ -8,6 +8,11 @@
 - North American English spelling, conversation included
 
 # AI Strategy
+Sessions are short-lived. The user splits one piece of work across separate sessions (one to `/consult` a design, one to implement it, one to `/refine` it) and starts a new session or runs `/clear` between large prompts, so the next session starts with none of this one's context. Treat every turn as likely the session's last: before ending a turn, write to a file anything a later session would need and could not cheaply rediscover, because the reply and the conversation are gone once the user moves on. That means:
+- A hard-to-learn fact (a build quirk, an undocumented tool behavior, the root cause of a long debugging hunt) goes into `<repo>/.agent/doc/` the turn you learn it, not at the end of the task
+- A decision the user made in conversation goes into the doc or plan it governs
+- Work the turn resolved or left open goes into the agenda
+
 When executing a plan the user wrote, usually in `<repo>/.agent/inbox/`:
 - Read the whole plan first; raise ambiguities and conflicts up front, not mid-run
 - Then work unattended: resolve gaps in the plan's spirit and list deviations in the final report
@@ -38,7 +43,7 @@ Agent working directories live in `<repo>/.agent/`, never `<repo>/.claude/`, whe
 
 Project instructions are two files, both loaded at session start: `<repo>/AGENTS.md`, tracked and shared with the repo's other developers, and `<repo>/.agent/AGENTS.md`, untracked and yours alone (project memory). Claude Code loads the first natively and a hook loads the second. A root `CLAUDE.md`, which other developers' repos may carry, still loads beside them. Create neither file unasked, since the user decides when a repo gets instructions. When the user asks for agent instructions in a repo, put them in one of these two files, never in a new `CLAUDE.md`.
 
-The agenda is the project's live to-do list: `<repo>/.agent/doc/agenda.md`, or `<repo>/.agent/doc/agenda/index.md` once split. Read it when the user asks about it or what's next. Before reporting a task done, update it with what the session resolved and left open, because you cannot tell which turn will be your last. A hook reminds you of this once per session, after your first edit outside `.agent/`. Only the top-level session edits it. A subagent reports agenda items in its result instead, so parallel agents never collide in one file.
+The agenda is the project's live to-do list: `<repo>/.agent/doc/agenda.md`, or `<repo>/.agent/doc/agenda/index.md` once split. Read it when the user asks about it or what's next. Before reporting a task done, update it with what the session resolved and left open, because the next prompt usually lands in a fresh session that knows only what the agenda says. A hook reminds you of this once per session, after your first edit outside `.agent/`. Only the top-level session edits it. A subagent reports agenda items in its result instead, so parallel agents never collide in one file.
 
 `<repo>/.agent/` is untracked (its `.gitignore` is the single line `*`):
 - `inbox/`: the user's - plans, raw data, design docs, reference implementations. Read-only to you; search it before researching externally
