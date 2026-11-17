@@ -65,6 +65,21 @@ $GitConfigKey = 'config' + $Blank + '+[A-Za-z][A-Za-z0-9-]*\.[A-Za-z0-9.-]+'
 $GitReadPattern = $GitCommand + $GitSafeArgs + $Blank + '+((' + $GitReadShapes + ')' + $WordEnd +
     '|((' + $GitListVerbs + ')|' + $GitConfigKey + ')' + $Blank + '*($|[;&|)\r\n]))'
 
+# A clone under .agent/git/ is the agent's own scratch repository, so its local writes are cut before
+# the write check when -C names it, and only a push, which reaches the user's remote, stays denied.
+# No other option may join -C, since a second -C or a --git-dir would point back at the user's repo.
+# A component past git/ may not open with a dot, so a trailing .. cannot climb out.
+$GitScratchComponent = '[\w-][\w.-]*'
+$GitScratchTail = '\.agent[/\\]git[/\\]' + $GitScratchComponent + '([/\\]' + $GitScratchComponent + ')*[/\\]?'
+$GitScratchDoubleQuoted = '"([^"]*[/\\])?' + $GitScratchTail + '"'
+$GitScratchSingleQuoted = '''([^'']*[/\\])?' + $GitScratchTail + ''''
+$GitScratchBare = '([^;&|)\s"'']*[/\\])?' + $GitScratchTail
+$GitScratchPath = '(' + $GitScratchDoubleQuoted + '|' + $GitScratchSingleQuoted + '|' + $GitScratchBare + ')'
+$GitScratchPattern = $GitCommand + $Blank + '+-C' + $Blank + '+' + $GitScratchPath + $Blank + '+'
+$GitScratchMarker = 'scratch_git'
+$GitScratchPushPattern = $GitScratchMarker + ' (push|send-pack)' + $WordEnd
+$GitScratchOptionPattern = $GitScratchMarker + ' -'
+
 $SudoPattern = $WordStart + 'sudo' + $WordEnd
 
 # No settings.json rule backs this check: any Read deny rule turns a command whose paths cannot be
@@ -121,7 +136,8 @@ $GhFieldPattern = '(^|\s)(-f|-F|--field|--raw-field|--input)(\s|=|$)'
 $GhReadMethods = @('GET', 'HEAD')
 
 $ReasonAllow = 'Auto-approved by permission-gate.'
-$ReasonGit = 'Commands that alter git state (index, HEAD, refs, stash, config) are reserved for the user. Move or delete tracked files with plain mv and rm.'
+$ReasonGit = 'Commands that alter git state (index, HEAD, refs, stash, config) are reserved for the user. Move or delete tracked files with plain mv and rm. For a checkout of your own, clone into .agent/git/<name> and run git -C .agent/git/<name> <command>.'
+$ReasonGitPush = 'The remote is reserved for the user, even from a scratch clone under .agent/git/.'
 $ReasonGitApply = 'git apply may not stage what it applies; drop --index, --cached and --3way.'
 $ReasonSudo = 'Elevation is not permitted.'
 $ReasonSsh = 'SSH keys are reserved for the user.'
@@ -205,11 +221,21 @@ function Get-GateDecision($commandText) {
         return @{ decision = 'deny'; reason = $ReasonSsh }
     }
 
-    if ($command -match $GitApplyIndexPattern) {
+    $gitText = $command -replace $GitScratchPattern, ('${1}' + $GitScratchMarker + ' ')
+
+    if ($gitText -match $GitScratchOptionPattern) {
+        return @{ decision = 'deny'; reason = $ReasonGit }
+    }
+
+    if ($gitText -match $GitScratchPushPattern) {
+        return @{ decision = 'deny'; reason = $ReasonGitPush }
+    }
+
+    if ($gitText -match $GitApplyIndexPattern) {
         return @{ decision = 'deny'; reason = $ReasonGitApply }
     }
 
-    if (($command -replace $GitReadPattern, ' ') -match $GitWritePattern) {
+    if (($gitText -replace $GitReadPattern, ' ') -match $GitWritePattern) {
         return @{ decision = 'deny'; reason = $ReasonGit }
     }
 

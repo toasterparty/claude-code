@@ -59,6 +59,22 @@ GIT_LIST_VERBS='branch|tag|remote|worktree|submodule|notes|reflog'
 GIT_CONFIG_KEY='config[[:blank:]]+[[:alpha:]][[:alnum:]-]*\.[[:alnum:].-]+'
 GIT_READ_PATTERN="$GIT_COMMAND$GIT_SAFE_ARGS"'[[:blank:]]+(('"$GIT_READ_SHAPES"')'"$WORD_END"'|(('"$GIT_LIST_VERBS"')|'"$GIT_CONFIG_KEY"')[[:blank:]]*($|[;&|)]))'
 
+# A clone under .agent/git/ is the agent's own scratch repository, so its local writes are cut before
+# the write check when -C names it, and only a push, which reaches the user's remote, stays denied.
+# No other option may join -C, since a second -C or a --git-dir would point back at the user's repo.
+# A component past git/ may not open with a dot, so a trailing .. cannot climb out.
+GIT_SCRATCH_COMPONENT='[[:alnum:]_-][[:alnum:]_.-]*'
+GIT_SCRATCH_TAIL='\.[Aa][Gg][Ee][Nn][Tt][/\\][Gg][Ii][Tt][/\\]'"$GIT_SCRATCH_COMPONENT"'([/\\]'"$GIT_SCRATCH_COMPONENT"')*[/\\]?'
+QUOTE="'"
+GIT_SCRATCH_DOUBLE_QUOTED='"([^"]*[/\\])?'"$GIT_SCRATCH_TAIL"'"'
+GIT_SCRATCH_SINGLE_QUOTED="$QUOTE([^$QUOTE]*[/\\\\])?$GIT_SCRATCH_TAIL$QUOTE"
+GIT_SCRATCH_BARE='([^;&|)[:blank:]"'"$QUOTE"']*[/\\])?'"$GIT_SCRATCH_TAIL"
+GIT_SCRATCH_PATH="($GIT_SCRATCH_DOUBLE_QUOTED|$GIT_SCRATCH_SINGLE_QUOTED|$GIT_SCRATCH_BARE)"
+GIT_SCRATCH_PATTERN="$GIT_COMMAND"'[[:blank:]]+-C[[:blank:]]+'"$GIT_SCRATCH_PATH"'[[:blank:]]+'
+GIT_SCRATCH_MARKER='scratch_git'
+GIT_SCRATCH_PUSH_PATTERN="$GIT_SCRATCH_MARKER"' (push|send-pack)'"$WORD_END"
+GIT_SCRATCH_OPTION_PATTERN="$GIT_SCRATCH_MARKER"' -'
+
 SUDO_PATTERN="$WORD_START"'sudo'"$WORD_END"
 
 # No settings.json rule backs this check: any Read deny rule turns a command whose paths cannot be
@@ -116,7 +132,8 @@ GH_FIELD_PATTERN='(^|[[:space:]])(-f|-F|--field|--raw-field|--input)([[:space:]]
 GH_READ_METHODS='GET|HEAD'
 
 REASON_ALLOW='Auto-approved by permission-gate.'
-REASON_GIT='Commands that alter git state (index, HEAD, refs, stash, config) are reserved for the user. Move or delete tracked files with plain mv and rm.'
+REASON_GIT='Commands that alter git state (index, HEAD, refs, stash, config) are reserved for the user. Move or delete tracked files with plain mv and rm. For a checkout of your own, clone into .agent/git/<name> and run git -C .agent/git/<name> <command>.'
+REASON_GIT_PUSH='The remote is reserved for the user, even from a scratch clone under .agent/git/.'
 REASON_GIT_APPLY='git apply may not stage what it applies; drop --index, --cached and --3way.'
 REASON_SUDO='Elevation is not permitted.'
 REASON_SSH='SSH keys are reserved for the user.'
@@ -254,14 +271,31 @@ gate_decision() {
         return
     fi
 
-    if matches "$command_text" "$GIT_APPLY_INDEX_PATTERN"; then
+    local git_text=$command_text
+    if [[ ${command_text,,} == *.agent* ]]; then
+        git_text="$(printf '%s' "$command_text" | sed -E "s#$GIT_SCRATCH_PATTERN#\1$GIT_SCRATCH_MARKER #g")"
+    fi
+
+    if matches "$git_text" "$GIT_SCRATCH_OPTION_PATTERN"; then
+        GATE_DECISION=deny
+        GATE_REASON=$REASON_GIT
+        return
+    fi
+
+    if matches "$git_text" "$GIT_SCRATCH_PUSH_PATTERN"; then
+        GATE_DECISION=deny
+        GATE_REASON=$REASON_GIT_PUSH
+        return
+    fi
+
+    if matches "$git_text" "$GIT_APPLY_INDEX_PATTERN"; then
         GATE_DECISION=deny
         GATE_REASON=$REASON_GIT_APPLY
         return
     fi
 
     local git_write_text
-    git_write_text="$(printf '%s' "$command_text" | sed -E "s/$GIT_READ_PATTERN/ /g")"
+    git_write_text="$(printf '%s' "$git_text" | sed -E "s/$GIT_READ_PATTERN/ /g")"
     if matches "$git_write_text" "$GIT_WRITE_PATTERN"; then
         GATE_DECISION=deny
         GATE_REASON=$REASON_GIT

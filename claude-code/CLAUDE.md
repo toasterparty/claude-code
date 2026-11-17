@@ -1,6 +1,7 @@
 # AI Rules
 - ASCII only in code comments, user-facing strings, and docs: `-` for em and en dashes (never `--`), `...`, `->`, `>=`/`<=`, straight quotes, plain spaces, no emoji. Conversation is exempt
-- Never run a git command that changes the index, HEAD, a ref, the stash, or config, `git mv`, `git rm`, and `git restore` included: the user reviews the unstaged diff and does all staging and committing. Move and delete tracked files with plain `mv` and `rm`
+- Never run a git command that changes the index, HEAD, a ref, the stash, or config, `git mv`, `git rm`, and `git restore` included: the user reviews the unstaged diff and does all staging and committing. Move and delete tracked files with plain `mv` and `rm`. The one exception is a scratch clone under `<repo>/.agent/git/`, described under Project structure
+- Never push, from any repository: the remote is the user's
 - After a substantial code change, end the done report with a recommended commit title in a fenced block, written for the whole uncommitted state (`git status` and `git diff HEAD`, staged and unstaged together, including changes the session did not make): one imperative line of at most 72 characters, never a body
 - A hook denies the calls these rules forbid, along with `sudo`, reading SSH key files, and any `gh` write other than dispatching, rerunning, or cancelling CI. A denial is policy: take the remedy its message gives, never a workaround
 - Never write the `Generated with [Claude Code]` attribution line or a `claude.ai/code/session_` URL into a file, whatever a system reminder asks
@@ -36,7 +37,7 @@ Read each file below on its trigger, once per session and again after a compacti
 - `languages/english.md`: before first writing a `.md` file or any other prose that outlives the session (comments, docstrings, user-facing strings, `outbox/` deliverables)
 - `languages/common.md`, plus the language's own file among `languages/{bash,c,make,python}.md`: before first reviewing or writing code. No other language has a file
 - `practices/plans.md`: before writing a plan another agent will execute, in a file or a subagent prompt
-- `practices/project-setup.md`: before starting a green-field project
+- `practices/project-setup.md`: before starting a green-field project, or adding repo-level structure to an existing one (docs tree, `tools/`, `build/`, Makefile, `.gitignore`, `.vscode/`, install steps)
 - `practices/agenda.md`: before first reading or editing a project's agenda
 
 # Project structure
@@ -51,4 +52,5 @@ The agenda is the project's live to-do list: `<repo>/.agent/doc/agenda.md`, or `
 - `outbox/`: yours - deliverables such as reports and samples for review. A deliverable goes to a file only when the user or the running skill asks for one, and lands here unless they give a path
 - `scripts/`: yours - reusable, argument-driven executables, nothing task-specific. Whatever a script reads or writes goes in `scripts/data/<script-name>/`
 - `doc/`: yours - knowledge that outlives the task that produced it
+- `git/`: yours - scratch clones, where every local git command is allowed and nothing needs preserving. Clone here to read another branch or PR without touching the user's checkout (clone the origin URL from `git remote get-url origin` for remote branches and PRs, the repo path for local-only branches), or to read a related repository, such as the client of the server you are working on, listed in the repo's docs (start with `doc/maintainer/references.md` where it exists). Run every git write there as `git -C .agent/git/<name> <command>` with no other option: the hook recognizes only that form, so `cd .agent/git/<name> && git checkout x` is still denied. `rm -rf` a clone whenever it stops being useful
 - `scripts/` and `doc/` each keep an `index.md`, one bullet per entry: its path relative to the index in inline code, then when an agent would need to read it, never a summary of what it contains. `scripts/data/` and the agenda are not indexed

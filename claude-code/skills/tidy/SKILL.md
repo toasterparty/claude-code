@@ -9,7 +9,7 @@ Bring `<repo>/.agent/` into the layout the user CLAUDE.md defines, running the p
 Survey with one recursive listing carrying sizes and dates, and open a file only when its name, size, and location leave its fate open. Batch moves and deletes into as few shell calls as possible rather than one tool call per file.
 
 ## Scope
-Touch only the four layout dirs under `.agent/`, the agenda, the project instruction files, and the legacy locations they replace: `<repo>/.claude/{inbox,outbox,scripts,doc}/`, the older `plans/`, `reference/`, `agent/`, and `CLAUDE.md` at the repo root, in `.agent/`, or in `.claude/`. Leave everything else in `<repo>/.claude/` alone. Remove a legacy dir from `.claude/` only once its contents are safely moved.
+Touch only the four layout dirs and the `git/` scratch dir under `.agent/`, the agenda, the project instruction files, and the legacy locations they replace: `<repo>/.claude/{inbox,outbox,scripts,doc}/`, the older `plans/`, `reference/`, `agent/`, and `CLAUDE.md` at the repo root, in `.agent/`, or in `.claude/`. Leave everything else in `<repo>/.claude/` alone. Remove a legacy dir from `.claude/` only once its contents are safely moved.
 
 Never edit a file under `inbox/`. Moving a whole file out of a legacy location is the one change allowed against user content.
 
@@ -35,7 +35,7 @@ A tracked root `CLAUDE.md` always counts as ambiguous: rename it only in a repo 
 Collect these during the survey, agenda items of unproven status and inbox assets of unclear status (step 4a) among them, and ask them in one AskUserQuestion batch before the first destructive move, one question per file or related group, each option stating the action it triggers. Whatever the user leaves unresolved stays where it is. Never archive or delete on a guess.
 
 ## 4. Purge and archive
-Delete regenerable artifacts outright: caches, `__pycache__`, virtualenvs, build outputs, logs, re-downloadable binaries. `scripts/data/` collects them fastest.
+Delete regenerable artifacts outright: caches, `__pycache__`, virtualenvs, build outputs, logs, re-downloadable binaries, and every clone under `git/`. `scripts/data/` collects them fastest.
 
 Everything else keeps its bytes. Never delete non-regenerable data (captured baselines, recorded measurements, one-off datasets), whatever its size. Files tied to a resolved issue move into an `_archive/` inside their current directory.
 

@@ -33,6 +33,9 @@ deny	git rebase -i main
 deny	git cherry-pick abc123
 deny	git revert HEAD
 deny	git pull --rebase
+deny	git pull
+deny	git pull origin main
+deny	git pull --ff-only
 deny	git gc --prune=now
 deny	git prune
 deny	git filter-branch --tree-filter x
@@ -310,3 +313,34 @@ deny	cat <<'EOF' | bash<NL>git push<NL>EOF
 deny	ssh host <<'EOF'<NL>sudo reboot<NL>EOF
 deny	python3 - <<'EOF'<NL>git push
 deny	echo $((1<<N))<NL>git push
+
+# A scratch clone under .agent/git/ named by -C takes every local write, but never a push
+allow	git clone https://github.com/o/r .agent/git/r
+
+# A clone creates a new repository and leaves the user's untouched, wherever it lands
+allow	git clone https://github.com/o/r
+allow	git clone https://github.com/o/r /tmp/r
+allow	git clone --depth 1 https://github.com/o/r
+allow	git clone . .agent/git/self
+allow	git -C .agent/git/r reset --hard origin/main
+allow	git -C .agent/git/r pull
+allow	git -C .agent/git/r fetch origin pull/123/head:pr-123 && git -C .agent/git/r switch pr-123
+allow	git -C /repo/.agent/git/r checkout -b x
+allow	git -C C:\Git\repo\.agent\git\r stash pop
+allow	git -C "C:/my repo/.agent/git/r" commit -m x
+allow	git -C '/my repo/.agent/git/r/sub/' apply --index p.diff
+allow	GIT -C .AGENT/GIT/r reset --hard
+allow	rm -rf .agent/git/r
+deny	git -C .agent/git/r push origin main
+deny	git -C .agent/git/r send-pack origin
+deny	git -C .agent/git/r status; git push
+deny	git -C .agent/git/r status && git reset --hard
+deny	git -C .agent/git/r/.. reset --hard
+deny	git -C .agent/git/r/../../.. reset --hard
+deny	git -C .agent/git reset --hard
+deny	git -C .agent/git/r -C ../../.. reset --hard
+deny	git -C .agent/git/r --git-dir=/repo/.git reset --hard
+deny	git --git-dir=/repo/.git -C .agent/git/r reset --hard
+deny	cd .agent/git/r && git checkout main
+deny	git -C "$scratch" reset --hard
+deny	git -C .agent/git/r;git reset --hard
