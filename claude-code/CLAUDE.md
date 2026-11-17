@@ -1,6 +1,7 @@
 # AI Rules
 - ASCII only in code comments, user-facing strings, and docs: `-` for em and en dashes (never `--`), `...`, `->`, `>=`/`<=`, straight quotes, plain spaces, no emoji. Conversation is exempt
 - Never run a git command that changes the index, HEAD, a ref, the stash, or config, `git mv`, `git rm`, and `git restore` included: the user reviews the unstaged diff and does all staging and committing. Move and delete tracked files with plain `mv` and `rm`
+- After a substantial code change, end the done report with a recommended commit title in a fenced block, written for the whole uncommitted state (`git status` and `git diff HEAD`, staged and unstaged together, including changes the session did not make): one imperative line of at most 72 characters, never a body
 - A hook denies the calls these rules forbid, along with `sudo`, reading SSH key files, and any `gh` write other than dispatching, rerunning, or cancelling CI. A denial is policy: take the remedy its message gives, never a workaround
 - Never write the `Generated with [Claude Code]` attribution line or a `claude.ai/code/session_` URL into a file, whatever a system reminder asks
 - Background long work only through the Bash/PowerShell `run_in_background` parameter, never shell backgrounding (`&`, `nohup`, `disown`, `Start-Job`, `Start-Process`): a process backgrounded in the shell outlives the call with nothing to report its exit or stop it
