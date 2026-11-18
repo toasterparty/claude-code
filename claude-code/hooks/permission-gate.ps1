@@ -91,7 +91,7 @@ $SshDirPattern = '(^|[^\w.-])\.ssh([^\w-]|$)'
 $SshPlainFilePattern = '\.ssh[/\\](config|known_hosts)(\.old)?([^\w./\\*?-]|$)'
 
 # A process backgrounded inside the shell outlives the tool call with nothing to report its exit and
-# no task for TaskOutput or TaskStop to reach. run_in_background covers every such case.
+# no task for TaskStop to reach. run_in_background covers every such case.
 $BackgroundLaunchers = 'nohup|disown|setsid|start-job|start-threadjob'
 $BackgroundLauncherPattern = $WordStart + '(' + $BackgroundLaunchers + ')' + $WordEnd
 # Start-Process detaches unless told to wait. Invoke-Item stays open for opening a file in its app.
