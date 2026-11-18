@@ -111,6 +111,20 @@ $ShellCommandArgument = '((^|[^\w-])(' + $ShellCommandWords + ')(' + $Blank + '+
     '+(-[A-Za-z]*c|-[Cc]ommand)' + $Blank + '+(' + $QuotedString + '))'
 $QuoteStripPattern = $ShellCommandArgument + '|' + $QuotedString
 
+# Quoted text is data to the git checks, so a search pattern or message that names a write verb is no
+# call. These stay in view: an argument of a shell, ssh, eval or interpreter, a value handed to a git
+# option, a double-quoted string that expands, and every line piped into a shell.
+$GitExecWords = $ShellCommandWords + '|ssh|eval|python[0-9.]*|node|perl|ruby'
+$GitQuotedLine = '"[^"\r\n]*"|''[^''\r\n]*'''
+$GitExecArgument = '(^|[^\w-])(' + $GitExecWords + ')(' + $Blank + '+' + $GitSafeArg + '+)*' + $Blank +
+    '+(' + $GitQuotedLine + ')'
+$GitOptionQuoted = '(?i:' + $GitCommand + ')' + $GitArgs + $Blank + '+(' + $GitValueOptions + ')' + $Blank +
+    '+(' + $GitQuotedLine + ')'
+$GitExpandingString = '"[^"\r\n]*[$`][^"\r\n]*"'
+$GitDataString = '"[^"$`\r\n]*"|''[^''\r\n]*'''
+$GitQuoteStripPattern = '(' + $GitExecArgument + '|' + $GitOptionQuoted + '|' + $GitExpandingString + ')|' + $GitDataString
+$PipedShellPattern = '\|&?' + $Blank + '*(' + $ShellCommandWords + ')' + $WordEnd
+
 # A heredoc body fed to a reader or an interpreter is cut before every check, so a doc quoting
 # `git push` is not read as the command. A body whose opener line names a shell stays in view.
 $HeredocOpener = '<<-?[''"]?([A-Za-z_][A-Za-z0-9_]*)'
@@ -222,6 +236,10 @@ function Get-GateDecision($commandText) {
     }
 
     $gitText = $command -replace $GitScratchPattern, ('${1}' + $GitScratchMarker + ' ')
+
+    if ($gitText -match '["'']' -and $gitText -cnotmatch $PipedShellPattern) {
+        $gitText = [regex]::Replace($gitText, $GitQuoteStripPattern, '${1}')
+    }
 
     if ($gitText -match $GitScratchOptionPattern) {
         return @{ decision = 'deny'; reason = $ReasonGit }

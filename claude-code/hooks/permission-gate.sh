@@ -105,6 +105,17 @@ SHELL_COMMAND_WORDS='sh|bash|zsh|dash|ksh|pwsh|powershell|su'
 SHELL_COMMAND_ARGUMENT='((^|[^[:alnum:]_-])('"$SHELL_COMMAND_WORDS"')([[:blank:]]+-[^[:blank:]]+)*[[:blank:]]+(-[[:alpha:]]*c|-[Cc]ommand)[[:blank:]]+('"$QUOTED_STRING"'))'
 QUOTE_STRIP_PATTERN="$SHELL_COMMAND_ARGUMENT|$QUOTED_STRING"
 
+# Quoted text is data to the git checks, so a search pattern or message that names a write verb is no
+# call. These stay in view: an argument of a shell, ssh, eval or interpreter, a value handed to a git
+# option, a double-quoted string that expands, and every line piped into a shell.
+GIT_EXEC_WORDS="$SHELL_COMMAND_WORDS"'|ssh|eval|python[0-9.]*|node|perl|ruby'
+GIT_EXEC_ARGUMENT='(^|[^[:alnum:]_-])('"$GIT_EXEC_WORDS"')([[:blank:]]+'"$GIT_SAFE_ARG"'+)*[[:blank:]]+('"$QUOTED_STRING"')'
+GIT_OPTION_QUOTED="$GIT_COMMAND$GIT_ARGS"'[[:blank:]]+('"$GIT_VALUE_OPTIONS"')[[:blank:]]+('"$QUOTED_STRING"')'
+GIT_EXPANDING_STRING='"[^"]*[$`][^"]*"'
+GIT_DATA_STRING='"[^"$`]*"|'"$QUOTE"'[^'"$QUOTE"']*'"$QUOTE"
+GIT_QUOTE_STRIP_PATTERN='('"$GIT_EXEC_ARGUMENT|$GIT_OPTION_QUOTED|$GIT_EXPANDING_STRING"')|'"$GIT_DATA_STRING"
+PIPED_SHELL_PATTERN='\|&?[[:blank:]]*('"$SHELL_COMMAND_WORDS"')'"$WORD_END"
+
 # A heredoc body fed to a reader or an interpreter is cut before every check, so a doc quoting
 # `git push` is not read as the command. A body whose opener line names a shell stays in view.
 HEREDOC_OPENER="<<-?['\"]?[A-Za-z_][A-Za-z0-9_]*"
@@ -274,6 +285,10 @@ gate_decision() {
     local git_text=$command_text
     if [[ ${command_text,,} == *.agent* ]]; then
         git_text="$(printf '%s' "$command_text" | sed -E "s#$GIT_SCRATCH_PATTERN#\1$GIT_SCRATCH_MARKER #g")"
+    fi
+
+    if [[ $git_text == *[\"\']* ]] && ! matches "$git_text" "$PIPED_SHELL_PATTERN"; then
+        git_text="$(printf '%s' "$git_text" | sed -E "s/$GIT_QUOTE_STRIP_PATTERN/\1/g")"
     fi
 
     if matches "$git_text" "$GIT_SCRATCH_OPTION_PATTERN"; then

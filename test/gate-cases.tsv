@@ -344,3 +344,26 @@ deny	git --git-dir=/repo/.git -C .agent/git/r reset --hard
 deny	cd .agent/git/r && git checkout main
 deny	git -C "$scratch" reset --hard
 deny	git -C .agent/git/r;git reset --hard
+
+# Quoted text is data unless it runs: a pattern or message naming a write verb is no call
+allow	git -C .agent/git/x show r:f | grep -n -E 'a|git push|b'
+allow	echo 'git push'
+allow	grep -E "git commit|git add" f
+allow	git log --grep='git push'
+allow	echo "it's"; git status
+deny	git commit -m "git push"
+deny	echo "x"; git push "origin"
+deny	echo "$x"; git push "origin"
+
+# A quoted value handed to a git option keeps the subcommand after it in view
+deny	git -C "repo" push
+deny	git -C '../x' commit -m x
+deny	git -c "user.name=x" push
+
+# Quoted text that executes stays in view
+deny	echo "$(git push)"
+deny	echo "`git push`"
+deny	ssh host 'git push'
+deny	eval "git push"
+deny	python3 -c "import os; os.system('git push')"
+deny	echo 'git push' | bash
