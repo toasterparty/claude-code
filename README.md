@@ -40,19 +40,6 @@ curl -fsSL https://claude.toasterparty.net/start-server.sh | bash -s -- --dir ~/
 curl -fsSL https://claude.toasterparty.net/start-server.sh | bash -s -- --uninstall [--dir ~/git/repo]
 ```
 
-### Custom Claude Code Home Directory
+## Other tips
 
-Set `CLAUDE_DIR` to deploy into a directory other than the default `~/.claude/`.
-
-Linux/MacOS:
-
-```sh
-curl -fsSL https://claude.toasterparty.net/install.sh | CLAUDE_DIR="$HOME/.claude-work" bash
-```
-
-Windows:
-
-```sh
-$env:CLAUDE_DIR = "$HOME\.claude-work"; irm https://claude.toasterparty.net/install.ps1 | iex
-$env:CLAUDE_DIR = "$HOME\.claude-personal"; irm https://claude.toasterparty.net/install.ps1 | iex
-```
+- Set a cron job to `claude --model haiku --effort low -p "hi"` 4 times at day 5h05m apart to help optimize your session limits.
