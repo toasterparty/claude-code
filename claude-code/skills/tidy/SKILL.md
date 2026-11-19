@@ -35,7 +35,7 @@ A tracked root `CLAUDE.md` always counts as ambiguous: rename it only in a repo 
 Collect these during the survey, agenda items of unproven status and inbox assets of unclear status (step 4a) among them, and ask them in one AskUserQuestion batch before the first destructive move, one question per file or related group, each option stating the action it triggers. Whatever the user leaves unresolved stays where it is. Never archive or delete on a guess.
 
 ## 4. Purge and archive
-Delete regenerable artifacts outright: caches, `__pycache__`, virtualenvs, build outputs, logs, re-downloadable binaries, and every clone under `git/`. `scripts/data/` collects them fastest.
+Delete regenerable artifacts outright: caches, `__pycache__`, virtualenvs, build outputs, logs, re-downloadable binaries, and every clone under `git/` except the persistent ones `practices/scratch-clones.md` describes. `scripts/data/` collects them fastest.
 
 Everything else keeps its bytes. Never delete non-regenerable data (captured baselines, recorded measurements, one-off datasets), whatever its size. Files tied to a resolved issue move into an `_archive/` inside their current directory.
 
@@ -45,6 +45,10 @@ Read `practices/agenda.md` first. Then check the agenda both ways against `inbox
 Drop an item once the evidence proves it addressed: a commit containing its change, the described behavior or file present in the repo, a plan whose boxes are all checked and whose changes landed, a decision recorded in a doc or plan. An item with only partial or circumstantial evidence goes to step 3, and is dropped on the user's confirmation. Never drop on a guess.
 
 Add an item for each asset that shows open work and has none: an `inbox/` plan or design doc nobody executed, raw data nobody analyzed, an `outbox/` report with open questions, a TODO left in a doc. Skip an asset that is archived, already linked from an item, or reference material, and an asset the evidence shows was executed or absorbed. Where it is unclear whether an asset still wants action, ask in step 3. Insert each new item by its priority, per the agenda rules, and move no existing item.
+
+Challenge a section whose date has fallen well behind the rest. Judge "behind" by the project's own pace, never by the calendar: compare against the other sections' dates and the spacing of recent commits, since a project can sit idle for months and then move daily. A quiet section in an idle project is not stale. One left behind while its neighbors kept moving likely is. Ask in step 3 whether to keep it or drop it, and act only on the answer. Keeping it bumps its date.
+
+Group loose items into sections, extract an oversized section, and fold back a shrunken one, as the agenda rules describe. Grouping keeps each item's relative order and dates the new section today.
 
 ## 5. Generalize
 Rewrite surviving scripts and docs so an agent on another task can use them: strip one-off paths, task-specific names, and hardcoded inputs in favor of arguments. Leave files that are already general unedited.

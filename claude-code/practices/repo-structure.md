@@ -1,4 +1,4 @@
-# Project setup
+# Repo structure
 Design every repo for a new developer on a freshly installed OS that has only git and the default shell (bash on Linux and macOS, PowerShell on Windows). Count every step on their path from `git clone` to a running project, and cut steps until only the unavoidable remain: typically one bootstrap that puts `make` on the machine, then `make install`. Any other prerequisite (a language runtime, a package manager, a compiler) is installed by the project's own idempotent script, never by README prose the developer has to follow by hand, because prose steps drift out of date and get skipped.
 
 ## Layout
