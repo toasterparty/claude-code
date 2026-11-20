@@ -8,7 +8,7 @@ argument-hint: "[subject]"
 
 Sessions narrow: agents silently rule out alternatives. The aim is enough bird's-eye guidance that the user is satisfied with the outcome without nitpicking its implementation.
 
-Report path: `.agent/outbox/consult/<YYYYMMDDHHMM>-<subject-slug>.md`
+Every consult writes a report, under `practices/reports.md`: start it once the subject is resolved, with `--skill consult` and a `--subject` slug for the subject.
 
 ## 1. Subject
 Subject given with the invocation is used as-is. Invoking the skill yourself, name the subject from the decision at hand. Otherwise resolve it with a `multiSelect` `AskUserQuestion`, naming each option concretely and omitting empty ones, or pick the likeliest subject where the tool is unavailable:
@@ -18,7 +18,7 @@ Subject given with the invocation is used as-is. Invoking the skill yourself, na
 - A specific plan, requirements set, or design
 
 ## 2. Research
-Read the subject, the standards that govern it, and earlier reports on it in `.agent/outbox/consult/`, where on conflict the newest wins. Stop once more reading would not change the questions. Look for:
+Read the subject, the standards that govern it, and earlier consult reports on it in `.agent/reports/` and its archive, where on conflict the newest wins. Stop once more reading would not change the questions. Look for:
 - Contradictions: a plan against the implementation, a doc against the code, one requirement against another, anything against the standards. Each becomes a question unless evidence settles it
 - Decisions already made, by anyone: everything is open to challenge, including the user's own decisions, plans, and standards
 - Alternatives the conversation never considered, and framings a reasonable person would reject
@@ -35,15 +35,18 @@ Each question:
 - **Stays neutral** - mark `(Recommended)`, with the reason, only where one option is strongly advisable
 - **Shows its history** - revisiting a decision quotes it, from a report or the session, and says why it is back
 
-Where `AskUserQuestion` is unavailable (a headless run, a subagent), write the questions and your lean on each under `Open` at the report path, add an agenda item linking the report (as a subagent, name the item in your result instead), then stop.
+Where `AskUserQuestion` is unavailable (a headless run, a subagent), add one agenda item for each question, tagged `User Decision` and linking the report, grouping the ones that would be resolved together, then write each question and your lean on it under the report's `Open`, and stop. As a subagent, skip the agenda: name the items in your result, and leave `opened` empty for the parent session to fill in.
 
 ## 4. Close
 Flag answers that conflict with each other, the standards, or research findings, and ask the user to resolve them.
 
 State the conclusions in chat, then ask with a `multiSelect` `AskUserQuestion` for any of the following, carried out in this order:
-- Write a report to the report path, in the format below
 - Capture the conclusions in the project's documentation, naming the file in the option: the doc where the topic lives, and `AGENTS.md` only for what every session needs
 - Implement all conclusions now, without further confirmation
+
+Then update the agenda, before the report so the report can carry the IDs. Remove any item asking for this subject to be consulted. Add one item for each question left open, tagged `User Decision`, and one for the conclusions not yet implemented, grouping the ones that would be resolved together, each linking the report.
+
+Then complete the report in one `Write`. Its `opened` lists the IDs just added, and its `closed` the items removed. The body after the front matter is:
 
 ```
 # Consult <subject>
@@ -55,9 +58,7 @@ State the conclusions in chat, then ask with a `multiSelect` `AskUserQuestion` f
 - <what the user supplied that research could not>
 
 ## Open
-- <question left unanswered, with your lean if the user never saw it>
+- #<id> <question left unanswered, with your lean if the user never saw it>
 ```
 
-Then update the agenda. Remove any item asking for this subject to be consulted. Add one item for each question left open, and one for the conclusions unless they were implemented, grouping the ones that would be resolved together and linking the report where one was written.
-
-Archive a report once nothing in it remains open, this one included: `mv` it into `.agent/outbox/consult/_archive/`, creating the directory on first use, and drop its agenda items.
+Archive the report straight away if it opened nothing.

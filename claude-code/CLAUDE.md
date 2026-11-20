@@ -34,12 +34,13 @@ Delegation: Opus and above hand broad fact-finding (multi-file exploration, code
 
 # Guidance files
 Read each file below on its trigger, once per session and again after a compaction drops it. Paths in this file and in every guidance file are relative to this file's directory:
-- `languages/english.md`: before first writing a `.md` file or any other prose that outlives the session (comments, docstrings, user-facing strings, `outbox/` deliverables)
+- `languages/english.md`: before first writing a `.md` file or any other prose that outlives the session (comments, docstrings, user-facing strings, `outbox/` deliverables, reports)
 - `languages/common.md`, plus the language's own file among `languages/{bash,c,make,python}.md`: before first reviewing or writing code. No other language has a file
 - `practices/plans.md`: before writing a plan another agent will execute, in a file or a subagent prompt
 - `practices/repo-structure.md`: before starting a green-field project, or adding repo-level structure to an existing one (docs tree, `tools/`, `build/`, Makefile, `.gitignore`, `.vscode/`, install steps)
 - `practices/scratch-clones.md`: before creating, reading, or running git in a clone under `.agent/git/`
 - `practices/agenda.md`: before first reading, creating, or editing a project's agenda, and before deciding at a task's end that it needs no update
+- `practices/reports.md`: before starting, reading, or archiving a skill report in `.agent/reports/`
 
 # Project structure
 Agent working directories live in `<repo>/.agent/`, never `<repo>/.claude/`, where every write raises a confirmation prompt that no permission rule clears.
@@ -50,7 +51,8 @@ The agenda is the project's live to-do list: `<repo>/.agent/doc/agenda.md`, or `
 
 `<repo>/.agent/` is untracked (its `.gitignore` is the single line `*`):
 - `inbox/`: the user's - plans, raw data, design docs, reference implementations. Read-only to you; search it before researching externally
-- `outbox/`: yours - deliverables such as reports and samples for review. A deliverable goes to a file only when the user or the running skill asks for one, and lands here unless they give a path
+- `outbox/`: yours - deliverables such as samples, PR drafts, and write-ups for review. A deliverable goes to a file only when the user asks for one, and lands here unless they give a path
+- `reports/`: yours - one report per skill run that writes one, archived under `reports/_archive/` once nothing in it is open
 - `scripts/`: yours - reusable, argument-driven executables, nothing task-specific. Whatever a script reads or writes goes in `scripts/data/<script-name>/`
 - `doc/`: yours - knowledge that outlives the task that produced it
 - `git/`: yours - scratch clones. Clone here to read another branch or PR without touching the user's checkout, to read a related repository such as the client of the server you are working on, or to build an artifact from a tree other than the working one, such as comparing an object file built at HEAD against the dirty tree's

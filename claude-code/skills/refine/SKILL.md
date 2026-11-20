@@ -9,14 +9,12 @@ Target the best implementation of the behavior already there, weighing simplicit
 
 Observable behavior is whatever anything outside the code can see: a public API's results, CLI output and exit codes, file and wire formats, persisted data, error text, side effects, and ordering or timing a caller could notice. Every change made without asking preserves it, however wrong it looks; Step 5 names the one exception.
 
-- Report directory: `.agent/outbox/refine/`
-- Report path: `<report directory>/<YYYYMMDDHHMM>-<sha>.md`, `<sha>` from `git rev-parse --short HEAD`, suffixed `-dirty` when `git status --porcelain -uno` prints anything. Resolve it before the first edit and keep it: it names the tree you inherited
-- Branch: `git branch --show-current`, or `detached` where it prints nothing. Resolve it with the report path
+Every pass writes a report, under `practices/reports.md`: read that file before the first edit, and start the report once scope and mode are resolved, with `--skill refine` and a `--subject` naming the component where the scope is one.
 - Base branch: `main`
 
 ## 1. Scope and mode
 
-Scope is what this pass may touch. File and directory scope is absolute. Diff scope is loose: the diff plus the neighboring code and files it relates to. Diff a commit against the working tree (`git diff <commit>`), never against `HEAD`, so uncommitted work counts. Steer away from code a recent report in the report directory refined, unless it has changed since that report's commit; each report's `Scope` section says what it covered, so read no further.
+Scope is what this pass may touch. File and directory scope is absolute. Diff scope is loose: the diff plus the neighboring code and files it relates to. Diff a commit against the working tree (`git diff <commit>`), never against `HEAD`, so uncommitted work counts. Steer away from code a recent refine report covered, unless it has changed since that report's commit: grep the `scope` and `commit` fields of the refine reports in `.agent/reports/` and its archive, and read no further.
 
 Scope given with the invocation is used as-is. Otherwise resolve it with `AskUserQuestion` from these options, omitting empty ones and merging staged and unstaged into one uncommitted option when more than four remain:
 - A component, feature, or set of files of your choosing, topical to recent work. Name it in the option
@@ -111,15 +109,15 @@ Raise rather than make, however good:
 
 ## 6. Review
 
-Open items earlier reports left under `Needs your review` that fall in scope join the raised items: grep the report directory for the scope's paths, skipping items already closed with a `[<status>: ...]` tag. Check each against the current code first, locating it by its description since line numbers drift. An item already addressed, or whose code is gone, closes as `resolved` instead of being raised again.
+Open agenda items that link an earlier refine report and fall in scope join the raised items, read from that report by their ID. Check each against the current code first, locating it by its description since line numbers drift. An item already addressed, or whose code is gone, closes as resolved instead of being raised again.
 
 Walk the user through every raised item with `AskUserQuestion`, one question per item, up to four per call, bugs and other behavior changes first. Each question explains in plain terms, for a user who may not know this code, what it does and why, what is wrong, and the risk.
 
 Options are the item's alternatives, each description stating what it changes. Mark one `(Recommended)` and list it first only where it is strongly advisable over the rest, giving the reason in its description, because a mark on a close call steers the user away from a judgment that is theirs. Otherwise leave every option unmarked. Where there is no real alternative, offer a single `Implement`. The last option is always `Skip for now`, and a re-raised item offers `Drop` just before it, closing the item for good. Use `preview` for a short before/after where the choice is between code shapes.
 
-Implement what the user chose. An item that gets no answer stays raised in the report.
+Implement what the user chose. A new item that gets no answer goes into the report's `Needs your review`. An earlier item that gets none keeps its agenda item and stays in its own report.
 
-In autonomous mode, skip the walkthrough: still close earlier items as `resolved` where the check above finds them addressed, and carry every other raised item, with its options and any recommendation, into the report's `Needs your review`.
+In autonomous mode, skip the walkthrough: still close earlier items as resolved where the check above finds them addressed, leave every other earlier item where it is, and carry every new raised item, with its options and any recommendation, into the report's `Needs your review`.
 
 ## 7. Validate
 
@@ -131,10 +129,10 @@ Then audit every prose file this session wrote against the writing standards.
 
 ## 8. Report
 
-When the scope is the staged, unstaged, or uncommitted diff, or files git does not track, give the report in chat instead of a file, unless `Needs your review` is non-empty (a skipped or unanswered item, a backed-out fix, deferred work) or the mode is autonomous: then write it as a file. Otherwise write it in one `Write`. Either way, use this template: a terse log of fragments, one line per item, no restating the diff. Keep the headings and the `Needs your review` instruction line verbatim and in this order, omitting a section only when it is empty. Give options only where two or more real ones exist, and a `Recommendation` line only where Step 6 would mark one `(Recommended)`.
+First add one agenda item for each item in `Needs your review`, tagged `User Decision` where it offers the user a choice, grouping the ones that would be resolved together, so the report can carry their IDs. Then complete the report this pass started, in one `Write`. Its `opened` lists the IDs just added, and its `closed` the earlier items this pass settled. The body after the front matter is a terse log of fragments, one line per item, no restating the diff. Keep the headings verbatim and in this order, omitting a section only when it is empty. Give options only where two or more real ones exist, and a `Recommendation` line only where Step 6 would mark one `(Recommended)`.
 
 ```
-# Refine <branch> <sha>
+# Refine <subject, or the scope in a few words>
 
 ## Scope
 <the slice taken, and what was left for a later pass>
@@ -146,9 +144,7 @@ When the scope is the staged, unstaged, or uncommitted diff, or files git does n
 - <one line per item the user approved in Step 6, a bug fix as: defect, trigger, fix>
 
 ## Needs your review
-Append `[resolved: <commit or report>]` to an item's first line when you address it.
-
-1. **<Title>** (`path:line`) - <proposed change>.
+1. **#<id> <Title>** (`path:line`) - <proposed change>.
 
 - (a) <option>
 - (b) <option>
@@ -160,10 +156,6 @@ Recommendation: (a)
 - <each intended delta from Step 7, like: 3 tests deleted with parser/legacy.py>
 ```
 
-Then close each earlier item this pass settled by appending `[<status>: <this report's path, or chat>]` to its first line in its own report: `resolved` when implemented or found addressed, `dropped` on `Drop`, and `moved` when it lands in this report's `Needs your review`. Each open item thus lives in exactly one report.
+Then finish the agenda. Remove every earlier item this pass closed, logged as resolved when implemented or found addressed and as dropped on `Drop`, and any item asking for this scope to be refined. Archive the reports this leaves with nothing open, this one included when `Needs your review` is empty.
 
-Archive an earlier report this pass left with no open item: `mv` it into `_archive/` in the report directory, creating the directory on first use.
-
-Then update the agenda. Add one item for each open item in this report's `Needs your review`, grouping the ones that would be resolved together, each linking the report. Remove the agenda item of every earlier item this pass closed, and any item asking for this scope to be refined.
-
-Name a written report by its repo-relative path and give the highlights in a sentence or two.
+Name the report by its repo-relative path and give the highlights in a sentence or two.
