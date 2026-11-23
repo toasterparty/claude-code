@@ -72,3 +72,6 @@ Then complete the report in one `Write`. Its `opened` lists the IDs just added, 
 ```
 
 Archive the report straight away if it opened nothing.
+
+## Called by another skill
+Another skill, such as `/next` or `/refine`, may hand you decisions to put to the user, because its own questions would carry too little context. The caller owns the work the decisions steer, so it implements them, records them, and tracks them on the agenda. Run steps 1 to 3 and the conflict check of step 4 as usual, offering any extra options the caller asks for, such as `Skip for now`. Then skip the rest of step 4: state the conclusions in chat, complete the report with `opened` and `closed` empty, archive it, and return to the caller each decision with the item ID it settles, and each question left unanswered.
