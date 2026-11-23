@@ -69,6 +69,7 @@ FOO_DATA = {
 - Setup scripts install `uv` with the official installer when missing.
 - Default to the lockfile (`uv run --locked`, `uv sync --frozen`); upgrading (`uv lock --upgrade`) is a separate, explicit action.
 - Pass `--directory`/`--all-packages` explicitly instead of relying on cwd or a single-package assumption.
+- Set `PYTHONUNBUFFERED=1` when redirecting a long run's output to a file: a redirected stdout is block-buffered, so nothing reaches the file until the run exits.
 
 ## CLI & entry points
 - Parse arguments with `click`.

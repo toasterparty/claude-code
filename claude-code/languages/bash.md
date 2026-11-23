@@ -38,3 +38,4 @@ apt_install() {
 ```
 - Parse `--arg`-style long options with a `while [[ $# -gt 0 ]]` / `case` loop (`shift 2` for value options, `shift` for flags); error and exit on unknown arguments
 - Clean up temp files with `tmp_dir=$(mktemp -d)` and `trap 'rm -rf "$tmp_dir"' EXIT`
+- Stop a process by its pid, never with `pkill -f <name>`, which also matches the shell running `pkill`, since that shell's command line contains the name

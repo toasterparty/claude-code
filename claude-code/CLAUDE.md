@@ -49,7 +49,7 @@ Project instructions are two files, both loaded at session start: `<repo>/AGENTS
 
 The agenda is the project's live to-do list: `<repo>/.agent/doc/agenda.md`, or `<repo>/.agent/doc/agenda/index.md` once split. Read it when the user asks about it or what's next. Before reporting a task done, update it with what the session resolved and left open, because the next prompt usually lands in a fresh session that knows only what the agenda says. A hook reminds you of this once per session, after your first edit outside `.agent/`. Only the top-level session edits it. A subagent reports agenda items in its result instead, so parallel agents never collide in one file.
 
-`<repo>/.agent/` is untracked (its `.gitignore` is the single line `*`):
+`<repo>/.agent/` is untracked (its `.gitignore` is the single line `*`). That `.gitignore` makes ripgrep, and so the Grep tool, skip every file under `.agent/` without a warning, even when the search path is `.agent/` itself. Search there by giving the Grep tool a `glob` such as `**/*.md`, which overrides the ignore rules, or with `command grep -r`:
 - `inbox/`: the user's - plans, raw data, design docs, reference implementations. Read-only to you; search it before researching externally
 - `outbox/`: yours - deliverables such as samples, PR drafts, and write-ups for review. A deliverable goes to a file only when the user asks for one, and lands here unless they give a path
 - `reports/`: yours - one report per skill run that writes one, archived under `reports/_archive/` once nothing in it is open

@@ -8,7 +8,7 @@ argument-hint: "[subject]"
 
 Sessions narrow: agents silently rule out alternatives. The aim is enough bird's-eye guidance that the user is satisfied with the outcome without nitpicking its implementation.
 
-Every consult writes a report, under `practices/reports.md`: start it once the subject is resolved, with `--skill consult` and a `--subject` slug for the subject.
+Every consult writes a report, under `practices/reports.md`: start it once the subject is resolved, with `--skill consult` and a `--subject` slug for the subject. The report serves later sessions, not the user: never mention it in chat or in a question.
 
 ## 1. Subject
 Subject given with the invocation is used as-is. Invoking the skill yourself, name the subject from the decision at hand. Otherwise resolve it with a `multiSelect` `AskUserQuestion`, naming each option concretely and omitting empty ones, or pick the likeliest subject where the tool is unavailable:
@@ -23,6 +23,7 @@ Read the subject, the standards that govern it, and earlier consult reports on i
 - Decisions already made, by anyone: everything is open to challenge, including the user's own decisions, plans, and standards
 - Alternatives the conversation never considered, and framings a reasonable person would reject
 - Facts only the user can supply
+- Where the subject is a change (a diff, commit, branch, or PR): each place its design or intent may conflict with a value the user holds. The answers turn these into review findings, which Step 4 can write out
 
 Then cut any value question two reasonable people would not disagree on, and any candidate research can answer or whose answer would not change the outcome. Decide those yourself.
 
@@ -40,9 +41,18 @@ Where `AskUserQuestion` is unavailable (a headless run, a subagent), add one age
 ## 4. Close
 Flag answers that conflict with each other, the standards, or research findings, and ask the user to resolve them.
 
-State the conclusions in chat, then ask with a `multiSelect` `AskUserQuestion` for any of the following, carried out in this order:
+State the conclusions in chat, then ask with a `multiSelect` `AskUserQuestion` for any of the following that apply, carried out in this order. Each option's description says only what choosing it does. The agenda update below happens whatever the user picks, so it is never an option and never an option's description:
 - Capture the conclusions in the project's documentation, naming the file in the option: the doc where the topic lives, and `AGENTS.md` only for what every session needs
-- Implement all conclusions now, without further confirmation
+- Implement all conclusions now, without further confirmation. Offer it only where some conclusion asks for work
+- Write the review findings to `.agent/outbox/review-<subject>-<YYYY-MM-DD>.md`. Offer it only where the subject is a change and the interview left findings against it
+
+The review file holds one comment per finding, most consequential first, each paired with the one line range of the change's new side that best demonstrates it. Word each comment as a reviewer posting it on a PR: what the code does, the value it works against, and the change asked for, with no reference to this consult, since the user may paste it into a review as written.
+
+```
+# Review <subject>
+
+1. `path/to/file.py:40-52` - <comment>
+```
 
 Then update the agenda, before the report so the report can carry the IDs. Remove any item asking for this subject to be consulted. Add one item for each question left open, tagged `User Decision`, and one for the conclusions not yet implemented, grouping the ones that would be resolved together, each linking the report.
 

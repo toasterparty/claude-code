@@ -31,7 +31,7 @@ closed: [9]
 
 The script writes `skill`, `date`, `branch`, `commit` (suffixed `-dirty` when tracked files had uncommitted changes), and `subject`. The run adds the rest:
 - `scope` - what the run covered, as paths or a diff spec such as `git diff main`, where the skill has a scope
-- `mode` - `guided` or `autonomous`, where the skill has modes
+- `mode` - the mode or intent the run used, in the skill's own word for it, such as `guided`, `autonomous`, or `orchestrate`, where the skill has modes
 - `model` and `effort` - the model ID and effort level the run used
 - `opened` - agenda IDs of the items the run added
 - `closed` - agenda IDs of the items the run resolved or dropped

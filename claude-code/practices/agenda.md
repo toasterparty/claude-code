@@ -70,6 +70,6 @@ Add a review item only for a change that is controversial, or whose details the 
 Every removal appends one line to `.agent/doc/agenda-log.md`, created with its first line: the date, the ID, `resolved` or `dropped`, the headline, and the evidence or reason, as in `- 2026-11-20 #14 resolved: Port the premultiplied draw path to the pause screen. Landed in a1b2c3d`. The log is append-only and no session reads it by default. It lets the user trace an item that vanished, and it keeps retired IDs on file.
 
 ## What's next
-Answer "What's next on the agenda?" with the top item of the top section: what resolving it takes and why it ranks first, then a line each for the next two. Stop there. The user agrees or reorders, then asks next turn to implement it or to walk through its decisions. `/next` is the user's way to pick and carry out the work in one run.
+Answer "What's next on the agenda?" with the top item of the top section: what resolving it takes and why it ranks first, then a line each for the next two. Stop there. The user agrees or reorders, then asks next turn to implement it or to walk through its decisions. `/next` is the user's way to work the agenda in one run.
 
 Answer "What's on me?" with every `User Task` and `User Decision` item, by section in agenda order, since they stay in their threads rather than in a section of their own.
