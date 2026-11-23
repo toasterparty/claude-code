@@ -82,6 +82,17 @@ $GitScratchOptionPattern = $GitScratchMarker + ' -'
 
 $SudoPattern = $WordStart + 'sudo' + $WordEnd
 
+# Claude Code's own safety checks outrank this hook's allow and prompt, or refuse where nobody can
+# answer, so the shapes that trip them are denied here with a remedy. Both deny wider than the checks:
+# a needless denial costs one retry, a missed one stalls the session.
+# An rm target expands to the root when a variable in it is empty, unless ${VAR:?} aborts first.
+# PowerShell reads ${VAR:?} as a drive-qualified variable that expands to empty, so it guards nothing.
+$GuardedExpansionPattern = '\$\{[A-Za-z_][A-Za-z0-9_]*:\?[^}]*\}'
+$UnguardedRmPattern = $WordStart + 'rm' + $Blank + '[^;&|)\r\n]*[$`]'
+# sed can write through -i or a w command, so a sed reaching a Claude home counts as an edit of it.
+$SedPattern = $WordStart + 'sed' + $WordEnd
+$ClaudeHomePattern = '\.claude'
+
 # No settings.json rule backs this check: any Read deny rule turns a command whose paths cannot be
 # resolved up front, like a leading cd or a recursive grep, into a prompt nobody answers unattended.
 # .ssh must open a path component, which spares a deploy.ssh file.
@@ -157,6 +168,9 @@ $ReasonSudo = 'Elevation is not permitted.'
 $ReasonSsh = 'SSH keys are reserved for the user.'
 $ReasonGh = 'Only read-only gh queries and CI dispatch are permitted.'
 $ReasonBackground = 'Background work belongs in the run_in_background parameter, not in the shell.'
+$ReasonRm = 'Claude Code asks a person to approve an rm whose target could expand to the root, and no hook can clear that prompt. Write every variable in the target as ${VAR:?}, as in rm -rf ${dir:?}/${name:?}, assigning any $(...) to a variable first.'
+$ReasonRmPowerShell = 'Claude Code may ask a person to approve an rm whose target could expand to the root, and no hook can clear that prompt. Call Remove-Item by name and throw first if any variable in its path is empty. ${VAR:?} is Bash syntax, which PowerShell expands to empty.'
+$ReasonSed = 'Claude Code asks a person to approve sed on a file under a Claude home (~/.claude*), and no hook can clear that prompt. Read the file with grep, cat or the Read tool instead.'
 
 # The last -X/--method flag wins, as in gh itself. Returns '' when none is given.
 function Find-GhMethod($ghArgs) {
@@ -228,7 +242,7 @@ function Test-GhInvocationsPermitted($command) {
     return $true
 }
 
-function Get-GateDecision($commandText) {
+function Get-GateDecision($commandText, $toolName) {
     $command = Remove-DataHeredocs $commandText
 
     if (($command -creplace $SshPlainFilePattern, ' ') -match $SshDirPattern) {
@@ -269,12 +283,24 @@ function Get-GateDecision($commandText) {
         return @{ decision = 'deny'; reason = $ReasonGh }
     }
 
+    if ($toolName -ceq 'PowerShell') {
+        if ($command -match $UnguardedRmPattern) {
+            return @{ decision = 'deny'; reason = $ReasonRmPowerShell }
+        }
+    } elseif (($command -replace $GuardedExpansionPattern, ' ') -match $UnguardedRmPattern) {
+        return @{ decision = 'deny'; reason = $ReasonRm }
+    }
+
+    if ($command -match $ClaudeHomePattern -and $command -match $SedPattern) {
+        return @{ decision = 'deny'; reason = $ReasonSed }
+    }
+
     return @{ decision = 'allow'; reason = $ReasonAllow }
 }
 
 function Invoke-Gate {
     $request = [Console]::In.ReadToEnd() | ConvertFrom-Json
-    $result = Get-GateDecision ([string]$request.tool_input.command)
+    $result = Get-GateDecision ([string]$request.tool_input.command) ([string]$request.tool_name)
     $payload = @{
         hookSpecificOutput = @{
             hookEventName            = 'PreToolUse'

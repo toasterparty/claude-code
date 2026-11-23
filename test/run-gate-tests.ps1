@@ -27,6 +27,10 @@ $requests = @(
     @{ json = '{"tool_input":{"command":"sudo ls"}}'; decision = 'deny'; reason = 'Elevation is not permitted.' }
     @{ json = '{"tool_input":{}}'; decision = 'allow'; reason = 'Auto-approved by permission-gate.' }
     @{ json = '{}'; decision = 'allow'; reason = 'Auto-approved by permission-gate.' }
+    @{ json = '{"tool_name":"Bash","tool_input":{"command":"rm -rf $W"}}'; decision = 'deny'; reason = $ReasonRm }
+    @{ json = '{"tool_name":"Bash","tool_input":{"command":"rm -rf ${W:?}/x"}}'; decision = 'allow'; reason = $ReasonAllow }
+    @{ json = '{"tool_name":"PowerShell","tool_input":{"command":"rm -rf ${W:?}/x"}}'; decision = 'deny'; reason = $ReasonRmPowerShell }
+    @{ json = '{"tool_name":"PowerShell","tool_input":{"command":"Remove-Item -Recurse $W"}}'; decision = 'allow'; reason = $ReasonAllow }
 )
 foreach ($request in $requests) {
     $total++

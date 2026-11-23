@@ -367,3 +367,39 @@ deny	ssh host 'git push'
 deny	eval "git push"
 deny	python3 -c "import os; os.system('git push')"
 deny	echo 'git push' | bash
+
+# An rm target with an unguarded variable trips Claude Code's root-removal prompt, which no hook clears
+allow	rm -rf build/out
+allow	rm -f "${W:?}/${t:?}"
+allow	W=$(mktemp -d); for t in a b; do rm -f "${W:?}/${t:?}"; done
+allow	rm -rf "${dir:?missing}"
+allow	echo $HOME; rm -f a.txt
+allow	git rev-parse HEAD; npm run format-rm
+allow	rm -f a.txt<NL>echo $HOME
+allow	rm -f a.txt; echo $HOME
+deny	RM -f $W
+deny	W=$(mktemp -d); for t in a b; do rm -f $W/$t; done
+deny	W=$(mktemp -d) && rm -rf $W
+deny	rm -rf "$dir"
+deny	rm -f "${W:?}/$t"
+deny	rm -rf ${W}/x
+deny	rm -rf ${W:-/tmp/x}
+deny	rm -f $(cat list.txt)
+deny	rm -f `cat list.txt`
+deny	/bin/rm -rf $W
+deny	trap 'rm -rf "$tmp_dir"' EXIT
+deny	ls<NL>rm -rf $W
+
+# sed reaching a Claude home trips Claude Code's protected-path prompt, which no hook clears
+allow	sed -n '/^## /,$p' .agent/doc/agenda.md
+allow	cat ~/.claude/practices/plans.md
+allow	grep -n Wording ~/.claude/languages/english.md
+allow	python3 - <<'EOF'<NL>import subprocess<NL>subprocess.run(['sed', '-n', '1p', '/home/u/.claude/x'])<NL>EOF
+deny	sed -n '/^#* *Wording/,/^## /p' /home/u/.claude/languages/english.md
+deny	f=/home/u/.claude/projects/p/tool-results/b.txt; sed -n '/^-----$/,$p' $f
+deny	sed -n 1,30p ~/.claude-personal/settings.json
+deny	cat ~/.claude/x | sed -n 1p
+deny	cat ~/.claude/x<NL>sed -n 1p notes.txt
+deny	sed -n 1p ~/.CLAUDE/x
+deny	SED -n 1p ~/.claude/x
+allow	sed-tool -n 1p ~/.claude/x

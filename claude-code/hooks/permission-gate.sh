@@ -77,6 +77,17 @@ GIT_SCRATCH_OPTION_PATTERN="$GIT_SCRATCH_MARKER"' -'
 
 SUDO_PATTERN="$WORD_START"'sudo'"$WORD_END"
 
+# Claude Code's own safety checks outrank this hook's allow and prompt, or refuse where nobody can
+# answer, so the shapes that trip them are denied here with a remedy. Both deny wider than the checks:
+# a needless denial costs one retry, a missed one stalls the session.
+# An rm target expands to the root when a variable in it is empty, unless ${VAR:?} aborts first.
+# PowerShell reads ${VAR:?} as a drive-qualified variable that expands to empty, so it guards nothing.
+GUARDED_EXPANSION_PATTERN='\$\{[A-Za-z_][A-Za-z0-9_]*:\?[^}]*\}'
+UNGUARDED_RM_PATTERN="$WORD_START"'rm[[:blank:]][^;&|)]*[$`]'
+# sed can write through -i or a w command, so a sed reaching a Claude home counts as an edit of it.
+SED_PATTERN="$WORD_START"'sed'"$WORD_END"
+CLAUDE_HOME_PATTERN='\.claude'
+
 # No settings.json rule backs this check: any Read deny rule turns a command whose paths cannot be
 # resolved up front, like a leading cd or a recursive grep, into a prompt nobody answers unattended.
 # .ssh must open a path component, which spares a deploy.ssh file.
@@ -150,6 +161,9 @@ REASON_SUDO='Elevation is not permitted.'
 REASON_SSH='SSH keys are reserved for the user.'
 REASON_GH='Only read-only gh queries and CI dispatch are permitted.'
 REASON_BACKGROUND='Background work belongs in the run_in_background parameter, not in the shell.'
+REASON_RM='Claude Code asks a person to approve an rm whose target could expand to the root, and no hook can clear that prompt. Write every variable in the target as ${VAR:?}, as in rm -rf ${dir:?}/${name:?}, assigning any $(...) to a variable first.'
+REASON_RM_POWERSHELL='Claude Code may ask a person to approve an rm whose target could expand to the root, and no hook can clear that prompt. Call Remove-Item by name and throw first if any variable in its path is empty. ${VAR:?} is Bash syntax, which PowerShell expands to empty.'
+REASON_SED='Claude Code asks a person to approve sed on a file under a Claude home (~/.claude*), and no hook can clear that prompt. Read the file with grep, cat or the Read tool instead.'
 
 # Line by line like grep, but in-process, since a fork costs a visible delay under Git Bash.
 matches() {
@@ -267,10 +281,18 @@ gh_invocations_permitted() {
     done < <(printf '%s' "$1" | sed -E 's/>&/>/g' | grep -oE "$GH_INVOCATION_PATTERN" || true)
 }
 
-# Sets GATE_DECISION and GATE_REASON for the given command text.
+unguarded_rm() {
+    local rm_text="$1"
+    if [[ $rm_text == *'${'* ]]; then
+        rm_text="$(printf '%s' "$rm_text" | sed -E "s/$GUARDED_EXPANSION_PATTERN/ /g")"
+    fi
+    matches_ci "$rm_text" "$UNGUARDED_RM_PATTERN"
+}
+
+# Sets GATE_DECISION and GATE_REASON for the given command text and the name of the tool running it.
 gate_decision() {
     # Each cut only removes text, so a check whose pattern misses the uncut text skips the fork.
-    local command_text=$1
+    local command_text=$1 tool_name=${2:-}
     if [[ $command_text == *'<<'* ]]; then
         command_text="$(strip_data_heredocs "$command_text")"
     fi
@@ -335,6 +357,24 @@ gate_decision() {
         return
     fi
 
+    if [[ $tool_name == PowerShell ]]; then
+        if matches_ci "$command_text" "$UNGUARDED_RM_PATTERN"; then
+            GATE_DECISION=deny
+            GATE_REASON=$REASON_RM_POWERSHELL
+            return
+        fi
+    elif unguarded_rm "$command_text"; then
+        GATE_DECISION=deny
+        GATE_REASON=$REASON_RM
+        return
+    fi
+
+    if matches_ci "$command_text" "$CLAUDE_HOME_PATTERN" && matches_ci "$command_text" "$SED_PATTERN"; then
+        GATE_DECISION=deny
+        GATE_REASON=$REASON_SED
+        return
+    fi
+
     GATE_DECISION=allow
     GATE_REASON=$REASON_ALLOW
 }
@@ -342,9 +382,10 @@ gate_decision() {
 main() {
     command -v jq >/dev/null 2>&1 || { echo "Error: 'jq' not found" >&2; exit 1; }
 
-    local command_text
-    command_text="$(jq -r '.tool_input.command // ""')"
-    gate_decision "$command_text"
+    # Tab-separated, since $(...) would strip a newline before an empty command.
+    local request
+    request="$(jq -r '(.tool_name // "") + "\t" + (.tool_input.command // "")')"
+    gate_decision "${request#*$'\t'}" "${request%%$'\t'*}"
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"%s","permissionDecisionReason":"%s"}}' \
         "$GATE_DECISION" "$GATE_REASON"
 }
