@@ -58,6 +58,18 @@ bash "$COMMIT_TITLE" --repo "$clone" --title 'Add untracked.txt'
 printf 'scratch\n' > "$clone/.agent/notes.md"
 check_status 'fresh Add untracked.txt' "$clone" 'a file under .agent leaves it fresh'
 
+git init -q "$clone/nested"
+printf 'later\n' > "$clone/zz.txt"
+bash "$COMMIT_TITLE" --repo "$clone" --title 'Add zz.txt' 2>/dev/null
+printf 'changed\n' > "$clone/zz.txt"
+check_status 'stale Add zz.txt' "$clone" 'an untracked nested repo still lets later untracked edits make it stale'
+
+with_external_diff=(env GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=diff.external GIT_CONFIG_VALUE_0=false)
+"${with_external_diff[@]}" bash "$COMMIT_TITLE" --repo "$clone" --title 'Edit the README' 2>/dev/null
+printf 'edit\n' >> "$clone/README.md"
+check 'stale Edit the README' "$("${with_external_diff[@]}" bash "$COMMIT_TITLE" --repo "$clone" 2>/dev/null)" \
+    'a configured external diff tool still lets tracked edits make it stale'
+
 unborn="$FIXTURE_DIR/unborn"
 git init -q "$unborn"
 printf 'first\n' > "$unborn/a.txt"
@@ -66,6 +78,8 @@ check_status 'fresh Add a.txt' "$unborn" 'a repo with no commits hashes'
 
 check_exit 2 'an empty title is rejected' --repo "$clone" --title ''
 check_exit 2 'a two-line title is rejected' --repo "$clone" --title $'One\nTwo'
+check_exit 2 'a title with a leading space is rejected' --repo "$clone" --title ' Fix it'
+check_exit 2 'a title with a trailing space is rejected' --repo "$clone" --title 'Fix it '
 check_exit 2 'a 73-character title is rejected' --repo "$clone" --title "$(printf 'x%.0s' {1..73})"
 check_exit 0 'a 72-character title is accepted' --repo "$clone" --title "$(printf 'x%.0s' {1..72})"
 check_exit 2 'an unknown argument is rejected' --repo "$clone" --bogus
