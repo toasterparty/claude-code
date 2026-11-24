@@ -1,6 +1,8 @@
 # Agenda
 The agenda lists what is still open in a project, for two readers: a fresh session asked "What's next on the agenda?", and every session closing out its work. A good session removes more items than it adds.
 
+The agenda lives at `<repo>/.agent/doc/agenda.md`, or `<repo>/.agent/doc/agenda/index.md` once split. Read it when the user asks about it or what's next. Before reporting a task done, update it with what the session resolved and left open, because the next prompt usually lands in a fresh session that knows only what the agenda says. A hook reminds you of this once per session, after your first edit outside `.agent/`. Only the top-level session edits it. A subagent reports agenda items in its result instead, so parallel agents never collide in one file.
+
 ## Items
 One bullet per item, highest priority first within its section. An item opens with its ID and a one-line headline stating what is open, followed by its tags, and links the document that carries the detail, where one exists: a report in `reports/`, a doc. Never an `inbox/` asset, under the rule below. Indented sub-bullets under the headline may carry short context a later session would otherwise rediscover: a finding, a constraint, an approach already ruled out. Anything longer goes in the linked doc, and the agenda never holds reports, code snippets, proposals, plans, or data. The headline stays one line so the agenda still reads at a glance.
 

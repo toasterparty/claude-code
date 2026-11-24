@@ -1,6 +1,6 @@
 # AI Rules
 - ASCII only in code comments, user-facing strings, and docs: `-` for em and en dashes (never `--`), `...`, `->`, `>=`/`<=`, straight quotes, plain spaces, no emoji. Conversation is exempt
-- Never run a git command that changes the index, HEAD, a ref, the stash, or config, `git mv`, `git rm`, and `git restore` included: the user reviews the unstaged diff and does all staging and committing. Move and delete tracked files with plain `mv` and `rm`. The one exception is a scratch clone under `<repo>/.agent/git/`, described under Project structure
+- Never run a git command that changes the index, HEAD, a ref, the stash, or config, `git mv`, `git rm`, and `git restore` included: the user reviews the unstaged diff and does all staging and committing. Move and delete tracked files with plain `mv` and `rm`. The one exception is a scratch clone under `<repo>/.agent/git/`, described in `practices/scratch-clones.md`
 - Never push, from any repository: the remote is the user's
 - After a substantial code change, end the done report with a recommended commit title in a fenced block, written for the whole uncommitted state (`git status` and `git diff HEAD`, staged and unstaged together, including changes the session did not make): one imperative line of at most 72 characters, never a body
 - A hook denies the calls these rules forbid, along with `sudo`, reading SSH key files, and any `gh` write other than dispatching, rerunning, or cancelling CI. A denial is policy: take the remedy its message gives, never a workaround
@@ -14,13 +14,6 @@ Sessions are short-lived. The user splits one piece of work across separate sess
 - A hard-to-learn fact (a build quirk, an undocumented tool behavior, the root cause of a long debugging hunt) goes into `<repo>/.agent/doc/` the turn you learn it, not at the end of the task
 - A decision the user made in conversation goes into the doc or plan it governs
 - Work the turn resolved or left open goes into the agenda
-
-When executing a plan the user wrote, usually in `<repo>/.agent/inbox/`:
-- Read the whole plan first; raise ambiguities and conflicts up front, not mid-run
-- Then work unattended: resolve gaps in the plan's spirit and list deviations in the final report
-- On a large task, strip the scaffolding, debug output, and dead code the run introduced, then rerun the project's validation
-- Distill process the run uncovered (build quirks, deploy steps, gotchas) into `<repo>/.agent/doc/`
-- Verify the result against the plan before reporting done
 
 Delegation: Opus and above hand broad fact-finding (multi-file exploration, codebase surveys) to Explore subagents with only the context they need, and do targeted lookups (a known file, a single search) inline. Sonnet and Haiku never delegate.
 
@@ -36,24 +29,12 @@ Delegation: Opus and above hand broad fact-finding (multi-file exploration, code
 Read each file below on its trigger, once per session and again after a compaction drops it. Paths in this file and in every guidance file are relative to this file's directory:
 - `languages/english.md`: before first writing a `.md` file or any other prose that outlives the session (comments, docstrings, user-facing strings, `outbox/` deliverables, reports)
 - `languages/common.md`, plus the language's own file among `languages/{bash,c,make,python}.md`: before first reviewing or writing code. No other language has a file
-- `practices/plans.md`: before writing a plan another agent will execute, in a file or a subagent prompt
+- `practices/plans.md`: before writing a plan another agent will execute, in a file or a subagent prompt, and before executing a plan the user wrote
 - `practices/repo-structure.md`: before starting a green-field project, or adding repo-level structure to an existing one (docs tree, `tools/`, `build/`, Makefile, `.gitignore`, `.vscode/`, install steps)
+- `practices/agent-dir.md`: before first searching, creating, or editing anything under `.agent/`, and before creating or editing a repo's agent instructions (`AGENTS.md`, `CLAUDE.md`)
 - `practices/scratch-clones.md`: before creating, reading, or running git in a clone under `.agent/git/`
 - `practices/agenda.md`: before first reading, creating, or editing a project's agenda, and before deciding at a task's end that it needs no update
 - `practices/reports.md`: before starting, reading, or archiving a skill report in `.agent/reports/`
 
 # Project structure
-Agent working directories live in `<repo>/.agent/`, never `<repo>/.claude/`, where every write raises a confirmation prompt that no permission rule clears.
-
-Project instructions are two files, both loaded at session start: `<repo>/AGENTS.md`, tracked and shared with the repo's other developers, and `<repo>/.agent/AGENTS.md`, untracked and yours alone (project memory). Claude Code loads the first natively and a hook loads the second. A root `CLAUDE.md`, which other developers' repos may carry, still loads beside them. Create neither file unasked, since the user decides when a repo gets instructions. When the user asks for agent instructions in a repo, put them in one of these two files, never in a new `CLAUDE.md`.
-
-The agenda is the project's live to-do list: `<repo>/.agent/doc/agenda.md`, or `<repo>/.agent/doc/agenda/index.md` once split. Read it when the user asks about it or what's next. Before reporting a task done, update it with what the session resolved and left open, because the next prompt usually lands in a fresh session that knows only what the agenda says. A hook reminds you of this once per session, after your first edit outside `.agent/`. Only the top-level session edits it. A subagent reports agenda items in its result instead, so parallel agents never collide in one file.
-
-`<repo>/.agent/` is untracked (its `.gitignore` is the single line `*`). That `.gitignore` makes ripgrep, and so the Grep tool, skip every file under `.agent/` without a warning, even when the search path is `.agent/` itself. Search there by giving the Grep tool a `glob` such as `**/*.md`, which overrides the ignore rules, or with `command grep -r`:
-- `inbox/`: the user's - plans, raw data, design docs, reference implementations. Read-only to you; search it before researching externally
-- `outbox/`: yours - deliverables such as samples, PR drafts, and write-ups for review. A deliverable goes to a file only when the user asks for one, and lands here unless they give a path
-- `reports/`: yours - one report per skill run that writes one, archived under `reports/_archive/` once nothing in it is open
-- `scripts/`: yours - reusable, argument-driven executables, nothing task-specific. Whatever a script reads or writes goes in `scripts/data/<script-name>/`
-- `doc/`: yours - knowledge that outlives the task that produced it
-- `git/`: yours - scratch clones. Clone here to read another branch or PR without touching the user's checkout, to read a related repository such as the client of the server you are working on, or to build an artifact from a tree other than the working one, such as comparing an object file built at HEAD against the dirty tree's
-- `scripts/` and `doc/` each keep an `index.md`, one bullet per entry: its path relative to the index in inline code, then when an agent would need to read it, never a summary of what it contains. `scripts/data/` and the agenda are not indexed. Read `doc/index.md` at the start of a task, and `scripts/index.md` before writing a script or running a multi-step procedure by hand, because both exist so a session reuses what an earlier one learned instead of rediscovering it
+Agent working files live in `<repo>/.agent/`, never `<repo>/.claude/`. Read `.agent/doc/index.md` at the start of a task, and `.agent/scripts/index.md` before writing a script or running a multi-step procedure by hand, because both exist so a session reuses what an earlier one learned instead of rediscovering it. Search `.agent/inbox/` before researching externally.

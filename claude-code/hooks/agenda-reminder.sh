@@ -9,7 +9,7 @@
 # The agent's own working files, the agenda among them, are not project work.
 AGENT_DIR_PATTERN='(^|/)\.agent/'
 
-REMINDER='This session has now edited project files. Before reporting the task done, update the project agenda as the user CLAUDE.md describes. This reminder appears once per session.'
+REMINDER='This session has now edited project files. Before reporting the task done, update the project agenda as practices/agenda.md (beside CLAUDE.md in the Claude home directory) describes. This reminder appears once per session.'
 
 # Per user, since /tmp is shared and the first user to create the directory would own it.
 MARKER_DIR="${TMPDIR:-/tmp}/claude-agenda-reminder-$UID"

@@ -4,7 +4,7 @@ description: Tidy the current repository's .agent/ directory into the standard i
 disable-model-invocation: true
 ---
 
-Bring `<repo>/.agent/` into the layout the user CLAUDE.md defines, running the passes below in order.
+Bring `<repo>/.agent/` into the layout `practices/agent-dir.md` defines, running the passes below in order.
 
 Survey with one recursive listing carrying sizes and dates, and open a file only when its name, size, and location leave its fate open. Batch moves and deletes into as few shell calls as possible rather than one tool call per file.
 
@@ -81,7 +81,7 @@ Record sizes from that listing, never from a fresh stat after the skim, so bytes
 A first run against a long history is the expensive one. Work newest-first, stop when findings dry up, and record only what was skimmed, leaving the rest pending.
 
 ## 6. Index
-Create or repair `scripts/index.md` and `doc/index.md` in the format the user CLAUDE.md gives. Add the step 5 scripts and drop lines whose file is gone.
+Create or repair `scripts/index.md` and `doc/index.md` in the format `practices/agent-dir.md` gives. Add the step 5 scripts and drop lines whose file is gone.
 
 ## 7. Ignore rules
 Make `.agent/.gitignore` the single line `*`, dropping any un-ignore exceptions a legacy layout left behind, `!CLAUDE.md` included.

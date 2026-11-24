@@ -22,7 +22,7 @@ Mark one intent `(Recommended)` and list it first only where the agenda, read by
 
 Any other text given with the invocation names the section to work in, or for Orchestrate the objective.
 
-In Unblock and Review the user is on hand: ask wherever an answer would settle something faster or more surely than you could alone. Put a non-trivial decision to the user through `/consult`, invoked with the `Skill` tool, never as a bare question, and ask the rest directly. Before sorting decisions, read `Non-trivial decisions` in `skills/consult/SKILL.md`, which defines the line. It counts a decision an earlier agent made without asking as non-trivial, even when the question looks like a confirmation to keep it. In Autonomous and Orchestrate, ask nothing after the intent question, because the user is not there to answer and a pending question stalls the whole run. A plan ambiguity that gates the work becomes a `User Decision` item, and one that does not is resolved in the plan's spirit and logged in the report.
+In Unblock and Review the user is on hand: ask wherever an answer would settle something faster or more surely than you could alone. Before putting any decision to the user, read `practices/decisions.md`, which sends each one to `/consult` or a direct question. It counts a decision an earlier agent made without asking as non-trivial, even when the question looks like a confirmation to keep it. In Autonomous and Orchestrate, ask nothing after the intent question, because the user is not there to answer and a pending question stalls the whole run. A plan ambiguity that gates the work becomes a `User Decision` item, and one that does not is resolved in the plan's spirit and logged in the report.
 
 Once the intent is Autonomous or Orchestrate, start the report step 9 describes, before the walk's first edit.
 
@@ -77,7 +77,7 @@ Stop when the objective is met, when every remaining thread is blocked on the us
 
 ## 7. Carry out a pick
 Route by what the item asks for:
-- **A plan not yet executed** - follow the plan-execution rules in the user `CLAUDE.md`
+- **A plan not yet executed** - follow the execution rules in `practices/plans.md`
 - **Code not yet refined** - invoke `/refine` through the `Skill` tool, passing the item's scope and the mode, `guided` where the user is on hand and `autonomous` otherwise, so it asks neither
 - **A plan or design not yet consulted** - invoke `/consult` with the item's subject, only where the user is on hand. Otherwise the item is blocked
 - **Anything else** - do the work directly

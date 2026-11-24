@@ -14,7 +14,7 @@ $ErrorActionPreference = 'Stop'
 # The agent's own working files, the agenda among them, are not project work.
 $AgentDirPattern = '(^|/)\.agent/'
 
-$Reminder = 'This session has now edited project files. Before reporting the task done, update the project agenda as the user CLAUDE.md describes. This reminder appears once per session.'
+$Reminder = 'This session has now edited project files. Before reporting the task done, update the project agenda as practices/agenda.md (beside CLAUDE.md in the Claude home directory) describes. This reminder appears once per session.'
 
 $MarkerDir = Join-Path ([System.IO.Path]::GetTempPath()) 'claude-agenda-reminder'
 $SessionIdPattern = '^[A-Za-z0-9_-]+$'
