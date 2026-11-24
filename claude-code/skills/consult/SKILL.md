@@ -10,6 +10,21 @@ Sessions narrow: agents silently rule out alternatives. The aim is enough bird's
 
 Every consult writes a report, under `practices/reports.md`: start it once the subject is resolved, with `--skill consult` and a `--subject` slug for the subject. The report serves later sessions, not the user: never mention it in chat or in a question.
 
+## Non-trivial decisions
+Skills that keep the user on hand, such as `/next` and `/refine`, send their non-trivial decisions here and ask the rest directly. A decision is non-trivial when any of these holds:
+- The options differ in behavior a client, user, or operator can observe, such as a reply or error code, an ordering, a timing, a wire format, or a log line, or in a resource budget such as memory, flash, or a task
+- It concerns design, naming, a public interface, or project policy, and two reasonable people could choose differently
+- Weighing it needs context the user is unlikely to remember, such as how the code works, a protocol's details, or why a plan chose what it did
+- An agent already made it without asking, for example an item a report lists under `Decided without asking` or `Needs your review`, or a choice that has already landed. Asking whether to keep it is not a confirmation, because the user never weighed it: it is the same decision, with the landed choice as one option
+
+Ask directly instead:
+- A confirmation of something the user already decided or said
+- A fact only the user knows, such as which hardware is on hand
+- A pick between agenda items, or an item's fate: remove, keep, or skip
+- A bug with one clear fix, or a change whose only option is `Implement`
+
+When unsure, consult. A consult costs the user a few minutes, while a misjudged bare question costs a round of answers they could not give.
+
 ## 1. Subject
 Subject given with the invocation is used as-is. Invoking the skill yourself, name the subject from the decision at hand. Otherwise resolve it with a `multiSelect` `AskUserQuestion`, naming each option concretely and omitting empty ones, or pick the likeliest subject where the tool is unavailable:
 - The current session topic, or a related one
@@ -32,7 +47,7 @@ Ask in rounds of up to four questions, most consequential first. Let answers spa
 
 Each question:
 - **Probes a value, unless asking a fact** - implementation is secondary. Not "Redis or an in-process cache?" but "Is losing cached state on restart acceptable to avoid running another service?", with the implementations in the option descriptions
-- **Assumes little** - the user may not have read the subject, and may see only the dialog. Give just enough context to decide: what the thing does and what is at stake
+- **Holds one decision** - never bundle unrelated decisions into one `multiSelect` where leaving a box unchecked means "change it", because an unchecked box cannot say whether the user rejected the choice or skipped it
 - **Stays neutral** - mark `(Recommended)`, with the reason, only where one option is strongly advisable
 - **Shows its history** - revisiting a decision quotes it, from a report or the session, and says why it is back
 
