@@ -125,6 +125,28 @@ deny	bash -c "sudo ls"
 allow	echo "legit push"
 allow	echo "pseudo sudo-less"
 
+# sudo named in quoted data is no call, unless the quotes reach a shell
+allow	grep -n 'sudo\|ssh' notes.md
+allow	git log --grep "sudo"
+deny	echo 'sudo ls' | bash
+
+# An inline interpreter script that writes files skips the Edit and Write hooks
+deny	node -e 'const fs=require("fs");fs.writeFileSync("a.ts","x")'
+deny	python3 -c "open('a.txt', 'w').write('x')"
+deny	python3 - <<'EOF'<NL>from pathlib import Path<NL>Path('a.md').write_text('x')<NL>EOF
+deny	node <<'EOF'<NL>require("fs").appendFileSync("log.txt", "x")<NL>EOF
+deny	perl -pi -e 's/a/b/' src/x.c
+deny	perl -i.bak -pe 's/a/b/' src/x.c
+allow	python3 -c "print(open('a.txt').read())"
+allow	node -e 'console.log(require("fs").readFileSync("a.json","utf8"))'
+allow	python tools/bake.py --out cakes.json
+allow	grep -rn writeFileSync src/node/
+allow	perl -ne 'print if /x/' f.txt
+allow	perl -Mlib=. -e 'print 1'
+deny	Perl -pi -e 's/a/b/' src/x.c
+allow	perl -I lib t/basic.t
+allow	ruby -I. test/a_test.rb
+
 # Backgrounding from inside the shell, which run_in_background does where the harness can see it
 deny	npm run dev &
 deny	python server.py & curl localhost:8000

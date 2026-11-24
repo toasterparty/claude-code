@@ -82,6 +82,22 @@ $GitScratchOptionPattern = $GitScratchMarker + ' -'
 
 $SudoPattern = $WordStart + 'sudo' + $WordEnd
 
+# A foreground poll loop holds the session until its condition turns true, which took 40 minutes once,
+# where run_in_background or Monitor would wake the session when it does. Monitor runs such loops by
+# design, so only the shell tools are checked, and only in the foreground.
+$PollLoopPattern = $WordStart + '(while|until|for|foreach|do)' + $WordEnd
+$PollSleepPattern = $WordStart + '(sleep|start-sleep)' + $WordEnd
+$ForegroundShellTools = @('Bash', 'PowerShell')
+
+# A script handed to an interpreter inline that writes files skips the hooks that guard Edit and
+# Write, and Claude Code may stop to ask a person to approve it. Checked before heredoc bodies are cut.
+$InlineInterpreterPattern = $WordStart + '(python[0-9.]*|py|node|deno|bun|perl|ruby)(' + $Blank + '+-\S*)*(' +
+    $Blank + '*<<|' + $Blank + '+(-[A-Za-z]*[ceE]|--eval|-)(' + $Blank + '|$))'
+$InlineFileWritePattern = 'writeFile|appendFile|createWriteStream|write_text|write_bytes|File\.write|open\([^)]*["''][wax]b?\+?["'']'
+# perl and ruby rewrite their file arguments under -i, as in perl -pi -e or perl -i.bak. Matched
+# with case, since -I adds an include path.
+$InPlaceEditPattern = $WordStart + '([Pp][Ee][Rr][Ll]|[Rr][Uu][Bb][Yy])(' + $Blank + '+-\S*)*' + $Blank + '+-[A-Za-z]*i(' + $Blank + '|\.|$)'
+
 # Claude Code's own safety checks outrank this hook's allow and prompt, or refuse where nobody can
 # answer, so the shapes that trip them are denied here with a remedy. Both deny wider than the checks:
 # a needless denial costs one retry, a missed one stalls the session.
@@ -164,10 +180,12 @@ $ReasonAllow = 'Auto-approved by permission-gate.'
 $ReasonGit = 'Commands that alter git state (index, HEAD, refs, stash, config) are reserved for the user. Move or delete tracked files with plain mv and rm. For a checkout of your own, clone into .agent/git/<name> and run git -C .agent/git/<name> <command>.'
 $ReasonGitPush = 'The remote is reserved for the user, even from a scratch clone under .agent/git/.'
 $ReasonGitApply = 'git apply may not stage what it applies; drop --index, --cached and --3way.'
-$ReasonSudo = 'Elevation is not permitted.'
-$ReasonSsh = 'SSH keys are reserved for the user.'
-$ReasonGh = 'Only read-only gh queries and CI dispatch are permitted.'
+$ReasonSudo = 'Elevation is not permitted. Give the user the command to run themselves, as ! <command> in the prompt, or hand them a script that needs it, untested.'
+$ReasonSsh = 'SSH keys are reserved for the user. Connect with ssh, scp or git, which load the keys themselves; of ~/.ssh, only config and known_hosts may be read.'
+$ReasonGh = 'Only read-only gh queries and CI dispatch (gh workflow run, gh run rerun, gh run cancel) are permitted. Write anything to post, such as a PR body, comment or review, to .agent/outbox/ for the user.'
 $ReasonBackground = 'Background work belongs in the run_in_background parameter, not in the shell.'
+$ReasonPollLoop = 'A foreground loop that sleeps holds the session until it ends. Wait for one condition with the same loop under run_in_background, which reports when it exits, or watch for repeated events with Monitor.'
+$ReasonInlineWrite = 'An inline interpreter script that writes files skips the hooks on Edit and Write, and may stop for a person to approve it. Edit the file with the Edit or Write tool. Generated output that needs a script goes in a script file, such as under .agent/scripts/, run by its path.'
 $ReasonRm = 'Claude Code asks a person to approve an rm whose target could expand to the root, and no hook can clear that prompt. Write every variable in the target as ${VAR:?}, as in rm -rf ${dir:?}/${name:?}, assigning any $(...) to a variable first.'
 $ReasonRmPowerShell = 'Claude Code may ask a person to approve an rm whose target could expand to the root, and no hook can clear that prompt. Call Remove-Item by name and throw first if any variable in its path is empty. ${VAR:?} is Bash syntax, which PowerShell expands to empty.'
 $ReasonSed = 'Claude Code asks a person to approve sed on a file under a Claude home (~/.claude*), and no hook can clear that prompt. Read the file with grep, cat or the Read tool instead.'
@@ -242,7 +260,12 @@ function Test-GhInvocationsPermitted($command) {
     return $true
 }
 
-function Get-GateDecision($commandText, $toolName) {
+function Test-WritesInline($command) {
+    if ($command -cmatch $InPlaceEditPattern) { return $true }
+    return $command -match $InlineInterpreterPattern -and $command -match $InlineFileWritePattern
+}
+
+function Get-GateDecision($commandText, $toolName, $inBackground = $false) {
     $command = Remove-DataHeredocs $commandText
 
     if (($command -creplace $SshPlainFilePattern, ' ') -match $SshDirPattern) {
@@ -271,12 +294,22 @@ function Get-GateDecision($commandText, $toolName) {
         return @{ decision = 'deny'; reason = $ReasonGit }
     }
 
-    if ($command -match $SudoPattern) {
+    # Quoted data, such as a search pattern naming sudo, is no call here either.
+    if ($gitText -match $SudoPattern) {
         return @{ decision = 'deny'; reason = $ReasonSudo }
+    }
+
+    if (Test-WritesInline $commandText) {
+        return @{ decision = 'deny'; reason = $ReasonInlineWrite }
     }
 
     if (Test-Backgrounds $command) {
         return @{ decision = 'deny'; reason = $ReasonBackground }
+    }
+
+    if ($toolName -cin $ForegroundShellTools -and -not $inBackground -and
+        $gitText -match $PollLoopPattern -and $gitText -match $PollSleepPattern) {
+        return @{ decision = 'deny'; reason = $ReasonPollLoop }
     }
 
     if (-not (Test-GhInvocationsPermitted $command)) {
@@ -300,7 +333,7 @@ function Get-GateDecision($commandText, $toolName) {
 
 function Invoke-Gate {
     $request = [Console]::In.ReadToEnd() | ConvertFrom-Json
-    $result = Get-GateDecision ([string]$request.tool_input.command) ([string]$request.tool_name)
+    $result = Get-GateDecision ([string]$request.tool_input.command) ([string]$request.tool_name) ($request.tool_input.run_in_background -eq $true)
     $payload = @{
         hookSpecificOutput = @{
             hookEventName            = 'PreToolUse'

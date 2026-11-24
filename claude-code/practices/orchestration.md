@@ -1,0 +1,28 @@
+# Orchestration
+An orchestrator is a session that drives an objective through subagents and does none of the work itself. Orchestration suits an objective no single session could finish: a large technical hurdle, a wide verification gap, an analysis spanning more material than one context holds. The user who asks for it expects substantially more progress than one session's top task or two. Only Opus and above orchestrate, because the orchestrator must be able to judge and correct every subagent below it.
+
+## Delegating
+Break the objective into delegations ordered by dependency, each with a plan written under `practices/plans.md`, and hand each to the cheapest worker that can be trusted with it:
+- **Sonnet subagent** - work whose plan leaves no judgment open: exact files, steps, and verification
+- **Opus subagent** - work that needs judgment: a design gap the plan cannot close in advance, a risky change to load-bearing code, a `/refine`, a review of another subagent's work
+
+Do no work inline, however small, because the orchestrator's context is held in reserve for judging results and handling what its subagents did not expect. The orchestrator writes plans, reads diffs and findings, runs validation, and keeps the records.
+
+Delegate only down the ladder Fable, Opus, Sonnet: a Fable session may hand work to Opus or Sonnet subagents, an Opus session to Opus or Sonnet, and never to a model above its own, because a weaker model cannot be trusted to judge a stronger one's work. A subagent may delegate further on the same terms. Sonnet never delegates.
+
+Subagents edit the working tree directly, never a worktree, whose branch and merge back would need git writes the rules forbid. Run subagents in parallel only on disjoint files, and never while one edits what another reads. Each plan states the line on open questions below, since a subagent never reads this file, and asks for a result listing the choices the subagent made at its own discretion, the questions it raised, what it left untested, and any follow-up work it found.
+
+## Open questions
+The user is away, so an orchestrated run asks nothing. An agent-owned decision, as `practices/decisions.md` defines it, is made and logged. A subagent treats any other question that nothing written settles as a single unattended session does: it proceeds on the likeliest answer where reversing it is a small change, and raises the rest.
+
+The orchestrator tolerates a costlier reversal than a single session would, and proceeds on the likeliest answer to most raised questions, logging each, because a run that halts at every gap makes little progress, and a finished result is cheaper to correct than a stalled one. A raised question blocks only where its likeliest answer would contradict a written design or plan, or where a wrong guess would throw away most of the objective's work. Work around a blocked question and list it at the close. Expect few.
+
+## Verifying
+Verify each delegation before anything builds on it: read its diff or findings, and rerun the validation its plan names. Once relayed, a subagent's claim is the orchestrator's claim: a "never happens", "clean", or "verified" in the close states the search it covered, such as the inputs, cases, or files checked, because a claim wider than its search once reached the user as a premise. A delegation that fails gets one retry with a corrected plan, then goes to an Opus subagent.
+
+Before a delegation builds on substantial code an earlier one landed, hand an Opus subagent `/refine` in `autonomous` mode on that code, because each layer built on unrefined code compounds its debt.
+
+## Stopping
+Stop when the objective is met, when every remaining thread waits on a blocking question or an action only the user can take, when the next piece of work is unrelated to what the run has finished, or when the context left can no longer verify another delegation. Before the close, wherever a subagent touched source, run `git status --short` and the project's tests, because a subagent can leave scratch edits behind.
+
+The close lists what was done and how it was verified, each logged decision with the alternative given up, each blocked question, and the work left untested.

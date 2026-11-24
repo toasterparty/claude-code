@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SessionStart hook (Linux/MacOS): load the project memory in <repo>/.agent/AGENTS.md, which Claude
+# SessionStart hook (Linux/MacOS): title the session with its directory name, load the project memory in <repo>/.agent/AGENTS.md, which Claude
 # Code itself loads only once a file under .agent/ is read, and warn the user when the deployed
 # config lags main. Install stamps the deployed commit beside hooks/. The root AGENTS.md loads
 # natively through pluginConfigs in settings.json, so printing it here would load it twice.
@@ -15,6 +15,18 @@ SHORT_SHA_LEN=7
 # A resumed session already holds the memory it loaded at its start.
 MEMORY_SOURCES='^(startup|clear|compact)$'
 DRIFT_SOURCES='^startup$'
+
+# Claude Code applies a hook's sessionTitle only on these sources.
+TITLE_SOURCES='^(startup|resume|fork)$'
+
+# Prints the working directory's name as the session title, or nothing when the session already
+# has a custom title (a --name or /rename the user chose) or the directory has no name.
+calc_session_title() {
+    local cwd="${1//\\//}" existing_title="$2"
+    [[ -n $existing_title ]] && return
+    cwd="${cwd%/}"
+    printf '%s' "${cwd##*/}"
+}
 
 # Prints the project memory path for the session's working directory, or nothing.
 find_project_memory() {
@@ -41,10 +53,14 @@ fetch_latest_commit() {
 main() {
     command -v jq >/dev/null 2>&1 || { echo "Error: 'jq' not found" >&2; exit 1; }
 
-    local request source cwd memory_path context='' message='' deployed=''
+    local request source cwd memory_path context='' message='' deployed='' title=''
     request="$(cat)"
     source="$(printf '%s' "$request" | jq -r '.source // ""')"
     cwd="$(printf '%s' "$request" | jq -r '.cwd // ""')"
+
+    if [[ $source =~ $TITLE_SOURCES ]]; then
+        title="$(calc_session_title "$cwd" "$(printf '%s' "$request" | jq -r '.session_title // ""')")"
+    fi
 
     if [[ $source =~ $MEMORY_SOURCES && -n $cwd ]]; then
         memory_path="$(find_project_memory "$cwd")"
@@ -58,11 +74,14 @@ main() {
         message="$(calc_drift_message "$deployed" "$(fetch_latest_commit)")"
     fi
 
-    if [[ -z $context && -z $message ]]; then
+    if [[ -z $context && -z $message && -z $title ]]; then
         return
     fi
-    jq -cn --arg context "$context" --arg message "$message" '
-        (if $context != "" then {hookSpecificOutput: {hookEventName: "SessionStart", additionalContext: $context}} else {} end)
+    jq -cn --arg context "$context" --arg message "$message" --arg title "$title" '
+        ({hookEventName: "SessionStart"}
+            + (if $context != "" then {additionalContext: $context} else {} end)
+            + (if $title != "" then {sessionTitle: $title} else {} end)) as $specific
+        | (if $context != "" or $title != "" then {hookSpecificOutput: $specific} else {} end)
         + (if $message != "" then {systemMessage: $message} else {} end)'
 }
 

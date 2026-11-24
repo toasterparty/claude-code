@@ -13,4 +13,8 @@ Ask directly instead:
 - A pick between agenda items, or an item's fate: remove, keep, or skip
 - A bug with one clear fix, or a change whose only option is `Implement`
 
+Ask neither way an agent-owned decision: one of a class the project's instructions assign to the agent, such as tuning constants or code structure. This holds even where a bullet above would make it non-trivial, because the user delegated the class to save their attention, and asking hands it back. The agent makes it, and a run that made any records them in its report under one review item, as `practices/agenda.md` describes, so the user can veto them in bulk. A decision the instructions leave to the user, or do not mention, stays under the rules above.
+
+Before asking, check each factual premise the question rests on against the code, data, or log that settles it, and state the evidence in the question. A claim relayed from another agent, such as a subagent's "this never happens", is a premise: restate the search it covered, or the user weighs a claim nobody verified.
+
 When unsure, consult. A consult costs the user a few minutes, while a misjudged bare question costs a round of answers they could not give.

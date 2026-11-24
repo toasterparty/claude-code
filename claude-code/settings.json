@@ -92,6 +92,11 @@
             "type": "command",
             "command": "{{AGENDA_REMINDER}}",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "{{CODE_REMINDER}}",
+            "timeout": 10
           }
         ]
       }

@@ -1,0 +1,23 @@
+# Expected code-reminder decision, tab, 1 when the context was already reminded, tab, 1 when
+# common.md is in context, tab, edited file. Both hooks must agree on every line. Blank lines and
+# # lines are skipped. A missing fourth field stands for a tool call with no file path.
+
+# A code edit without common.md in context reminds
+remind	0	0	/repo/src/main.c
+remind	0	0	/repo/tools/bake.py
+remind	0	0	/repo/src/client/src/libraries.ts
+remind	0	0	/repo/hooks/gate.ps1
+remind	0	0	C:\Users\x\repo\src\knife.rs
+remind	0	0	/repo/Makefile
+remind	0	0	/repo/.agent/scripts/digest.py
+
+# Once common.md is in context, or once reminded, it stays silent
+skip	0	1	/repo/src/main.c
+skip	1	0	/repo/src/main.c
+
+# Prose, data and config are not code
+skip	0	0	/repo/README.md
+skip	0	0	/repo/settings.json
+skip	0	0	/repo/test/cases.tsv
+skip	0	0	/repo/src/main.c.orig
+skip	0	0

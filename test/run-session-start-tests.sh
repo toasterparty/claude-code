@@ -50,5 +50,15 @@ for source in resume clear compact; do
     check 0 "$([[ $source =~ $DRIFT_SOURCES ]] && echo 1 || echo 0)" "drift skips $source"
 done
 
+check 'claude-code' "$(calc_session_title 'C:\Git\claude-code' '')" 'title from a Windows path'
+check 'claude-code' "$(calc_session_title '/home/me/claude-code/' '')" 'title from a path with a trailing slash'
+check '' "$(calc_session_title '/home/me/claude-code' 'my name')" 'title keeps an existing custom title'
+for source in startup resume fork; do
+    check 1 "$([[ $source =~ $TITLE_SOURCES ]] && echo 1 || echo 0)" "title sets on $source"
+done
+for source in clear compact; do
+    check 0 "$([[ $source =~ $TITLE_SOURCES ]] && echo 1 || echo 0)" "title skips $source"
+done
+
 printf '%s/%s passed\n' "$((total - failed))" "$total"
 [[ $failed -eq 0 ]]

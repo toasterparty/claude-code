@@ -55,6 +55,7 @@ function Resolve-HookPlaceholders($json) {
         '{{PROSE_GATE}}'      = 'prose-gate.ps1'
         '{{SESSION_START}}'   = 'session-start.ps1'
         '{{AGENDA_REMINDER}}' = 'agenda-reminder.ps1'
+        '{{CODE_REMINDER}}'   = 'code-reminder.ps1'
     }
     foreach ($placeholder in $gates.Keys) {
         $gate = 'powershell -NoProfile -NonInteractive -File "{0}"' -f (Join-Path $ClaudeDir "hooks\$($gates[$placeholder])")

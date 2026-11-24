@@ -1,4 +1,4 @@
-# SessionStart hook (Windows): load the project memory in <repo>/.agent/AGENTS.md, which Claude
+# SessionStart hook (Windows): title the session with its directory name, load the project memory in <repo>/.agent/AGENTS.md, which Claude
 # Code itself loads only once a file under .agent/ is read, and warn the user when the deployed
 # config lags main. Install stamps the deployed commit beside hooks/. The root AGENTS.md loads
 # natively through pluginConfigs in settings.json, so printing it here would load it twice.
@@ -19,6 +19,16 @@ $ShortShaLen = 7
 # A resumed session already holds the memory it loaded at its start.
 $MemorySources = '^(startup|clear|compact)$'
 $DriftSources = '^startup$'
+
+# Claude Code applies a hook's sessionTitle only on these sources.
+$TitleSources = '^(startup|resume|fork)$'
+
+# Returns the working directory's name as the session title, or nothing when the session already
+# has a custom title (a --name or /rename the user chose) or the directory has no name.
+function Get-SessionTitle($cwd, $existingTitle) {
+    if ($existingTitle) { return }
+    ($cwd -replace '\\', '/').TrimEnd('/').Split('/')[-1]
+}
 
 # Returns the project memory path for the session's working directory, or nothing.
 function Find-ProjectMemory($cwd) {
@@ -46,17 +56,23 @@ function Invoke-SessionStart {
     $source = if ($request.PSObject.Properties['source']) { [string]$request.source } else { '' }
     $cwd = if ($request.PSObject.Properties['cwd']) { [string]$request.cwd } else { '' }
 
-    $payload = @{}
+    $specific = @{ hookEventName = 'SessionStart' }
     if ($source -match $MemorySources -and $cwd) {
         $memoryPath = Find-ProjectMemory $cwd
         if ($memoryPath) {
             $content = (Get-Content -Raw -LiteralPath $memoryPath).TrimEnd()
-            $payload.hookSpecificOutput = @{
-                hookEventName     = 'SessionStart'
-                additionalContext = "Contents of $memoryPath (project memory):`n`n$content"
-            }
+            $specific.additionalContext = "Contents of $memoryPath (project memory):`n`n$content"
         }
     }
+
+    if ($source -match $TitleSources) {
+        $existingTitle = if ($request.PSObject.Properties['session_title']) { [string]$request.session_title } else { '' }
+        $title = Get-SessionTitle $cwd $existingTitle
+        if ($title) { $specific.sessionTitle = $title }
+    }
+
+    $payload = @{}
+    if ($specific.Count -gt 1) { $payload.hookSpecificOutput = $specific }
 
     if ($source -match $DriftSources -and (Test-Path -LiteralPath $DeployedCommitFile)) {
         $deployed = (Get-Content -Raw -LiteralPath $DeployedCommitFile).Trim()

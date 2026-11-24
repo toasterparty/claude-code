@@ -77,6 +77,21 @@ GIT_SCRATCH_OPTION_PATTERN="$GIT_SCRATCH_MARKER"' -'
 
 SUDO_PATTERN="$WORD_START"'sudo'"$WORD_END"
 
+# A foreground poll loop holds the session until its condition turns true, which took 40 minutes once,
+# where run_in_background or Monitor would wake the session when it does. Monitor runs such loops by
+# design, so only the shell tools are checked, and only in the foreground.
+POLL_LOOP_PATTERN="$WORD_START"'(while|until|for|foreach|do)'"$WORD_END"
+POLL_SLEEP_PATTERN="$WORD_START"'(sleep|start-sleep)'"$WORD_END"
+FOREGROUND_SHELL_TOOLS='^(Bash|PowerShell)$'
+
+# A script handed to an interpreter inline that writes files skips the hooks that guard Edit and
+# Write, and Claude Code may stop to ask a person to approve it. Checked before heredoc bodies are cut.
+INLINE_INTERPRETER_PATTERN="$WORD_START"'(python[0-9.]*|py|node|deno|bun|perl|ruby)([[:blank:]]+-[^[:blank:]]*)*([[:blank:]]*<<|[[:blank:]]+(-[[:alpha:]]*[ceE]|--eval|-)([[:blank:]]|$))'
+INLINE_FILE_WRITE_PATTERN='writeFile|appendFile|createWriteStream|write_text|write_bytes|File\.write|open\([^)]*'"[\"$QUOTE][wax]b?\\+?[\"$QUOTE]"
+# perl and ruby rewrite their file arguments under -i, as in perl -pi -e or perl -i.bak. Matched
+# with case, since -I adds an include path.
+IN_PLACE_EDIT_PATTERN="$WORD_START"'([Pp][Ee][Rr][Ll]|[Rr][Uu][Bb][Yy])([[:blank:]]+-[^[:blank:]]*)*[[:blank:]]+-[[:alpha:]]*i([[:blank:]]|\.|$)'
+
 # Claude Code's own safety checks outrank this hook's allow and prompt, or refuse where nobody can
 # answer, so the shapes that trip them are denied here with a remedy. Both deny wider than the checks:
 # a needless denial costs one retry, a missed one stalls the session.
@@ -157,10 +172,12 @@ REASON_ALLOW='Auto-approved by permission-gate.'
 REASON_GIT='Commands that alter git state (index, HEAD, refs, stash, config) are reserved for the user. Move or delete tracked files with plain mv and rm. For a checkout of your own, clone into .agent/git/<name> and run git -C .agent/git/<name> <command>.'
 REASON_GIT_PUSH='The remote is reserved for the user, even from a scratch clone under .agent/git/.'
 REASON_GIT_APPLY='git apply may not stage what it applies; drop --index, --cached and --3way.'
-REASON_SUDO='Elevation is not permitted.'
-REASON_SSH='SSH keys are reserved for the user.'
-REASON_GH='Only read-only gh queries and CI dispatch are permitted.'
+REASON_SUDO='Elevation is not permitted. Give the user the command to run themselves, as ! <command> in the prompt, or hand them a script that needs it, untested.'
+REASON_SSH='SSH keys are reserved for the user. Connect with ssh, scp or git, which load the keys themselves; of ~/.ssh, only config and known_hosts may be read.'
+REASON_GH='Only read-only gh queries and CI dispatch (gh workflow run, gh run rerun, gh run cancel) are permitted. Write anything to post, such as a PR body, comment or review, to .agent/outbox/ for the user.'
 REASON_BACKGROUND='Background work belongs in the run_in_background parameter, not in the shell.'
+REASON_POLL_LOOP='A foreground loop that sleeps holds the session until it ends. Wait for one condition with the same loop under run_in_background, which reports when it exits, or watch for repeated events with Monitor.'
+REASON_INLINE_WRITE='An inline interpreter script that writes files skips the hooks on Edit and Write, and may stop for a person to approve it. Edit the file with the Edit or Write tool. Generated output that needs a script goes in a script file, such as under .agent/scripts/, run by its path.'
 REASON_RM='Claude Code asks a person to approve an rm whose target could expand to the root, and no hook can clear that prompt. Write every variable in the target as ${VAR:?}, as in rm -rf ${dir:?}/${name:?}, assigning any $(...) to a variable first.'
 REASON_RM_POWERSHELL='Claude Code may ask a person to approve an rm whose target could expand to the root, and no hook can clear that prompt. Call Remove-Item by name and throw first if any variable in its path is empty. ${VAR:?} is Bash syntax, which PowerShell expands to empty.'
 REASON_SED='Claude Code asks a person to approve sed on a file under a Claude home (~/.claude*), and no hook can clear that prompt. Read the file with grep, cat or the Read tool instead.'
@@ -289,10 +306,20 @@ unguarded_rm() {
     matches_ci "$rm_text" "$UNGUARDED_RM_PATTERN"
 }
 
-# Sets GATE_DECISION and GATE_REASON for the given command text and the name of the tool running it.
+writes_inline() {
+    local command_text="$1"
+    if matches "$command_text" "$IN_PLACE_EDIT_PATTERN"; then
+        return 0
+    fi
+    matches_ci "$command_text" "$INLINE_INTERPRETER_PATTERN" && matches_ci "$command_text" "$INLINE_FILE_WRITE_PATTERN"
+}
+
+# Sets GATE_DECISION and GATE_REASON for the given command text, the name of the tool running it, and
+# whether the call runs in the background.
 gate_decision() {
     # Each cut only removes text, so a check whose pattern misses the uncut text skips the fork.
-    local command_text=$1 tool_name=${2:-}
+    local command_text=$1 tool_name=${2:-} in_background=${3:-false}
+    local raw_text=$command_text
     if [[ $command_text == *'<<'* ]]; then
         command_text="$(strip_data_heredocs "$command_text")"
     fi
@@ -339,15 +366,29 @@ gate_decision() {
         return
     fi
 
-    if matches_ci "$command_text" "$SUDO_PATTERN"; then
+    # Quoted data, such as a search pattern naming sudo, is no call here either.
+    if matches_ci "$git_text" "$SUDO_PATTERN"; then
         GATE_DECISION=deny
         GATE_REASON=$REASON_SUDO
+        return
+    fi
+
+    if writes_inline "$raw_text"; then
+        GATE_DECISION=deny
+        GATE_REASON=$REASON_INLINE_WRITE
         return
     fi
 
     if backgrounds "$command_text"; then
         GATE_DECISION=deny
         GATE_REASON=$REASON_BACKGROUND
+        return
+    fi
+
+    if [[ $tool_name =~ $FOREGROUND_SHELL_TOOLS && $in_background != true ]] &&
+        matches_ci "$git_text" "$POLL_LOOP_PATTERN" && matches_ci "$git_text" "$POLL_SLEEP_PATTERN"; then
+        GATE_DECISION=deny
+        GATE_REASON=$REASON_POLL_LOOP
         return
     fi
 
@@ -384,8 +425,11 @@ main() {
 
     # Tab-separated, since $(...) would strip a newline before an empty command.
     local request
-    request="$(jq -r '(.tool_name // "") + "\t" + (.tool_input.command // "")')"
-    gate_decision "${request#*$'\t'}" "${request%%$'\t'*}"
+    request="$(jq -r '(.tool_name // "") + "\t" + (.tool_input.run_in_background == true | tostring) + "\t" + (.tool_input.command // "")')"
+    local tool_name=${request%%$'\t'*} in_background
+    request=${request#*$'\t'}
+    in_background=${request%%$'\t'*}
+    gate_decision "${request#*$'\t'}" "$tool_name" "$in_background"
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"%s","permissionDecisionReason":"%s"}}' \
         "$GATE_DECISION" "$GATE_REASON"
 }

@@ -111,6 +111,8 @@ Raise rather than make, however good:
 - A risky restructure of load-bearing code
 - Work too large for this pass
 
+Except an agent-owned decision, as `practices/decisions.md` defines it: a change in a class the project's instructions give to the agent, such as a tuning constant or a layout choice. Make that call yourself in every mode, implement it unless it is a risky restructure or too large, and list it under the report's `Decided by the agent`, because raising it hands the user a decision they delegated.
+
 ## 6. Review
 
 Open agenda items that link an earlier refine report and fall in scope join the raised items, read from that report by their ID. Check each against the current code first, locating it by its description since line numbers drift. An item already addressed, or whose code is gone, closes as resolved instead of being raised again.
@@ -135,7 +137,7 @@ Then audit every prose file this session wrote against the writing standards.
 
 ## 8. Report
 
-First add one agenda item for each item in `Needs your review`, tagged `User Decision` where it offers the user a choice, grouping the ones that would be resolved together, so the report can carry their IDs. Then complete the report this pass started, in one `Write`. Its `opened` lists the IDs just added, and its `closed` the earlier items this pass settled. The body after the front matter is a terse log of fragments, one line per item, no restating the diff. Keep the headings verbatim and in this order, omitting a section only when it is empty. Give options only where two or more real ones exist, and a `Recommendation` line only where Step 6 would mark one `(Recommended)`.
+First add one agenda item for each item in `Needs your review`, tagged `User Decision` where it offers the user a choice, grouping the ones that would be resolved together, plus the one review item `practices/agenda.md` describes where `Decided by the agent` is not empty, so the report can carry their IDs. Then complete the report this pass started, in one `Write`. Its `opened` lists the IDs just added, and its `closed` the earlier items this pass settled. The body after the front matter is a terse log of fragments, one line per item, no restating the diff. Keep the headings verbatim and in this order, omitting a section only when it is empty. Give options only where two or more real ones exist, and a `Recommendation` line only where Step 6 would mark one `(Recommended)`.
 
 ```
 # Refine <subject, or the scope in a few words>
@@ -152,6 +154,9 @@ First add one agenda item for each item in `Needs your review`, tagged `User Dec
 ## Changed in review
 - <one line per item the user approved in Step 6, a bug fix as: defect, trigger, fix>
 
+## Decided by the agent
+- #<review item id> <one line per agent-owned decision: what was chosen, and the alternative given up>
+
 ## Needs your review
 1. **#<id> <Title>** (`path:line`) - <proposed change>.
 
@@ -165,6 +170,6 @@ Recommendation: (a)
 - <each intended delta from Step 7, like: 3 tests deleted with parser/legacy.py>
 ```
 
-Then finish the agenda. Remove every earlier item this pass closed, logged as resolved when implemented or found addressed and as dropped on `Drop`, and any item asking for this scope to be refined. Archive the reports this leaves with nothing open, this one included when `Needs your review` is empty.
+Then finish the agenda. Remove every earlier item this pass closed, logged as resolved when implemented or found addressed and as dropped on `Drop`, and any item asking for this scope to be refined. Archive the reports this leaves with nothing open, this one included when `Needs your review` and `Decided by the agent` are both empty.
 
 Name the report by its repo-relative path and give the highlights in a sentence or two.

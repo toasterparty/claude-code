@@ -12,4 +12,4 @@ Layout:
 
 The install scripts download the repo archive at the commit `main` points at and stamp it into `<claude home>/.deployed-commit`, which the session-start hook compares against `main`. An edit here changes nothing live until the user pushes and reruns install.
 
-Update the language file list under `Guidance files` in `claude-code/CLAUDE.md` whenever a file directly under `claude-code/languages/` is added or removed.
+Update the language file lists in `claude-code/CLAUDE.md` (the code rule under `AI Rules` and its entry under `Guidance files`) and in the reminder text of `claude-code/hooks/code-reminder.*` whenever a file directly under `claude-code/languages/` is added or removed.

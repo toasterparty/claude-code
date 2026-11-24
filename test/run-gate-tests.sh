@@ -41,6 +41,12 @@ expect_request '{"tool_name":"Bash","tool_input":{"command":"rm -rf $W"}}' deny 
 expect_request '{"tool_name":"Bash","tool_input":{"command":"rm -rf ${W:?}/x"}}' allow "$REASON_ALLOW"
 expect_request '{"tool_name":"PowerShell","tool_input":{"command":"rm -rf ${W:?}/x"}}' deny "$REASON_RM_POWERSHELL"
 expect_request '{"tool_name":"PowerShell","tool_input":{"command":"Remove-Item -Recurse $W"}}' allow "$REASON_ALLOW"
+expect_request '{"tool_name":"Bash","tool_input":{"command":"until curl -s localhost:5198; do sleep 1; done"}}' deny "$REASON_POLL_LOOP"
+expect_request '{"tool_name":"Bash","tool_input":{"command":"until curl -s localhost:5198; do sleep 1; done","run_in_background":true}}' allow "$REASON_ALLOW"
+expect_request '{"tool_name":"Monitor","tool_input":{"command":"while true; do gh run list; sleep 30; done"}}' allow "$REASON_ALLOW"
+expect_request '{"tool_name":"PowerShell","tool_input":{"command":"while (-not (Test-Path out.txt)) { Start-Sleep 1 }"}}' deny "$REASON_POLL_LOOP"
+expect_request '{"tool_name":"Bash","tool_input":{"command":"grep -n '"'"'while sleep'"'"' notes.md"}}' allow "$REASON_ALLOW"
+expect_request '{"tool_name":"Bash","tool_input":{"command":"for f in *.md; do wc -l $f; done"}}' allow "$REASON_ALLOW"
 
 printf '%s/%s passed\n' "$((total - failed))" "$total"
 [[ $failed -eq 0 ]]

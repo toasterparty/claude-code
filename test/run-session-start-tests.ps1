@@ -52,5 +52,15 @@ foreach ($source in 'resume', 'clear', 'compact') {
     Test-Case $false ($source -match $DriftSources) "drift skips $source"
 }
 
+Test-Case 'claude-code' (Get-SessionTitle 'C:\Git\claude-code' '') 'title from a Windows path'
+Test-Case 'claude-code' (Get-SessionTitle '/home/me/claude-code/' '') 'title from a path with a trailing slash'
+Test-Case '' (Get-SessionTitle '/home/me/claude-code' 'my name') 'title keeps an existing custom title'
+foreach ($source in 'startup', 'resume', 'fork') {
+    Test-Case $true ($source -match $TitleSources) "title sets on $source"
+}
+foreach ($source in 'clear', 'compact') {
+    Test-Case $false ($source -match $TitleSources) "title skips $source"
+}
+
 "$($total - $failed)/$total passed"
 if ($failed -gt 0) { exit 1 }

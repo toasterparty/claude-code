@@ -27,7 +27,7 @@ Read the subject, the standards that govern it, and earlier consult reports on i
 - Facts only the user can supply
 - Where the subject is a change (a diff, commit, branch, or PR): each place its design or intent may conflict with a value the user holds. The answers turn these into review findings, which Step 4 can write out
 
-Then cut any value question two reasonable people would not disagree on, and any candidate research can answer or whose answer would not change the outcome. Decide those yourself.
+Then cut any value question two reasonable people would not disagree on, any candidate research can answer or whose answer would not change the outcome, and any agent-owned decision as `practices/decisions.md` defines it. Decide those yourself. Check each factual premise a remaining question rests on against the code or data, as `practices/decisions.md` requires.
 
 ## 3. Ask
 Ask in rounds of up to four questions, most consequential first. Let answers spawn follow-ups and retire questions. Stop when nothing left would change the outcome, or when the user says to. An answer through `Other` can redefine the question: follow what it says. To rank, pit the top contenders against each other or invite an ordering through `Other`, since the tool has no ranking input.
@@ -65,6 +65,7 @@ Then complete the report in one `Write`. Its `opened` lists the IDs just added, 
 
 ## Decisions
 - **<decision>** - <the value behind it>. <what it implies for implementation>
+    - > <the user's words, verbatim, wherever they typed the answer rather than picked an option>
 
 ## Facts
 - <what the user supplied that research could not>

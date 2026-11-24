@@ -24,13 +24,19 @@ foreach ($line in Get-Content (Join-Path $PSScriptRoot 'gate-cases.tsv')) {
 
 # The hook end to end: a PreToolUse request on stdin, its decision on stdout.
 $requests = @(
-    @{ json = '{"tool_input":{"command":"sudo ls"}}'; decision = 'deny'; reason = 'Elevation is not permitted.' }
+    @{ json = '{"tool_input":{"command":"sudo ls"}}'; decision = 'deny'; reason = $ReasonSudo }
     @{ json = '{"tool_input":{}}'; decision = 'allow'; reason = 'Auto-approved by permission-gate.' }
     @{ json = '{}'; decision = 'allow'; reason = 'Auto-approved by permission-gate.' }
     @{ json = '{"tool_name":"Bash","tool_input":{"command":"rm -rf $W"}}'; decision = 'deny'; reason = $ReasonRm }
     @{ json = '{"tool_name":"Bash","tool_input":{"command":"rm -rf ${W:?}/x"}}'; decision = 'allow'; reason = $ReasonAllow }
     @{ json = '{"tool_name":"PowerShell","tool_input":{"command":"rm -rf ${W:?}/x"}}'; decision = 'deny'; reason = $ReasonRmPowerShell }
     @{ json = '{"tool_name":"PowerShell","tool_input":{"command":"Remove-Item -Recurse $W"}}'; decision = 'allow'; reason = $ReasonAllow }
+    @{ json = '{"tool_name":"Bash","tool_input":{"command":"until curl -s localhost:5198; do sleep 1; done"}}'; decision = 'deny'; reason = $ReasonPollLoop }
+    @{ json = '{"tool_name":"Bash","tool_input":{"command":"until curl -s localhost:5198; do sleep 1; done","run_in_background":true}}'; decision = 'allow'; reason = $ReasonAllow }
+    @{ json = '{"tool_name":"Monitor","tool_input":{"command":"while true; do gh run list; sleep 30; done"}}'; decision = 'allow'; reason = $ReasonAllow }
+    @{ json = '{"tool_name":"PowerShell","tool_input":{"command":"while (-not (Test-Path out.txt)) { Start-Sleep 1 }"}}'; decision = 'deny'; reason = $ReasonPollLoop }
+    @{ json = '{"tool_name":"Bash","tool_input":{"command":"grep -n ''while sleep'' notes.md"}}'; decision = 'allow'; reason = $ReasonAllow }
+    @{ json = '{"tool_name":"Bash","tool_input":{"command":"for f in *.md; do wc -l $f; done"}}'; decision = 'allow'; reason = $ReasonAllow }
 )
 foreach ($request in $requests) {
     $total++

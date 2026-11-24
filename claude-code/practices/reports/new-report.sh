@@ -5,7 +5,11 @@
 # taken when any report of that day holds it, archived ones included, whatever its skill.
 set -euo pipefail
 shopt -s nullglob
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+# The install scripts stamp the deployed commit into the Claude home. A checkout of the config repo
+# has no stamp, and its reports leave the field out.
+DEPLOYED_COMMIT_PATH="$SCRIPT_DIR/../../.deployed-commit"
 LOCK_WAIT_TENTHS=50
 SEQUENCES=({a..y} z{a..z})
 
@@ -59,6 +63,10 @@ slug_pattern='^[a-z0-9]+(-[a-z0-9]+)*$'
 
 branch=$(git -C "$repo" branch --show-current)
 commit=$(fetch_commit "$repo")
+config=""
+if [[ -r "$DEPLOYED_COMMIT_PATH" ]]; then
+    config=$(head -c 7 "$DEPLOYED_COMMIT_PATH")
+fi
 reports_dir="$repo/.agent/reports"
 mkdir -p "$reports_dir"
 
@@ -76,6 +84,7 @@ path="$reports_dir/$day$seq-$skill${subject:+-$subject}.md"
     echo "branch: ${branch:-detached}"
     echo "commit: $commit"
     [[ -z "$subject" ]] || echo "subject: $subject"
+    [[ -z "$config" ]] || echo "config: $config"
     echo '---'
 } > "$path"
 echo "$path"

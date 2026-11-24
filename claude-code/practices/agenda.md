@@ -66,6 +66,8 @@ The user's order is sticky, both of sections and of items within one. Insert a n
 ## Review items
 Add a review item only for a change that is controversial, or whose details the user contested or showed interest in. Routine changes get none, since the unstaged diff already lists them. The item resolves on evidence that the user reviewed the change: a commit containing it, or the user settling it in a session. A `/code-review` report is not that evidence.
 
+A run that made agent-owned decisions, as `practices/decisions.md` defines them, adds one review item for all of them, linking the report that lists them, as in `` - #31 Review the agent-owned decisions of the controls run (`20261124a-next-controls.md`) ``. It carries no `User Decision` tag, so nothing waits on it, and it resolves like any review item.
+
 ## Updating
 - Remove what the session resolved and add what it left open. A session that changed nothing open leaves the agenda alone.
 - Check older items against `inbox/`, `reports/`, and recent git history. A commit containing an item's change resolves it, and so does a deliverable that finished it.
