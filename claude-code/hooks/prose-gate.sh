@@ -46,16 +46,43 @@ english_sentinel() {
     done <<<"$english_text"
 }
 
-# An unreadable transcript counts as in context: failing open costs a missed reminder, where
-# failing closed would deny every prose write for the rest of the session.
+# One pass, so the file may be a pipe. ENVIRON rather than -v, which would unescape the pattern.
+file_holds_english() {
+    SENTINEL="$2" PATTERN="$ENGLISH_READ_PATTERN" awk '
+        (ENVIRON["SENTINEL"] != "" && index($0, ENVIRON["SENTINEL"])) || $0 ~ ENVIRON["PATTERN"] { found = 1; exit }
+        END { exit !found }
+    ' "$1"
+}
+
+# The parent transcript's lines up to the message a fork branched at, which is the context the fork
+# inherited without copying it into its own sidechain. Empty unless the sidechain is a fork's.
+fork_inherited_lines() {
+    local sidechain="$1" transcript="$2" branch_uuid
+
+    branch_uuid="$(head -n 1 -- "$sidechain" \
+        | jq -r 'select(.type == "fork-context-ref") | .parentLastUuid // empty' 2>/dev/null)" || true
+    [[ -n $branch_uuid ]] || return 0
+    sed "/\"uuid\":\"$branch_uuid\"/q" -- "$transcript"
+}
+
+# True when the calling context holds english.md's text or a file tool call on it. A subagent's
+# call carries its parent's transcript_path plus its agent_id, and its own messages land in a
+# sidechain transcript beside the parent's. An unreadable transcript counts as in context: failing
+# open costs a missed reminder, where failing closed would deny every prose write for the rest of
+# the session.
 english_md_in_context() {
-    local transcript="$1" sentinel="$2"
+    local transcript="$1" sentinel="$2" agent_id="${3:-}" sidechain
 
     [[ -f $transcript ]] || return 0
-    if [[ -n $sentinel ]] && grep -Fq -- "$sentinel" "$transcript"; then
-        return 0
+    if [[ -z $agent_id ]]; then
+        file_holds_english "$transcript" "$sentinel"
+        return
     fi
-    grep -Eq "$ENGLISH_READ_PATTERN" "$transcript"
+
+    sidechain="${transcript%.jsonl}/subagents/agent-$agent_id.jsonl"
+    [[ -f $sidechain ]] || return 0
+    file_holds_english "$sidechain" "$sentinel" && return 0
+    file_holds_english <(fork_inherited_lines "$sidechain" "$transcript") "$sentinel"
 }
 
 build_denial_reason() {
@@ -71,12 +98,13 @@ build_denial_reason() {
 main() {
     command -v jq >/dev/null 2>&1 || { echo "Error: 'jq' not found" >&2; exit 1; }
 
-    local request file_path transcript english_text english_in_context=0
+    local request file_path transcript agent_id english_text english_in_context=0
     request="$(cat)"
     file_path="$(printf '%s' "$request" | jq -r '.tool_input.file_path // ""')"
     transcript="$(printf '%s' "$request" | jq -r '.transcript_path // ""')"
+    agent_id="$(printf '%s' "$request" | jq -r '.agent_id // ""')"
     english_text="$(cat -- "$ENGLISH_PATH" 2>/dev/null)" || english_text=''
-    if english_md_in_context "$transcript" "$(english_sentinel "$english_text")"; then
+    if english_md_in_context "$transcript" "$(english_sentinel "$english_text")" "$agent_id"; then
         english_in_context=1
     fi
 

@@ -66,6 +66,38 @@ try {
     $request = ConvertTo-Json @{ tool_input = @{ file_path = '/repo/README.md' }; transcript_path = $mention } -Compress
     $denial = ($request | pwsh -NoProfile -File (Join-Path $TopDir 'claude-code\hooks\prose-gate.ps1') | ConvertFrom-Json).hookSpecificOutput.permissionDecisionReason
     Test-Case $true ($denial.Contains($sentinel)) 'hook denial is valid JSON carrying english.md'
+
+    # A subagent's call names its parent's transcript; only the subagent's own sidechain counts.
+    foreach ($pair in @(@('mention', 'read'), @('read', 'mention'))) {
+        $subagentDir = Join-Path $fixtureDir "$($pair[0])\subagents"
+        New-Item -ItemType Directory -Path $subagentDir | Out-Null
+        Copy-Item (Join-Path $fixtureDir "$($pair[1]).jsonl") (Join-Path $subagentDir 'agent-sub.jsonl')
+    }
+    function Invoke-Gate($transcript, $agentId) {
+        $request = ConvertTo-Json @{ tool_input = @{ file_path = '/repo/README.md' }; transcript_path = $transcript; agent_id = $agentId } -Compress
+        # -join, because a [string] cast of an empty pipeline stays $null.
+        return ($request | pwsh -NoProfile -File (Join-Path $TopDir 'claude-code\hooks\prose-gate.ps1')) -join ''
+    }
+    Test-Case '' (Invoke-Gate $mention 'sub') 'subagent that read english.md under an unread parent is allowed'
+    Test-Case $true ((Invoke-Gate (Join-Path $fixtureDir 'read.jsonl') 'sub').Contains('"deny"')) 'subagent that never read english.md under a read parent is denied'
+
+    # A fork inherits the parent's transcript up to its branch point without copying it, and the
+    # parent reads english.md at u2.
+    $forkParent = Join-Path $fixtureDir 'fork.jsonl'
+    Set-Content -LiteralPath $forkParent -Value @'
+{"uuid":"u1","type":"user","message":{"content":"hi"}}
+{"uuid":"u2","type":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"/x/english.md"}}]}}
+{"uuid":"u3","type":"user","message":{"content":"bye"}}
+'@
+    New-Item -ItemType Directory -Path (Join-Path $fixtureDir 'fork\subagents') | Out-Null
+    foreach ($branch in 'u1', 'u2') {
+        Set-Content -LiteralPath (Join-Path $fixtureDir "fork\subagents\agent-$branch.jsonl") -Value @(
+            "{`"type`":`"fork-context-ref`",`"parentLastUuid`":`"$branch`"}"
+            '{"type":"user","message":{"content":"probe"}}'
+        )
+    }
+    Test-Case $true (Test-EnglishMdInContext $forkParent $sentinel 'u2') 'fork branched after the parent read english.md'
+    Test-Case $false (Test-EnglishMdInContext $forkParent $sentinel 'u1') 'fork branched before the parent read english.md'
 }
 finally {
     Remove-Item -Recurse -Force $fixtureDir
