@@ -29,10 +29,11 @@ Free text through `Other` covers anything else. A scope too large to carry throu
 
 **Always out of scope:** adding features and implementing plans.
 
-Mode is whether the pass may stop for the user, and whether it may fix bugs unasked. Resolve it immediately after scope. A mode given with the invocation (`guided`, `autonomous`, or `autonomous-fix`, in any wording) is used as-is. Otherwise ask with `AskUserQuestion`, offering the three below in this order, without a recommendation:
+Mode is whether the pass may stop for the user, and whether it may fix bugs unasked. Resolve it immediately after scope. A mode given with the invocation (`guided`, `guided-fix`, `autonomous`, or `autonomous-fix`, in any wording) is used as-is. Otherwise ask with `AskUserQuestion`, offering the four below in this order, without a recommendation:
 - **Guided** - the user stays on hand to answer questions and review raised items. Interview them with `AskUserQuestion` at any step where their answer would settle something faster or more surely than you could alone, such as the intent behind odd code, which validation route to take, or whether a bug candidate's behavior is deliberate. Items raised for review still wait for Step 6, so the user answers them together, and Step 6 puts the non-trivial decisions among them through `/consult`
+- **Guided (fix bugs)** (`guided-fix`) - guided, with every bug that has one clear fix approved in advance, as **Bugs** in Step 5 describes, so Step 6 asks only about the rest. Everything this skill says of guided mode applies to it too
 - **Autonomous** - the user steps away, and the pass ends in a report and agenda items. Ask nothing after the mode question, because the user is not there to answer and a pending question stalls the whole pass. Steps 3, 6, and 8 say what changes
-- **Autonomous, fixing bugs** (`autonomous-fix`) - autonomous, with every bug that has one clear fix approved in advance, as **Bugs** in Step 5 describes. Everything this skill says of autonomous mode applies to it too
+- **Autonomous (fix bugs)** (`autonomous-fix`) - autonomous, with every bug that has one clear fix approved in advance, as **Bugs** in Step 5 describes. Everything this skill says of autonomous mode applies to it too
 
 ## 2. Load guidance
 
@@ -78,7 +79,7 @@ Interrogate every piece of complexity: each layer, option, branch, type, and fil
 
 A bug is a defect that plausibly harms observable behavior: a crash, an unhandled failure, an off-by-one, a violated contract, a disputed doc (see **Document**). Hunt bugs first and raise every one: never fix one without asking, never sit on one silently. Code can be free of them, and a pass that finds none says so rather than promoting a surprise into a defect. Cover each approved fix with a check that fails before and passes after.
 
-In `autonomous-fix` mode, fix a bug without asking where it has one clear fix: the fix Step 6 would offer as a lone `Implement`, or mark `(Recommended)`. Raise a bug whose fixes are a close call, because picking among them is the user's judgment. Every other behavior change is still raised.
+In `guided-fix` and `autonomous-fix` modes, fix a bug without asking where it has one clear fix: the fix Step 6 would offer as a lone `Implement`, or mark `(Recommended)`. Raise a bug whose fixes are a close call, because picking among them is the user's judgment. Every other behavior change is still raised.
 
 ### Toolkit
 
@@ -146,7 +147,7 @@ First add one agenda item for each item in `Needs your review`, tagged `User Dec
 - <one line per change class, never per file, like: Inlined 4 one-caller helpers in parser/>
 
 ## Fixed
-- <one line per bug fixed without asking in autonomous-fix mode: defect, trigger, fix>
+- <one line per bug fixed without asking in a fix mode: defect, trigger, fix>
 
 ## Changed in review
 - <one line per item the user approved in Step 6, a bug fix as: defect, trigger, fix>

@@ -12,11 +12,13 @@ Expect an agenda that has fallen behind the repo, with items a commit already re
 Read `practices/agenda.md` and `.agent/doc/index.md` before anything else. The agenda practice defines the item kinds, the tags, the sticky order, and the evidence that resolves an item, and every step below relies on it. Where the project has no agenda, or it holds no items, say so and stop.
 
 ## 1. Intent
-The intent is what the session is for. An intent given with the invocation, in any wording, is used as-is. Otherwise ask it first with `AskUserQuestion`, offering these in this order, without a recommendation:
+The intent is what the session is for. An intent given with the invocation, in any wording, is used as-is. Otherwise ask it first with `AskUserQuestion`, offering these in this order:
 - **Unblock** - the user has time to make the decisions and carry out the tasks the agenda waits on. Step 3
 - **Review** - the user wants to hear what is open, clear out stale items, reorder, and pick what this session works on. Step 4
 - **Autonomous** - the user steps away while the session works the agenda from the top, as much as one session holds. Step 5
 - **Orchestrate** - the user steps away while the session drives an objective larger than one session's context, delegating to subagents. Step 6. Offer it only where the session model is Opus or above, because the orchestrator must be able to judge and correct every subagent below it. Asked for by invocation on a lower model, run Autonomous instead and say why in the close
+
+Mark one intent `(Recommended)` and list it first only where the agenda, read by its tags alone, makes it a clear winner, giving the reason in its description.
 
 Any other text given with the invocation names the section to work in, or for Orchestrate the objective.
 
