@@ -50,6 +50,7 @@ A tag records a fact a session confirmed, so the next session does not rediscove
 - `User Decision` - a decision only the user can make. No session makes it on its own lean, even where it would recommend an answer.
 - `blocked by #N` - the item cannot start until item #N resolves, as in `blocked by #12, #13`. An item that waits on a decision is blocked by that decision's own `User Decision` item. A blocker outside the agenda, such as an upstream release, is written in words: `blocked: c-wspp lacks permessage-deflate`.
 - `open @<commit>` - a session checked the item against the repo at that commit, the short hash of `HEAD`, and found it still open. A later session trusts it and skips reconciling the item unless a commit since then touches what the item names. Restamp it on every re-check, and drop it when an edit to the item changes what done means.
+- `Fable`, `Opus`, or `Sonnet` - the cheapest model trusted with the work, ranked Fable above Opus above Sonnet. `Sonnet` fits an item whose linked plan leaves no judgment open: exact files, steps, and verification. An untagged item counts as `Opus`. A session tags only below its own model, because judging whether a model suffices takes a stronger one: Fable may tag `Opus` or `Sonnet`, Opus may tag `Sonnet`, and Sonnet tags nothing. `Fable` goes on an item only where the user proposed it or agreed to it in conversation. A session skips an item tagged above its own model, and `/next` works the items tagged for its own model first.
 
 A dependency is written on the blocked item only, so the agenda holds each dependency once. A session that resolves an item searches the agenda for its ID, in split-out section files too, and clears or narrows each `blocked by` that named it in the same edit.
 
@@ -67,6 +68,8 @@ The user's order is sticky, both of sections and of items within one. Insert a n
 Add a review item only for a change that is controversial, or whose details the user contested or showed interest in. Routine changes get none, since the unstaged diff already lists them. The item resolves on evidence that the user reviewed the change: a commit containing it, or the user settling it in a session. A `/code-review` report is not that evidence.
 
 A run that made agent-owned decisions, as `practices/decisions.md` defines them, adds one review item for all of them, linking the report that lists them, as in `` - #31 Review the agent-owned decisions of the controls run (`20261124a-next-controls.md`) ``. It carries no `User Decision` tag, so nothing waits on it, and it resolves like any review item.
+
+An autonomous `/refine` adds one such item for the taste-only proposals it raised, listed in its report under `Taste proposals`. It resolves when the user settles them in a session, or when a guided `/refine` over the same scope takes them up as its own raised items.
 
 ## Updating
 - Remove what the session resolved and add what it left open. A session that changed nothing open leaves the agenda alone.

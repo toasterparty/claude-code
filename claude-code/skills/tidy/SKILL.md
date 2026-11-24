@@ -9,29 +9,16 @@ Bring `<repo>/.agent/` into the layout `practices/agent-dir.md` defines, running
 Survey with one recursive listing carrying sizes and dates, and open a file only when its name, size, and location leave its fate open. Batch moves and deletes into as few shell calls as possible rather than one tool call per file.
 
 ## Scope
-Touch only the five layout dirs and the `git/` scratch dir under `.agent/`, the agenda, the project instruction files, and the legacy locations they replace: `<repo>/.claude/{inbox,outbox,scripts,doc}/`, the older `plans/`, `reference/`, `agent/`, and `CLAUDE.md` at the repo root, in `.agent/`, or in `.claude/`. Leave everything else in `<repo>/.claude/` alone. Remove a legacy dir from `.claude/` only once its contents are safely moved.
-
-Never edit a file under `inbox/`. Moving a whole file out of a legacy location is the one change allowed against user content.
+Touch only the five layout dirs and the `git/` scratch dir under `.agent/`, the agenda, the project instruction files, and the legacy locations step 2 names. Never edit a file under `inbox/`.
 
 ## 1. Create the layout
 Create whichever of the five layout dirs (`inbox/`, `outbox/`, `reports/`, `scripts/`, `doc/`) are missing, and keep them even when empty. Subdirectories, `_archive/` and `scripts/data/` included, appear only on first use.
 
 ## 2. Migrate legacy layouts
-- `.claude/{inbox,outbox,scripts,doc}/*` -> the matching dir under `.agent/`, subdirectories intact
-- `.agent/CLAUDE.md`, `.claude/CLAUDE.md`, and an untracked root `CLAUDE.md` -> `.agent/AGENTS.md`, appending to it where it already exists
-- a tracked root `CLAUDE.md` -> `AGENTS.md`, only on the user's answer in step 3, appending to a tracked `AGENTS.md` where one exists. Move it with plain `mv`, leaving the rename for the user to stage
-- `scripts/data/tidy-claude/` -> `scripts/data/tidy/`, merging into it where it exists
-- `reference/*` -> `inbox/`
-- `plans/*` -> `inbox/`, and its `archive/` or `_archive/` subdirs -> `inbox/_archive/`
-- `agent/` scripts -> `scripts/` if worth reusing, otherwise delete
-- `agent/` notes that still teach something -> `doc/`
-- skill reports written before `practices/reports.md`, such as `outbox/refine/`, `outbox/consult/`, and `refine-*` or `review-*` files, archived or not -> `reports/_archive/`, contents unchanged, each name prefixed with its old subdir under `outbox/` (minus any `_archive/` level) so names cannot collide, as in `outbox/refine/_archive/202611021811-b357e5f.md` -> `reports/_archive/refine-202611021811-b357e5f.md`. Give each review item or open question still open in them an agenda item tagged `User Decision`, unless one already covers it: an item not marked `[resolved: ...]`, `[dropped: ...]`, or `[moved: ...]`, whose code or question still stands. Repoint every agenda link to a moved file
-- other agent-authored reports in any legacy dir -> `outbox/_archive/`
+Where the survey finds a legacy location, read `migrate.md` beside this file and migrate as it describes. The legacy locations are `<repo>/.claude/{inbox,outbox,scripts,doc}/`, `plans/`, `reference/`, `agent/`, `scripts/data/tidy-claude/`, a `CLAUDE.md` at the repo root, in `.agent/`, or in `.claude/`, and skill reports under `outbox/` written before `practices/reports.md`. Otherwise skip this step.
 
 ## 3. Resolve ambiguity
 A file is archived once its work is finished. Ambiguous means neither the file, the repo, nor git history settles that: a plan with unchecked boxes, a report on an unmerged branch, a script whose target still exists.
-
-A tracked root `CLAUDE.md` always counts as ambiguous: rename it only in a repo the user owns, and only the user can say whether they own it, since a work repo's remote names an org rather than an owner. Other developers' repos keep their `CLAUDE.md`.
 
 Collect these during the survey, agenda items of unproven status and inbox assets of unclear status (step 4a) among them, and ask them in one AskUserQuestion batch before the first destructive move, one question per file or related group, each option stating the action it triggers. Whatever the user leaves unresolved stays where it is. Never archive or delete on a guess.
 
@@ -59,34 +46,13 @@ Rewrite surviving scripts and docs so an agent on another task can use them: str
 Move stray data files out of `scripts/` into `scripts/data/<script-name>/` and repoint the scripts that read them.
 
 ### 5a. Mine the session history
-Script the work past sessions did by hand.
-
-Transcripts live at `<claude home>/projects/<repo path with every separator and colon replaced by `-`>/<session-id>.jsonl`, with subagent transcripts in a sidecar directory named for the session. `<claude home>` is `$CLAUDE_CONFIG_DIR` when set, otherwise `~/.claude`.
-
-Opus and above delegate the skim to an Explore subagent, handing it the exact files and byte offsets from the ledger. Filter the JSONL down to user messages and tool-call inputs before reading. Collect only each procedure, the commands that carried it out, and the arguments a script would take.
-
-Worth a script: a multi-command procedure repeated across sessions or rebuilt each time, an invocation that took several attempts (quoting, platform differences, pagination, auth), anything the user had to correct. Not worth one: anything a single tool call solves.
-
-Write each new script under the same rules as the generalized ones: argument-driven, idempotent, non-interactive, no repo-specific path.
-
-### 5b. Skim ledger
-Never skim the same bytes twice. The ledger is `scripts/data/tidy/skimmed.tsv`: one line per transcript, `<session-id>`, tab, its size in bytes when skimmed. List the transcript directory with sizes and compare:
-
-- absent, or smaller than recorded (rotated) - skim the whole file
-- larger - skim only the tail, from `tail -c +<recorded + 1>`
-- equal - skip without opening
-
-Record sizes from that listing, never from a fresh stat after the skim, so bytes appended mid-run (the tidying session's own transcript among them) are picked up next time.
-
-A first run against a long history is the expensive one. Work newest-first, stop when findings dry up, and record only what was skimmed, leaving the rest pending.
+Read `mine.md` beside this file and script the work past sessions did by hand, as it describes.
 
 ## 6. Index
 Create or repair `scripts/index.md` and `doc/index.md` in the format `practices/agent-dir.md` gives. Add the step 5 scripts and drop lines whose file is gone.
 
 ## 7. Ignore rules
-Make `.agent/.gitignore` the single line `*`, dropping any un-ignore exceptions a legacy layout left behind, `!CLAUDE.md` included.
-
-Once an untracked root `CLAUDE.md` has moved, delete its line from `.git/info/exclude`, which an older layout added to keep it out of git.
+Make `.agent/.gitignore` the single line `*`.
 
 Files already committed stay tracked until the user untracks them. Never touch the git index.
 

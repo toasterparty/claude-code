@@ -32,7 +32,7 @@ Free text through `Other` covers anything else. A scope too large to carry throu
 Mode is whether the pass may stop for the user, and whether it may fix bugs unasked. Resolve it immediately after scope. A mode given with the invocation (`guided`, `guided-fix`, `autonomous`, or `autonomous-fix`, in any wording) is used as-is. Otherwise ask with `AskUserQuestion`, offering the four below in this order, without a recommendation:
 - **Guided** - the user stays on hand to answer questions and review raised items. Interview them with `AskUserQuestion` at any step where their answer would settle something faster or more surely than you could alone, such as the intent behind odd code, which validation route to take, or whether a bug candidate's behavior is deliberate. Items raised for review still wait for Step 6, so the user answers them together, and Step 6 puts the non-trivial decisions among them through `/consult`
 - **Guided (fix bugs)** (`guided-fix`) - guided, with every bug that has one clear fix approved in advance, as **Bugs** in Step 5 describes, so Step 6 asks only about the rest. Everything this skill says of guided mode applies to it too
-- **Autonomous** - the user steps away, and the pass ends in a report and agenda items. Ask nothing after the mode question, because the user is not there to answer and a pending question stalls the whole pass. Steps 3, 6, and 8 say what changes
+- **Autonomous** - the user steps away, and the pass ends in a report and agenda items. Ask nothing after the mode question, because the user is not there to answer and a pending question stalls the whole pass. Steps 3, 6, and 8 say what changes, and Step 6 what changes again where an orchestrator dispatched the pass
 - **Autonomous (fix bugs)** (`autonomous-fix`) - autonomous, with every bug that has one clear fix approved in advance, as **Bugs** in Step 5 describes. Everything this skill says of autonomous mode applies to it too
 
 ## 2. Load guidance
@@ -125,7 +125,9 @@ Hand the items that are non-trivial decisions to one `/consult` through the `Ski
 
 Implement what the user chose. A new item that gets no answer goes into the report's `Needs your review`. An earlier item that gets none keeps its agenda item and stays in its own report.
 
-In autonomous mode, skip the walkthrough: still close earlier items as resolved where the check above finds them addressed, leave every other earlier item where it is, and carry every new raised item, with its options and any recommendation, into the report's `Needs your review`.
+In autonomous mode, skip the walkthrough: still close earlier items as resolved where the check above finds them addressed, leave every other earlier item where it is, and carry every new raised item, with its options and any recommendation, into the report's `Needs your review`. A raised item whose only ground is taste, under the taste bullet of `Raise for review`, goes under `Taste proposals` instead, because nobody is there to weigh it and one item per proposal builds a queue the user never clears.
+
+Where an orchestrator dispatched this pass, as its plan says, it stands in for the user: instead of the walkthrough, end your turn by returning every raised item, taste proposals included, with the question, options, and any recommendation Step 6 would put to the user. Implement the orchestrator's answers when it resumes you, as you would the user's. An item it decides goes under `Changed in review` marked `(orchestrator)`, and one it leaves open goes under `Needs your review`. Where the harness cannot resume you, fall back to autonomous mode.
 
 ## 7. Validate
 
@@ -137,7 +139,7 @@ Then audit every prose file this session wrote against the writing standards.
 
 ## 8. Report
 
-First add one agenda item for each item in `Needs your review`, tagged `User Decision` where it offers the user a choice, grouping the ones that would be resolved together, plus the one review item `practices/agenda.md` describes where `Decided by the agent` is not empty, so the report can carry their IDs. Then complete the report this pass started, in one `Write`. Its `opened` lists the IDs just added, and its `closed` the earlier items this pass settled. The body after the front matter is a terse log of fragments, one line per item, no restating the diff. Keep the headings verbatim and in this order, omitting a section only when it is empty. Give options only where two or more real ones exist, and a `Recommendation` line only where Step 6 would mark one `(Recommended)`.
+First add one agenda item for each item in `Needs your review`, tagged `User Decision` where it offers the user a choice, grouping the ones that would be resolved together, plus one untagged review item, as `practices/agenda.md` describes, for each of `Decided by the agent` and `Taste proposals` that is not empty, so the report can carry their IDs. Then complete the report this pass started, in one `Write`. Its `opened` lists the IDs just added, and its `closed` the earlier items this pass settled. The body after the front matter is a terse log of fragments, one line per item, no restating the diff. Keep the headings verbatim and in this order, omitting a section only when it is empty. Give options only where two or more real ones exist, and a `Recommendation` line only where Step 6 would mark one `(Recommended)`.
 
 ```
 # Refine <subject, or the scope in a few words>
@@ -165,11 +167,14 @@ First add one agenda item for each item in `Needs your review`, tagged `User Dec
 
 Recommendation: (a)
 
+## Taste proposals
+- #<review item id> <one line per autonomous taste-only proposal: what it would change, and where>
+
 ## Baseline
 - `<command>` - <anything noteworthy>
 - <each intended delta from Step 7, like: 3 tests deleted with parser/legacy.py>
 ```
 
-Then finish the agenda. Remove every earlier item this pass closed, logged as resolved when implemented or found addressed and as dropped on `Drop`, and any item asking for this scope to be refined. Archive the reports this leaves with nothing open, this one included when `Needs your review` and `Decided by the agent` are both empty.
+Then finish the agenda. Remove every earlier item this pass closed, logged as resolved when implemented or found addressed and as dropped on `Drop`, and any item asking for this scope to be refined. Archive the reports this leaves with nothing open, this one included when `Needs your review`, `Decided by the agent`, and `Taste proposals` are all empty.
 
 Name the report by its repo-relative path and give the highlights in a sentence or two.
