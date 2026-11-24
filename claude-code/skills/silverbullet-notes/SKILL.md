@@ -1,6 +1,6 @@
 ---
 name: silverbullet-notes
-description: Read, search, write, query, or script the user's SilverBullet notes at notes.toasterparty.net. Use when the user mentions their notes, a notes space, or SilverBullet, or asks to look something up in or save something to their notes.
+description: Read, search, write, query, or script the user's SilverBullet notes at notes.toaster.foo and notes.bspang.net. Use when the user mentions their notes, a notes space, or SilverBullet, or asks to look something up in or save something to their notes.
 allowed-tools: Bash(bash ${CLAUDE_SKILL_DIR}/sb.sh *)
 ---
 
@@ -8,7 +8,7 @@ allowed-tools: Bash(bash ${CLAUDE_SKILL_DIR}/sb.sh *)
 
 SilverBullet is a self-hosted, programmable markdown notes app. A space is a folder of markdown files: the page `Projects/Example` is the file `Projects/Example.md`. Pages carry YAML frontmatter, `[[wikilinks]]`, `#tags`, and `- [ ]` tasks, all indexed as queryable objects. Space Lua makes the space programmable: `space-lua` fenced blocks define functions and commands active across the whole space, `${expr}` renders inline, `query[[...]]` runs queries over the index, and `CONFIG.md` configures the space. A `space-lua` block written to a page is code that runs in every client opening the space.
 
-The server `https://notes.toasterparty.net` hosts several spaces, one per path prefix. Its data folder is `~/git/toaster-server/services/silver-bullet/data/` on `toaster@toasterparty.net`, reached over SSH or read directly when the session runs on the server itself. There `spaces.json` maps each space's `binding.prefix` to its `folder` and anonymous `access`.
+One server hosts several spaces, one per path prefix, each bound to a host: Hobby at `https://notes.toaster.foo/hobby`, the rest under `https://notes.bspang.net`. A space answers 404 on any other host. Its data folder is `~/git/toaster-server/services/silver-bullet/data/` on `toaster@toaster.foo`, reached over SSH or read directly when the session runs on the server itself. There `spaces.json` maps each space's `binding.host` and `binding.prefix` to its `folder` and anonymous `access`.
 
 ## Tool
 Use the official SilverBullet CLI through `bash ${CLAUDE_SKILL_DIR}/sb.sh`, written `sb` below; never run a bare `sb`. The wrapper installs the CLI on first use and keeps its saved spaces and encrypted credentials in `<claude home>/silverbullet/`, so each Claude home has its own set. `sb --help` and `sb <command> --help` are authoritative where this file disagrees. Never use WebFetch on the notes.
