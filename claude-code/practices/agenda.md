@@ -2,7 +2,7 @@
 The agenda lists what is still open in a project, for two readers: a fresh session asked "What's next on the agenda?", and every session closing out its work. A good session removes more items than it adds.
 
 ## Items
-One bullet per item, highest priority first within its section. An item opens with its ID and a one-line headline stating what is open, followed by its tags, and links the document that carries the detail, where one exists: a plan in `inbox/`, a report in `reports/`, a doc. Indented sub-bullets under the headline may carry short context a later session would otherwise rediscover: a finding, a constraint, an approach already ruled out. Anything longer goes in the linked doc, and the agenda never holds reports, code snippets, proposals, plans, or data. The headline stays one line so the agenda still reads at a glance.
+One bullet per item, highest priority first within its section. An item opens with its ID and a one-line headline stating what is open, followed by its tags, and links the document that carries the detail, where one exists: a report in `reports/`, a doc. Never an `inbox/` asset, under the rule below. Indented sub-bullets under the headline may carry short context a later session would otherwise rediscover: a finding, a constraint, an approach already ruled out. Anything longer goes in the linked doc, and the agenda never holds reports, code snippets, proposals, plans, or data. The headline stays one line so the agenda still reads at a glance.
 
 ```
 - #12 Decide whether the pause screen draws premultiplied like the HUD (`hud-blending.md`) `User Decision`
@@ -12,6 +12,9 @@ One bullet per item, highest priority first within its section. An item opens wi
 ```
 
 A document with several open points gets one item per point, each linking it, so the user can rank an urgent question above unrelated work. Group points that would be resolved together into one item.
+
+## Inbox independence
+`inbox/` is the user's, and they may delete anything in it at any time, so no item names, links, or depends on an `inbox/` asset. Triaging one means carrying every action it implies into items that stand alone: the headline and sub-bullets state the work, and where the detail runs longer, a copy or distillation under `doc/` carries it, linked as any doc is. A plan not yet executed is copied whole, since the executing session must read all of it. Once its actions are on the agenda or done, the asset is safe to delete. Never wait on the user to delete it, and never delete it yourself.
 
 Open work the agenda tracks includes:
 - design not yet created
@@ -65,7 +68,7 @@ Add a review item only for a change that is controversial, or whose details the 
 - Remove what the session resolved and add what it left open. A session that changed nothing open leaves the agenda alone.
 - Check older items against `inbox/`, `reports/`, and recent git history. A commit containing an item's change resolves it, and so does a deliverable that finished it.
 - Remove an item whose linked document is gone, unless the work it named is still open.
-- A removal that leaves a linked report with no open ID archives that report, as `practices/reports.md` describes. A finished plan in `inbox/` loses its item and stays where it is, because `inbox/` is the user's: `/tidy` archives it on their answer.
+- A removal that leaves a linked report with no open ID archives that report, as `practices/reports.md` describes. A finished plan in `inbox/` stays where it is, because `inbox/` is the user's: `/tidy` archives it on their answer.
 
 Every removal appends one line to `.agent/doc/agenda-log.md`, created with its first line: the date, the ID, `resolved` or `dropped`, the headline, and the evidence or reason, as in `- 2026-11-20 #14 resolved: Port the premultiplied draw path to the pause screen. Landed in a1b2c3d`. The log is append-only and no session reads it by default. It lets the user trace an item that vanished, and it keeps retired IDs on file.
 
