@@ -17,8 +17,8 @@ $CommitTitle = Join-Path $PSScriptRoot '..\practices\commit-title.sh'
 # Returns the status line for one line of commit-title.sh output and the tree state (clean or
 # dirty), or nothing.
 function Get-StatusLine($check, $tree) {
-    if ($check -match '^fresh (.*)$') { return "commit: $($Matches[1])" }
-    if ($check -match '^stale (.*)$' -and $tree -ne 'clean') { return "commit (stale): $($Matches[1])" }
+    if ($check -match '^fresh (.*)$') { return $Matches[1] }
+    if ($check -match '^stale (.*)$' -and $tree -ne 'clean') { return "(stale) $($Matches[1])" }
 }
 
 # Returns clean when git sees no staged, unstaged, or untracked change, else dirty.

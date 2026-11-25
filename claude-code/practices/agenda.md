@@ -23,6 +23,7 @@ Open work the agenda tracks includes:
 - functionality not yet implemented
 - changes not yet reviewed, under the rule below
 - decisions not yet made
+- questions not yet researched, under the rule below
 - verification or validation not yet done
 - tasks outside the project's scope or beyond an agent's capabilities, for the user to carry out
 - plans not yet executed
@@ -32,6 +33,8 @@ Open work the agenda tracks includes:
 - incomplete plans not yet `/consult`ed
 
 Most code should pass through `/refine` at least once after its last substantial change. A session that finishes a feature, a rewrite, or a large fix adds a refine item naming that scope, or widens a refine item already open, since one item per module reads better than a trail of small ones. A small fix gets none.
+
+A session that meets an unknown outside its task records it as an item rather than researching it on the spot, because the detour grows the session past its scope. The item states the question and what its answer would change. Where the answer feeds a user decision, the item is that `User Decision`, with the question as a sub-bullet beginning `Research:`, and its options need not be worked out yet. Research worth doing only on one answer of a pending decision gets its own item, `blocked by` that decision.
 
 Never record git state. The user owns staging, committing, and pushing, so an item like "commit and push the staged changes" never appears. A release not yet made is open work. The commits leading up to it are not.
 
@@ -61,7 +64,7 @@ Items against the same task, branch, or topic share a `##` section, named for it
 
 Each section heading ends with the date of the last session that added, resolved, or edited one of its items: `## Hook refactor - 2026-11-19`. Bump it on every such touch, and never for a reorder alone. The date tells `/tidy` which sections have gone quiet.
 
-A section that no longer reads at a glance, roughly more than seven items, moves to its own file: `.agent/doc/agenda/<section>.md`, with the agenda itself moving to `.agent/doc/agenda/index.md` on the first extraction. The section keeps its heading and date in the index, with its top item and a link to the file below them, and the file holds the full list under the same rules. Fold the file back into the index once it shrinks to a few items.
+A section that no longer reads at a glance, roughly more than seven items, moves to its own file: `.agent/doc/agenda/<section>.md`, with the agenda itself moving to `.agent/doc/agenda/index.md` on the first extraction. The section keeps its heading and date in the index, with a link to the file below them but never a copy of an item, because each item lives in one place, and the file holds the full list under the same rules. Fold the file back into the index once it shrinks to a few items.
 
 ## Order
 The user's order is sticky, both of sections and of items within one. Insert a new item or section where its priority puts it, but never move an existing one without the user's agreement. Propose the move instead, because the order decides what the next session works on.
@@ -84,7 +87,7 @@ Remove an item with the script, never by editing it out:
 bash practices/agenda/resolve.sh --repo <repo> --id <n> --status resolved|dropped --evidence "<evidence or reason>"
 ```
 
-A removal has five parts, and runs that did them by hand skipped some. Under the lock `next-id.sh` takes, the script deletes the item and its sub-bullets, appends its line to `.agent/doc/agenda-log.md`, clears its ID from every `blocked by` tag, dates its section heading today, and archives each report in `reports/` whose `opened` IDs are now all logged, as `practices/reports.md` describes. It prints one line per action. A split-out section's top item and its copy in the index count as one item, and the script replaces the copy with the section's new top item, or removes it once the section has none. An ID that opens no item, or more than one in any other arrangement, is an error that changes nothing. Narrowing or adding an item stays an edit.
+A removal has five parts, and runs that did them by hand skipped some. Under the lock `next-id.sh` takes, the script deletes the item and its sub-bullets, appends its line to `.agent/doc/agenda-log.md`, clears its ID from every `blocked by` tag, dates its section heading today, and archives each report in `reports/` whose `opened` IDs are now all logged, as `practices/reports.md` describes. It prints one line per action. An ID that opens no item, or more than one, is an error that changes nothing. Narrowing or adding an item stays an edit.
 
 The log line holds the date, the ID, the status, the headline without its tags, and the evidence, as in `- 2026-11-20 #14 resolved: Port the premultiplied draw path to the pause screen. Landed in a1b2c3d`. Name a report in the evidence by its file name alone, never by path, because the report moves to `_archive/` and the path then points nowhere. The script cuts a report path in the headline to its file name. The log is append-only and no session reads it by default. It lets the user trace an item that vanished, and it keeps retired IDs on file.
 

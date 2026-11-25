@@ -14,8 +14,8 @@ COMMIT_TITLE="$HOOK_DIR/../practices/commit-title.sh"
 calc_status_line() {
     local check="$1" tree="$2"
     case "$check" in
-        'fresh '*) printf 'commit: %s' "${check#fresh }" ;;
-        'stale '*) [[ $tree == clean ]] || printf 'commit (stale): %s' "${check#stale }" ;;
+        'fresh '*) printf '%s' "${check#fresh }" ;;
+        'stale '*) [[ $tree == clean ]] || printf '(stale) %s' "${check#stale }" ;;
     esac
 }
 

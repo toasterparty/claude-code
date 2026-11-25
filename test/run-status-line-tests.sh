@@ -57,10 +57,10 @@ request_for() {
 
 expect_line '' "$(request_for "$repo")" 'a repo with no stored title shows nothing'
 bash "$COMMIT_TITLE" --repo "$repo" --title 'Add a.txt'
-expect_line 'commit: Add a.txt' "$(request_for "$repo")" 'a title written for this state shows'
-expect_line 'commit: Add a.txt' "$(request_for "$repo/sub")" 'a subdirectory shows the repo root title'
+expect_line 'Add a.txt' "$(request_for "$repo")" 'a title written for this state shows'
+expect_line 'Add a.txt' "$(request_for "$repo/sub")" 'a subdirectory shows the repo root title'
 printf 'edit\n' >> "$repo/a.txt"
-expect_line 'commit (stale): Add a.txt' "$(request_for "$repo")" 'an edit since the title was written marks it stale'
+expect_line '(stale) Add a.txt' "$(request_for "$repo")" 'an edit since the title was written marks it stale'
 # Deleting the repo's only file stands in for a commit, which would need a git write.
 rm "$repo/a.txt"
 expect_line '' "$(request_for "$repo")" 'a stale title on a clean tree shows nothing'

@@ -56,10 +56,10 @@ try {
 
     Test-Line '' (New-Request $repo) 'a repo with no stored title shows nothing'
     bash $CommitTitle --repo $repo --title 'Add a.txt'
-    Test-Line 'commit: Add a.txt' (New-Request $repo) 'a title written for this state shows'
-    Test-Line 'commit: Add a.txt' (New-Request (Join-Path $repo 'sub')) 'a subdirectory shows the repo root title'
+    Test-Line 'Add a.txt' (New-Request $repo) 'a title written for this state shows'
+    Test-Line 'Add a.txt' (New-Request (Join-Path $repo 'sub')) 'a subdirectory shows the repo root title'
     Add-Content -LiteralPath (Join-Path $repo 'a.txt') -Value 'edit'
-    Test-Line 'commit (stale): Add a.txt' (New-Request $repo) 'an edit since the title was written marks it stale'
+    Test-Line '(stale) Add a.txt' (New-Request $repo) 'an edit since the title was written marks it stale'
     # Deleting the repo's only file stands in for a commit, which would need a git write.
     Remove-Item -LiteralPath (Join-Path $repo 'a.txt')
     Test-Line '' (New-Request $repo) 'a stale title on a clean tree shows nothing'

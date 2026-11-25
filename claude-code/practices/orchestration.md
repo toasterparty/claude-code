@@ -19,6 +19,9 @@ The user is away, so an orchestrated run asks nothing, and each subagent sorts i
 
 Hand each call back to the subagent that raised it, continuing that subagent with its context where the harness allows (`SendMessage` in Claude Code), or else to a new delegation whose plan carries the answer.
 
+## Updates
+The user prefers less clutter to explicit updates. A turn that a subagent's notification wakes, and that changes nothing the user would act on, such as an interim result while others still run, ends without text. Where the harness asks for a status, post one line only if something landed or started since the last one, naming it, and otherwise no text.
+
 ## Verifying
 Verify each delegation before anything builds on it: read its diff or findings, and rerun the validation its plan names. Once relayed, a subagent's claim is the orchestrator's claim: a "never happens", "clean", or "verified" in the close states the search it covered, such as the inputs, cases, or files checked, because a claim wider than its search once reached the user as a premise. A delegation that fails gets one retry with a corrected plan, then goes to an Opus subagent.
 

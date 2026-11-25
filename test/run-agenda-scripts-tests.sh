@@ -200,7 +200,6 @@ new_split_repo() {
 - #10 Loose work
 
 ## Hooks - 2026-01-02
-- #20 Top item
 - More in `hooks.md`
 EOF
     cat > "$repo/.agent/doc/agenda/hooks.md" <<'EOF'
@@ -237,35 +236,17 @@ check "# Agenda
 - #10 Loose work
 
 ## Hooks - $TODAY
-- #21 Second item
-- More in \`hooks.md\`" "$(<"$index")" "a split section's top item in the index gives way to the new top item"
-check "- $TODAY #20 resolved: Top item. Landed" "$(<"$repo/.agent/doc/agenda-log.md")" \
-    "a split section's top item is logged once"
+- More in \`hooks.md\`" "$(<"$index")" "a split section's index entry keeps only its dated heading and link"
 check "removed #20 and 1 sub-bullet lines from agenda/hooks.md
-replaced #20 in agenda/index.md with the new top item #21
 dated \"## Hooks\" $TODAY in agenda/hooks.md
 dated \"## Hooks\" $TODAY in agenda/index.md
-logged #20 resolved in agenda-log.md" "$output" "resolving a split section's top item reports the index replacement"
+logged #20 resolved in agenda-log.md" "$output" "resolving a split section's top item reports each action"
 
 repo=$(new_split_repo)
-index="$repo/.agent/doc/agenda/index.md"
-hooks="$repo/.agent/doc/agenda/hooks.md"
-printf '## Hooks - 2026-01-02\n- #20 Top item\n    - context for the top item\n' > "$hooks"
-bash "$RESOLVE" --repo "$repo" --id 20 --status resolved --evidence 'Landed' >/dev/null
-check "## Hooks - $TODAY" "$(<"$hooks")" "a split section's last item leaves its section file"
-check "# Agenda
-
-## General - 2026-01-01
-- #10 Loose work
-
-## Hooks - $TODAY
-- More in \`hooks.md\`" "$(<"$index")" "a split section's last item leaves the index with no copy"
-
-repo=$(new_split_repo)
-printf '# Agenda\n\n## General - 2026-01-01\n- #20 Top item\n' > "$repo/.agent/doc/agenda/index.md"
+printf '# Agenda\n\n## Hooks - 2026-01-02\n- #20 Top item\n- More in `hooks.md`\n' > "$repo/.agent/doc/agenda/index.md"
 before=$(snapshot "$repo")
-check_exit 1 'step 1: an index copy under another section is an error' "$RESOLVE" --repo "$repo" --id 20 --status resolved --evidence 'x'
-check "$before" "$(snapshot "$repo")" 'step 1: an index copy under another section changes nothing'
+check_exit 1 'step 1: an item copied into the index is an error' "$RESOLVE" --repo "$repo" --id 20 --status resolved --evidence 'x'
+check "$before" "$(snapshot "$repo")" 'step 1: an item copied into the index changes nothing'
 
 # A Windows path separator here, and a literal path on Linux
 repo="$FIXTURE_DIR"'/back\slash'
@@ -274,7 +255,6 @@ cat > "$repo/.agent/doc/agenda/index.md" <<'EOF'
 # Agenda
 
 ## Paths like C:\temp - 2026-01-02
-- #20 Top item
 - More in `paths.md`
 EOF
 cat > "$repo/.agent/doc/agenda/paths.md" <<'EOF'
@@ -286,8 +266,9 @@ check_exit 0 'a backslash in the repo path is kept' "$RESOLVE" --repo "$repo" --
 check "# Agenda
 
 ## Paths like C:\\temp - $TODAY
-- #21 Fix the \\n escape
-- More in \`paths.md\`" "$(<"$repo/.agent/doc/agenda/index.md")" 'a backslash in a heading or an item is kept'
+- More in \`paths.md\`" "$(<"$repo/.agent/doc/agenda/index.md")" 'a backslash in a heading is kept'
+check "## Paths like C:\\temp - $TODAY
+- #21 Fix the \\n escape" "$(<"$repo/.agent/doc/agenda/paths.md")" 'a backslash in an item is kept'
 
 repo=$(new_repo)
 printf '# Agenda\n\n## General - 2026-01-01\n- #4 Review the run (`../reports/_archive/20260101a-next.md`)\n' > "$repo/.agent/doc/agenda.md"

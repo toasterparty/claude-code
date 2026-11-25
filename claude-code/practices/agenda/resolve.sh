@@ -2,9 +2,8 @@
 # Removes one agenda item with all the bookkeeping a removal needs, under the lock next-id.sh takes:
 # drops its line and sub-bullets, logs it in agenda-log.md, clears its ID from every `blocked by`
 # tag, dates its section heading today, and archives each report whose `opened` IDs are all logged.
-# Prints one line per action. A split section's top item, repeated in agenda/index.md, counts as one
-# item, and the index copy gives way to the section's new top item. An ID that opens no item, or more
-# than one otherwise, is an error that changes nothing.
+# Prints one line per action. An ID that opens no item, or more than one, is an error that changes
+# nothing.
 set -euo pipefail
 shopt -s nullglob
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -36,25 +35,6 @@ is_section_file() {
     [[ "$1" == "$doc_dir"/agenda/* && "$1" != "$index_file" ]]
 }
 
-# Where the two matches are a split section's top item and its copy in agenda/index.md under the
-# same heading, prints which of them is the copy.
-find_index_mirror() {
-    local mirror_idx item_idx heading
-    for mirror_idx in 0 1; do
-        item_idx=$((1 - mirror_idx))
-        [[ "${match_files[mirror_idx]}" == "$index_file" ]] && is_section_file "${match_files[item_idx]}" || continue
-        heading=$(fetch_heading "${match_files[item_idx]}" "${match_line_nos[item_idx]}")
-        [[ -n "$heading" && "$heading" == "$(fetch_heading "$index_file" "${match_line_nos[mirror_idx]}")" ]] || continue
-        echo "$mirror_idx"
-        return 0
-    done
-    return 1
-}
-
-find_top_item() {
-    awk '/^- #[0-9]+ / { print; exit }' "$1"
-}
-
 calc_headline() {
     local headline=${1#"- #$2 "}
     while [[ $headline =~ $TRAILING_TAG_PATTERN ]]; do
@@ -65,25 +45,13 @@ calc_headline() {
 
 # Each rewrite below reads <in>, writes <out>, and prints its actions naming the file <name>. Paths
 # and agenda text reach awk through ENVIRON, since -v would expand the backslash escapes in them.
-# A non-empty <replacement> line takes the place of the item and its sub-bullets.
 remove_item() {
-    out=$2 name=$3 replacement=${6:-} awk -v item_line_no="$4" -v id="$5" '
-        BEGIN { out = ENVIRON["out"]; replacement = ENVIRON["replacement"] }
-        NR == item_line_no {
-            skipping = 1
-            if (replacement != "") print replacement > out
-            next
-        }
+    out=$2 name=$3 awk -v item_line_no="$4" -v id="$5" '
+        BEGIN { out = ENVIRON["out"] }
+        NR == item_line_no { skipping = 1; next }
         skipping && /^[ \t]+[^ \t]/ { sub_bullet_count++; next }
         { skipping = 0; print > out }
-        END {
-            if (replacement == "") {
-                printf "removed #%s and %d sub-bullet lines from %s\n", id, sub_bullet_count, ENVIRON["name"]
-                exit
-            }
-            match(replacement, /^- #[0-9]+/)
-            printf "replaced #%s in %s with the new top item %s\n", id, ENVIRON["name"], substr(replacement, 3, RLENGTH - 2)
-        }
+        END { printf "removed #%s and %d sub-bullet lines from %s\n", id, sub_bullet_count, ENVIRON["name"] }
     ' "$1"
 }
 
@@ -232,16 +200,7 @@ if ((${#match_files[@]} == 0)); then
     echo "Error: #$id opens no item in '$doc_dir'" >&2
     exit 1
 fi
-mirror_line_no=""
-if ((${#match_files[@]} == 1)); then
-    item_file=${match_files[0]}
-    item_line_no=${match_line_nos[0]}
-elif ((${#match_files[@]} == 2)) && mirror_idx=$(find_index_mirror); then
-    item_idx=$((1 - mirror_idx))
-    item_file=${match_files[item_idx]}
-    item_line_no=${match_line_nos[item_idx]}
-    mirror_line_no=${match_line_nos[mirror_idx]}
-else
+if ((${#match_files[@]} > 1)); then
     locations=""
     for i in "${!match_files[@]}"; do
         locations+=" ${match_files[i]#"$doc_dir/"}:${match_line_nos[i]}"
@@ -249,6 +208,8 @@ else
     echo "Error: #$id opens more than one item:$locations" >&2
     exit 1
 fi
+item_file=${match_files[0]}
+item_line_no=${match_line_nos[0]}
 
 today=$(date +%F)
 item_line=$(sed -n "${item_line_no}p" "$item_file")
@@ -259,9 +220,6 @@ actions="$tmp_dir/actions"
 : > "$actions"
 declare -A staged=()
 rewrite_staged "$item_file" remove_item "$item_line_no" "$id"
-if [[ -n "$mirror_line_no" ]]; then
-    rewrite_staged "$index_file" remove_item "$mirror_line_no" "$id" "$(find_top_item "${staged[$item_file]}")"
-fi
 if [[ -n "$heading" ]]; then
     rewrite_staged "$item_file" date_heading "$heading" "$today"
     # A split-out section keeps its heading in the index too
