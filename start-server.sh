@@ -3,7 +3,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-INSTALL_URL="https://claude.toasterparty.net/install.sh"
+INSTALL_URL="https://claude.toaster.foo/install.sh"
 UNIT_DIR="$HOME/.config/systemd/user"
 UNIT_PREFIX="claude-remote-"
 CLAUDE_BIN="$HOME/.local/bin/claude"

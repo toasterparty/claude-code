@@ -17,13 +17,13 @@ The scripts provided by this repository handle the following (idempotently):
 ### Linux/MacOS (Bash)
 
 ```sh
-curl -fsSL https://claude.toasterparty.net/install.sh | bash
+curl -fsSL https://claude.toaster.foo/install.sh | bash
 ```
 
 ### Windows (PowerShell)
 
 ```sh
-irm https://claude.toasterparty.net/install.ps1 | iex
+irm https://claude.toaster.foo/install.ps1 | iex
 ```
 
 ### Remote Control Server (Headless Linux)
@@ -31,13 +31,13 @@ irm https://claude.toasterparty.net/install.ps1 | iex
 Runs `install.sh`, then serves a directory to claude.ai/code and the Claude app through a systemd user service that survives reboots. Every session started from the cloud runs in that directory. Repeat with another `--dir` to serve more repos. Logging in takes a terminal the first time.
 
 ```sh
-curl -fsSL https://claude.toasterparty.net/start-server.sh | bash -s -- --dir ~/git/repo
+curl -fsSL https://claude.toaster.foo/start-server.sh | bash -s -- --dir ~/git/repo
 ```
 
 `--uninstall` removes the service for one `--dir`, or every one when `--dir` is omitted. Login, workspace trust, and linger stay in place.
 
 ```sh
-curl -fsSL https://claude.toasterparty.net/start-server.sh | bash -s -- --uninstall [--dir ~/git/repo]
+curl -fsSL https://claude.toaster.foo/start-server.sh | bash -s -- --uninstall [--dir ~/git/repo]
 ```
 
 ## Other tips
