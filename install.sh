@@ -67,7 +67,7 @@ merge_settings() {
     rm -f "$resolved"
 }
 
-# Hook commands need an absolute path, which only exists once CLAUDE_DIR is resolved,
+# Hook and status line commands need an absolute path, which only exists once CLAUDE_DIR is resolved,
 # so the tracked settings.json carries a placeholder instead.
 resolve_hook_placeholders() {
     jq --arg permission_gate "bash \"$CLAUDE_DIR/hooks/permission-gate.sh\"" \
@@ -75,7 +75,8 @@ resolve_hook_placeholders() {
         --arg session_start "bash \"$CLAUDE_DIR/hooks/session-start.sh\"" \
         --arg agenda_reminder "bash \"$CLAUDE_DIR/hooks/agenda-reminder.sh\"" \
         --arg code_reminder "bash \"$CLAUDE_DIR/hooks/code-reminder.sh\"" \
-        'walk(if . == "{{PERMISSION_GATE}}" then $permission_gate elif . == "{{PROSE_GATE}}" then $prose_gate elif . == "{{SESSION_START}}" then $session_start elif . == "{{AGENDA_REMINDER}}" then $agenda_reminder elif . == "{{CODE_REMINDER}}" then $code_reminder else . end)' "$1"
+        --arg status_line "bash \"$CLAUDE_DIR/hooks/status-line.sh\"" \
+        'walk(if . == "{{PERMISSION_GATE}}" then $permission_gate elif . == "{{PROSE_GATE}}" then $prose_gate elif . == "{{SESSION_START}}" then $session_start elif . == "{{AGENDA_REMINDER}}" then $agenda_reminder elif . == "{{CODE_REMINDER}}" then $code_reminder elif . == "{{STATUS_LINE}}" then $status_line else . end)' "$1"
 }
 
 # Replace each top-level entry of $CLAUDE_DIR that this repo owns with a fresh copy from $src,

@@ -25,8 +25,8 @@ foreach ($line in Get-Content (Join-Path $PSScriptRoot 'gate-cases.tsv')) {
 # The hook end to end: a PreToolUse request on stdin, its decision on stdout.
 $requests = @(
     @{ json = '{"tool_input":{"command":"sudo ls"}}'; decision = 'deny'; reason = $ReasonSudo }
-    @{ json = '{"tool_input":{}}'; decision = 'allow'; reason = 'Auto-approved by permission-gate.' }
-    @{ json = '{}'; decision = 'allow'; reason = 'Auto-approved by permission-gate.' }
+    @{ json = '{"tool_input":{}}'; decision = 'allow'; reason = $ReasonAllow }
+    @{ json = '{}'; decision = 'allow'; reason = $ReasonAllow }
     @{ json = '{"tool_name":"Bash","tool_input":{"command":"rm -rf $W"}}'; decision = 'deny'; reason = $ReasonRm }
     @{ json = '{"tool_name":"Bash","tool_input":{"command":"rm -rf ${W:?}/x"}}'; decision = 'allow'; reason = $ReasonAllow }
     @{ json = '{"tool_name":"PowerShell","tool_input":{"command":"rm -rf ${W:?}/x"}}'; decision = 'deny'; reason = $ReasonRmPowerShell }

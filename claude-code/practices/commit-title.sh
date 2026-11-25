@@ -5,6 +5,7 @@
 # nothing when no title is stored. A commit, ref switch, stash, or edit since the write makes it stale.
 set -euo pipefail
 shopt -s nullglob inherit_errexit
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 MAX_TITLE_LEN=72
 
@@ -31,13 +32,6 @@ fetch_state_hash() {
     } | git hash-object --stdin
 }
 
-ensure_agent_dir() {
-    local agent_dir=$1
-    [[ -d "$agent_dir" ]] && return
-    mkdir -p "$agent_dir"
-    printf '*\n' > "$agent_dir/.gitignore"
-}
-
 write_title() {
     local top=$1 title=$2 title_file=$3 state_hash
     [[ -n "$title" ]] || { echo "Error: --title is empty" >&2; exit 2; }
@@ -45,7 +39,7 @@ write_title() {
     [[ "$title" != [[:space:]]* && "$title" != *[[:space:]] ]] || { echo "Error: --title has leading or trailing whitespace" >&2; exit 2; }
     ((${#title} <= MAX_TITLE_LEN)) || { echo "Error: --title is ${#title} characters, over $MAX_TITLE_LEN" >&2; exit 2; }
     state_hash=$(fetch_state_hash "$top")
-    ensure_agent_dir "$top/.agent"
+    bash "$SCRIPT_DIR/agent-dir/ensure-layout.sh" --repo "$top" >/dev/null
     printf '%s\n%s\n' "$title" "$state_hash" > "$title_file.tmp"
     mv -f "$title_file.tmp" "$title_file"
 }

@@ -1,7 +1,7 @@
 # Agenda
 The agenda lists what is still open in a project, for two readers: a fresh session asked "What's next on the agenda?", and every session closing out its work. A good session removes more items than it adds.
 
-The agenda lives at `<repo>/.agent/doc/agenda.md`, or `<repo>/.agent/doc/agenda/index.md` once split. Read it when the user asks about it or what's next. Before reporting a task done, update it with what the session resolved and left open, because the next prompt usually lands in a fresh session that knows only what the agenda says. A hook reminds you of this once per session, after your first edit outside `.agent/`. Only the top-level session edits it. A subagent reports agenda items in its result instead, so parallel agents never collide in one file.
+The agenda lives at `<repo>/.agent/doc/agenda.md`, or `<repo>/.agent/doc/agenda/index.md` once split. Read it when the user asks about it or what's next. Before reporting a task done, update it with what the session resolved and left open, because the next prompt usually lands in a fresh session that knows only what the agenda says. A hook reminds you of this once per session, after your first edit outside `.agent/`. Only the top-level session edits it, so parallel agents never collide in one file. A subagent still takes the IDs of the items it would add from `next-id.sh` and writes them into its report's `opened`, where it writes a report, but never edits the agenda: its result gives the full line of each item to add and the ID and evidence of each item to remove, and the parent session inserts and removes them.
 
 ## Items
 One bullet per item, highest priority first within its section. An item opens with its ID and a one-line headline stating what is open, followed by its tags, and links the document that carries the detail, where one exists: a report in `reports/`, a doc. Never an `inbox/` asset, under the rule below. Indented sub-bullets under the headline may carry short context a later session would otherwise rediscover: a finding, a constraint, an approach already ruled out. Anything longer goes in the linked doc, and the agenda never holds reports, code snippets, proposals, plans, or data. The headline stays one line so the agenda still reads at a glance.
@@ -40,7 +40,9 @@ Skip work that is minor and cannot be forgotten, especially when something else 
 Create the agenda when its first item appears.
 
 ## IDs
-Every item carries a permanent ID, `#N`, so a dependency, a report, a log line, or the user ("do 14") can name it. Take new IDs from `bash practices/agenda/next-id.sh --repo <repo>`, adding `--count <n>` for several at once, and never by reading the agenda and adding one, because two sessions in one repo would then hand out the same ID. The script prints one ID per line and keeps its counter in `.agent/doc/agenda-id`.
+Every item carries a permanent ID, `#N`, so a dependency, a report, a log line, or the user ("do 14") can name it. Take new IDs from `bash practices/agenda/next-id.sh --repo <repo>`, adding `--count <n>` for several at once, and never by reading the agenda and adding one, because two sessions in one repo would then hand out the same ID. The script prints one ID per line and keeps its counter in `.agent/doc/agenda-id`. An ID is never written anywhere, the log and a report included, before `next-id.sh` has printed it, because the number you expect may go to another session first: one run wrote `#61` into the log, and the script then handed it 62.
+
+The script counts an ID as in use where it opens an item, sits in a `blocked by` tag, or names a log line. Write a number from outside the agenda, such as a pull request, without the `#`, as in `PR 188`, so no reader takes it for an item.
 
 An ID is never reused or renumbered, because an old reference would then point at the wrong item. An item narrowed to its remaining work keeps its ID. An item split in two keeps its ID on the part that stays and takes a new ID for the part split off.
 
@@ -49,10 +51,10 @@ A tag records a fact a session confirmed, so the next session does not rediscove
 - `User Task` - only the user can carry it out: a check on their hardware, a step needing their credentials, an action on a PR, a task outside the project.
 - `User Decision` - a decision only the user can make. No session makes it on its own lean, even where it would recommend an answer.
 - `blocked by #N` - the item cannot start until item #N resolves, as in `blocked by #12, #13`. An item that waits on a decision is blocked by that decision's own `User Decision` item. A blocker outside the agenda, such as an upstream release, is written in words: `blocked: c-wspp lacks permessage-deflate`.
-- `open @<commit>` - a session checked the item against the repo at that commit, the short hash of `HEAD`, and found it still open. A later session trusts it and skips reconciling the item unless a commit since then touches what the item names. Restamp it on every re-check, and drop it when an edit to the item changes what done means.
+- `open @<commit>` - a session checked the item against the repo at that commit, the short hash of `HEAD`, and found it still open, as `Reconciling` describes. Drop it when an edit to the item changes what done means.
 - `Fable`, `Opus`, or `Sonnet` - the cheapest model trusted with the work, ranked Fable above Opus above Sonnet. `Sonnet` fits an item whose linked plan leaves no judgment open: exact files, steps, and verification. An untagged item counts as `Opus`. A session tags only below its own model, because judging whether a model suffices takes a stronger one: Fable may tag `Opus` or `Sonnet`, Opus may tag `Sonnet`, and Sonnet tags nothing. `Fable` goes on an item only where the user proposed it or agreed to it in conversation. A session skips an item tagged above its own model, and `/next` works the items tagged for its own model first.
 
-A dependency is written on the blocked item only, so the agenda holds each dependency once. A session that resolves an item searches the agenda for its ID, in split-out section files too, and clears or narrows each `blocked by` that named it in the same edit.
+A dependency is written on the blocked item only, so the agenda holds each dependency once. Removing an item with `resolve.sh`, under `Updating`, clears its ID from every `blocked by` tag, in split-out section files too.
 
 ## Sections
 Items against the same task, branch, or topic share a `##` section, named for it, so the reader can take or skip the group whole. An item that fits no group stays in a `## General` section rather than loose above the first heading.
@@ -73,11 +75,29 @@ An autonomous `/refine` adds one such item for the taste-only proposals it raise
 
 ## Updating
 - Remove what the session resolved and add what it left open. A session that changed nothing open leaves the agenda alone.
-- Check older items against `inbox/`, `reports/`, and recent git history. A commit containing an item's change resolves it, and so does a deliverable that finished it.
-- Remove an item whose linked document is gone, unless the work it named is still open.
-- A removal that leaves a linked report with no open ID archives that report, as `practices/reports.md` describes. A finished plan in `inbox/` stays where it is, because `inbox/` is the user's: `/tidy` archives it on their answer.
+- Check older items against `inbox/`, `reports/`, and recent git history, as `Reconciling` describes.
+- A finished plan in `inbox/` stays where it is when its item goes, because `inbox/` is the user's: `/tidy` archives it on their answer.
 
-Every removal appends one line to `.agent/doc/agenda-log.md`, created with its first line: the date, the ID, `resolved` or `dropped`, the headline, and the evidence or reason, as in `- 2026-11-20 #14 resolved: Port the premultiplied draw path to the pause screen. Landed in a1b2c3d`. The log is append-only and no session reads it by default. It lets the user trace an item that vanished, and it keeps retired IDs on file.
+Remove an item with the script, never by editing it out:
+
+```
+bash practices/agenda/resolve.sh --repo <repo> --id <n> --status resolved|dropped --evidence "<evidence or reason>"
+```
+
+A removal has five parts, and runs that did them by hand skipped some. Under the lock `next-id.sh` takes, the script deletes the item and its sub-bullets, appends its line to `.agent/doc/agenda-log.md`, clears its ID from every `blocked by` tag, dates its section heading today, and archives each report in `reports/` whose `opened` IDs are now all logged, as `practices/reports.md` describes. It prints one line per action. A split-out section's top item and its copy in the index count as one item, and the script replaces the copy with the section's new top item, or removes it once the section has none. An ID that opens no item, or more than one in any other arrangement, is an error that changes nothing. Narrowing or adding an item stays an edit.
+
+The log line holds the date, the ID, the status, the headline without its tags, and the evidence, as in `- 2026-11-20 #14 resolved: Port the premultiplied draw path to the pause screen. Landed in a1b2c3d`. Name a report in the evidence by its file name alone, never by path, because the report moves to `_archive/` and the path then points nowhere. The script cuts a report path in the headline to its file name. The log is append-only and no session reads it by default. It lets the user trace an item that vanished, and it keeps retired IDs on file.
+
+## Reconciling
+Reconciling checks items against the repo, because an agenda falls behind it: a commit resolves an item, or its linked document goes. Classify each item checked:
+- **Resolved** - evidence proves it done: a commit containing its change, the described behavior or file present in the repo, a deliverable that finished it, a plan whose boxes are all checked and whose changes landed, a decision recorded in a doc or plan, or a linked document gone with the work it named finished. Remove it with `resolve.sh`
+- **Unclear** - only partial or circumstantial evidence that it is done. Never remove one on a guess. The skill doing the walk says whether to ask the user about it or leave it in place
+- **Blocked** - it needs something only the user can give: a decision not yet made, a task outside the agent's reach, validation that needs their hardware or credentials, or a `/consult` while the user is away. Or it waits on another item still open, or carries a model tag above the session's own model, as `Tags` ranks them
+- **Open** - doable now
+
+Trust the tags before re-deriving anything. An item tagged `User Task` or `User Decision`, or `blocked by` an item still on the agenda, is blocked without a check. A `blocked by` naming an ID no longer on the agenda is stale: clear it and classify the item afresh. An item stamped `open @<commit>` is not resolved, unless a commit since that one touches what it names.
+
+Record what the check confirms, so the next walk can skip it: stamp `open @<HEAD>` on each item checked and found still open, restamping one already stamped, and add the tag for each blocker found that the item did not yet name. An item classified from its tags or an existing stamp alone was not checked, so its stamp stays as it was, because a restamp claims a check that never ran.
 
 ## What's next
 Answer "What's next on the agenda?" with the top item of the top section: what resolving it takes and why it ranks first, then a line each for the next two. Stop there. The user agrees or reorders, then asks next turn to implement it or to walk through its decisions. `/next` is the user's way to work the agenda in one run.

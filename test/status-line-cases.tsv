@@ -1,0 +1,17 @@
+# Line printed by commit-title.sh, tab, tree state, tab, expected status line. Both status-line twins
+# must agree on every line. Blank lines and # lines are skipped. A - field stands for empty.
+
+# A title written for the current working state shows as is
+fresh Add a status line	dirty	commit: Add a status line
+
+# A title written for an earlier working state is marked
+stale Add a status line	dirty	commit (stale): Add a status line
+
+# A stale title on a clean tree was most likely for work already committed, so it shows nothing
+stale Add a status line	clean	-
+
+# Only the leading state word is read, never one inside the title
+fresh Drop stale cache entries	dirty	commit: Drop stale cache entries
+
+# No stored title shows nothing
+-	dirty	-

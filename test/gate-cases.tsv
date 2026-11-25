@@ -78,6 +78,27 @@ allow	git branch -vv
 allow	git branch -av
 allow	git tag -n
 allow	git bisect log
+allow	git branch -a --contains HEAD
+allow	git branch --sort=-committerdate
+allow	git branch --format='%(refname:short)'
+allow	git branch -vv --sort=-committerdate --list 'feat*'
+allow	git tag --sort=-v:refname
+allow	git tag -l --sort=-v:refname
+allow	git remote -v show origin
+allow	git branch -a 2>&1 | head
+allow	git branch 2>/dev/null
+allow	git config core.autocrlf 2>/dev/null
+deny	git branch -v 2
+deny	git branch -a > $(git push)
+
+# A flag that only shapes the listing acts on a name or write flag after it
+deny	git branch -r -d origin/stale
+deny	git branch -v -D feature
+deny	git branch -v newb
+deny	git branch -a -m old new
+deny	git branch --sort=refname b2
+deny	git tag --sort=refname t2
+deny	git remote -v add x url
 
 # apply stops at the working tree until a flag hands it the index
 allow	git apply patch.diff
@@ -97,10 +118,10 @@ deny	git.exe apply --index patch.diff
 deny	git apply patch.diff && git commit -m x
 deny	git apply patch.diff; git apply --index other.diff
 
-# Worktree creation touches nothing the user owns
-allow	git worktree add ../wt -b feature
-allow	git -C /repo worktree add ../wt main
-allow	bash -c 'git worktree add ../wt'
+# A worktree writes refs and metadata into the user's .git, so only its listing is a read
+deny	git worktree add ../wt -b feature
+deny	git -C /repo worktree add ../wt main
+deny	bash -c 'git worktree add ../wt'
 allow	git worktree list
 deny	git worktree remove ../wt
 deny	git worktree prune
@@ -164,6 +185,9 @@ deny	Start-ThreadJob { ls }
 deny	Start-Sleep 30 &
 deny	Start-Process node server.js
 deny	Start-Process -FilePath cmake -ArgumentList build
+deny	start node server.js
+deny	saps node server.js
+deny	ls; start report.html
 
 # An ampersand that redirects, chains, calls or belongs to an argument is not backgrounding
 allow	make 2>&1 | tee build.log
@@ -179,6 +203,12 @@ allow	& "C:\Program Files\App\app.exe" --version
 allow	Get-Content x.txt | & $parser
 allow	Start-Process cmake -ArgumentList build -Wait
 allow	Invoke-Item report.html
+allow	npm start
+allow	start=$(date +%s); make; echo $(( $(date +%s) - start ))
+allow	gh api repos/o/r/branches -q '.[].name' | grep -i 'color\|start'
+deny	pwsh -Command "start node server.js"
+allow	start /wait setup.exe
+allow	saps node app.js -Wait
 
 # gh reads
 allow	gh pr view 5
@@ -207,6 +237,7 @@ allow	gh api -X GET search/issues -f q=repo:o/r
 allow	gh api --method=GET repos/o/r
 allow	gh api -X get search/issues -f q=repo:o/r
 allow	gh api -X HEAD repos/o/r
+allow	gh api -XGET search/issues -f q=x
 
 # Driving CI is a write, but destroys nothing durable
 allow	gh workflow run ci.yml
@@ -232,6 +263,10 @@ deny	gh api -X POST repos/o/r/issues
 deny	gh api --method=POST repos/o/r/issues
 deny	gh api -XDELETE repos/o/r/actions/artifacts/1
 deny	gh api -X GET repos/o/r -X DELETE repos/o/r
+deny	gh api repos/o/r/issues -ftitle=x
+deny	gh api repos/o/r/issues -Ftitle=x
+deny	gh api -if title=x repos/o/r/issues
+deny	gh api -iX DELETE repos/o/r/actions/artifacts/1
 
 # graphql cannot be told apart from a mutation without reading the query body
 deny	gh api graphql -f query=query{viewer{login}}
@@ -242,6 +277,9 @@ deny	bash -c 'gh pr merge 5'
 deny	echo `gh pr merge 5`
 deny	/usr/bin/gh pr merge 5
 deny	gh pr view 5<NL>gh pr merge 5
+deny	gh pr view $(gh pr create --fill)
+deny	gh pr view `gh pr merge 5`
+allow	gh run view $(gh run list -L1 --json databaseId -q '.[0].databaseId')
 
 # Program names fold case, as on the macOS and Windows filesystems that resolve them
 deny	GIT push
@@ -249,6 +287,18 @@ deny	Git.exe commit -m x
 deny	SUDO ls
 deny	GH pr merge 5
 allow	GH pr view 5
+deny	gh.exe pr merge 5
+allow	GH.EXE pr view 5
+
+# Subcommands and flags keep their case, as git and gh read them, so an uppercase one runs nothing
+allow	git PUSH
+allow	git APPLY --index p.diff
+allow	git -C .agent/git/r PUSH
+deny	git -c .agent/git/r reset --hard
+deny	gh pr VIEW 5
+deny	gh WORKFLOW RUN ci.yml
+allow	gh api GRAPHQL
+allow	echo gh<NL>pr merge 5
 
 # SSH key material, in every path spelling: no settings.json rule covers this one
 deny	cat ~/.ssh/id_rsa
@@ -309,6 +359,11 @@ allow	./a.sh & P1=$!; ./b.sh; wait $P1
 allow	(sleep 1; echo x) & wait
 deny	./a.sh & echo wait
 deny	nohup ./a.sh & wait
+allow	./a.sh & ./b.sh & wait
+allow	./a.sh & ./b.sh && wait
+allow	./a.sh &<NL>wait
+deny	wait; ./server &
+deny	./a.sh & wait; ./b.sh &
 allow	$p = Start-Process node app.js -PassThru; $p.WaitForExit(60000)
 allow	Start-Process node app.js | Wait-Process
 
@@ -319,6 +374,7 @@ allow	ls "Snakes & Ladders (2023)"
 deny	bash -c "./server &"
 deny	sh -c './server &'
 deny	powershell -Command "Start-Sleep 30 &"
+deny	x;bash -c "y"&z
 
 # A heredoc body fed to a reader or an interpreter is text, not the command
 allow	python3 - <<'EOF'<NL>if flags & MASK: pass<NL>EOF
@@ -335,6 +391,13 @@ deny	cat <<'EOF' | bash<NL>git push<NL>EOF
 deny	ssh host <<'EOF'<NL>sudo reboot<NL>EOF
 deny	python3 - <<'EOF'<NL>git push
 deny	echo $((1<<N))<NL>git push
+
+# An unquoted delimiter runs each command substitution in the body, so those lines stay in view
+deny	cat > f.txt <<EOF<NL>$(git push)<NL>EOF
+deny	cat > f.txt <<EOF<NL>`sudo reboot`<NL>EOF
+allow	cat > f.txt <<'EOF'<NL>$(git push)<NL>EOF
+allow	cat > f.txt <<"EOF"<NL>`sudo reboot`<NL>EOF
+allow	cat > notes.md <<EOF<NL>Built at $(date)<NL>Run git push after review<NL>EOF
 
 # A scratch clone under .agent/git/ named by -C takes every local write, but never a push
 allow	git clone https://github.com/o/r .agent/git/r

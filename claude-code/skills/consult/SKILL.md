@@ -10,8 +10,6 @@ Sessions narrow: agents silently rule out alternatives. The aim is enough bird's
 
 Every consult writes a report, under `practices/reports.md`: start it once the subject is resolved, with `--skill consult` and a `--subject` slug for the subject. The report serves later sessions, not the user: never mention it in chat or in a question.
 
-Skills that keep the user on hand, such as `/next` and `/refine`, send their non-trivial decisions here, as `practices/decisions.md` defines.
-
 ## 1. Subject
 Subject given with the invocation is used as-is. Invoking the skill yourself, name the subject from the decision at hand. Otherwise resolve it with a `multiSelect` `AskUserQuestion`, naming each option concretely and omitting empty ones, or pick the likeliest subject where the tool is unavailable:
 - The current session topic, or a related one
@@ -38,7 +36,7 @@ Each question:
 - **Stays neutral** - mark `(Recommended)`, with the reason, only where one option is strongly advisable
 - **Shows its history** - revisiting a decision quotes it, from a report or the session, and says why it is back
 
-Where `AskUserQuestion` is unavailable (a headless run, a subagent), add one agenda item for each question, tagged `User Decision` and linking the report, grouping the ones that would be resolved together, then write each question and your lean on it under the report's `Open`, and stop. As a subagent, skip the agenda: name the items in your result, and leave `opened` empty for the parent session to fill in.
+Where `AskUserQuestion` is unavailable (a headless run, a subagent), close the run as `Closing a run` in `practices/reports.md` describes, opening one item per question, tagged `User Decision`, and writing each question with your lean on it under `Open` in the report body Step 4 gives. Then stop. A subagent returns those items to its parent session instead of adding them, as that section says.
 
 ## 4. Close
 Flag answers that conflict with each other, the standards, or research findings, and ask the user to resolve them.
@@ -56,9 +54,7 @@ The review file holds one comment per finding, most consequential first, each pa
 1. `path/to/file.py:40-52` - <comment>
 ```
 
-Then update the agenda, before the report so the report can carry the IDs. Remove any item asking for this subject to be consulted. Add one item for each question left open, tagged `User Decision`, and one for the conclusions not yet implemented, grouping the ones that would be resolved together, each linking the report.
-
-Then complete the report in one `Write`. Its `opened` lists the IDs just added, and its `closed` the items removed. The body after the front matter is:
+Then close the run as `Closing a run` in `practices/reports.md` describes. It opens one item for each question left open, tagged `User Decision`, and one for the conclusions not yet implemented, and removes any item asking for this subject to be consulted. The body after the front matter is:
 
 ```
 # Consult <subject>
@@ -74,7 +70,5 @@ Then complete the report in one `Write`. Its `opened` lists the IDs just added, 
 - #<id> <question left unanswered, with your lean if the user never saw it>
 ```
 
-Archive the report straight away if it opened nothing.
-
 ## Called by another skill
-Another skill, such as `/next` or `/refine`, may hand you decisions to put to the user, because its own questions would carry too little context. The caller owns the work the decisions steer, so it implements them, records them, and tracks them on the agenda. Run steps 1 to 3 and the conflict check of step 4 as usual, offering any extra options the caller asks for, such as `Skip for now`. Then skip the rest of step 4: state the conclusions in chat, complete the report with `opened` and `closed` empty, archive it, and return to the caller each decision with the item ID it settles, and each question left unanswered.
+Another skill may hand you decisions to put to the user, because its own questions would carry too little context. The caller owns the work the decisions steer, so it implements them, records them, and tracks them on the agenda. Run steps 1 to 3 and the conflict check of step 4 as usual, offering any extra options the caller asks for, such as `Skip for now`. Then skip the rest of step 4: state the conclusions in chat, complete the report with `opened` and `closed` empty, archive it, and return to the caller each decision with the item ID it settles, and each question left unanswered.

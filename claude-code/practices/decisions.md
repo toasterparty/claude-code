@@ -18,3 +18,13 @@ Ask neither way an agent-owned decision: one of a class the project's instructio
 Before asking, check each factual premise the question rests on against the code, data, or log that settles it, and state the evidence in the question. A claim relayed from another agent, such as a subagent's "this never happens", is a premise: restate the search it covered, or the user weighs a claim nobody verified.
 
 When unsure, consult. A consult costs the user a few minutes, while a misjudged bare question costs a round of answers they could not give.
+
+## When the user is away
+Once the user has stepped away, at the point the skill, plan, or user names, a run asks nothing, because nobody is there to answer and a pending question stalls the whole run. Sort each question that nothing written settles, in this order:
+1. An agent-owned decision is made and logged, never raised.
+2. A choice whose reversal is a small change is built on its likeliest answer and logged. A guess that a later session undid has cost a full rebuild, so a costlier reversal falls to step 3.
+3. Anything else is raised, and the run takes another thread.
+
+Logged means listed in the run's report, or a subagent's result, with the alternative given up. Raised means an agenda item tagged `User Decision`, with the work that needs it tagged `blocked by` it. A skill may raise more than this, as `/refine` raises every behavior change.
+
+A subagent sorts its questions the same way but raises to its parent session, in its result, since only the top-level session edits the agenda. A parent that orchestrates stands in as the interim user for what its subagents raise and decides each question itself, as `practices/orchestration.md` describes.

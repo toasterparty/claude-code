@@ -47,7 +47,7 @@ function Merge-Json($base, $overlay) {
     }
 }
 
-# Hook commands need an absolute path, which only exists once $ClaudeDir is resolved,
+# Hook and status line commands need an absolute path, which only exists once $ClaudeDir is resolved,
 # so the tracked settings.json carries a placeholder instead.
 function Resolve-HookPlaceholders($json) {
     $gates = [ordered]@{
@@ -56,6 +56,7 @@ function Resolve-HookPlaceholders($json) {
         '{{SESSION_START}}'   = 'session-start.ps1'
         '{{AGENDA_REMINDER}}' = 'agenda-reminder.ps1'
         '{{CODE_REMINDER}}'   = 'code-reminder.ps1'
+        '{{STATUS_LINE}}'     = 'status-line.ps1'
     }
     foreach ($placeholder in $gates.Keys) {
         $gate = 'powershell -NoProfile -NonInteractive -File "{0}"' -f (Join-Path $ClaudeDir "hooks\$($gates[$placeholder])")

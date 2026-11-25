@@ -10,17 +10,16 @@ Target the best implementation of the behavior already there, weighing simplicit
 Observable behavior is whatever anything outside the code can see: a public API's results, CLI output and exit codes, file and wire formats, persisted data, error text, side effects, and ordering or timing a caller could notice. Every change made without asking preserves it, however wrong it looks; Step 5 names the one exception.
 
 Every pass writes a report, under `practices/reports.md`: read that file before the first edit, and start the report once scope and mode are resolved, with `--skill refine` and a `--subject` naming the component where the scope is one.
-- Base branch: `main`
 
 ## 1. Scope and mode
 
-Scope is what this pass may touch. File and directory scope is absolute. Diff scope is loose: the diff plus the neighboring code and files it relates to. Diff a commit against the working tree (`git diff <commit>`), never against `HEAD`, so uncommitted work counts. Steer away from code a recent refine report covered, unless it has changed since that report's commit: grep the `scope` and `commit` fields of the refine reports in `.agent/reports/` and its archive, and read no further.
+Scope is what this pass may touch. File and directory scope is absolute. Diff scope is loose: the diff plus the neighboring code and files it relates to. Diff a commit against the working tree (`git diff <commit>`), never against `HEAD`, so uncommitted work counts. Steer away from code a recent refine report covered, unless it has changed since that report: grep the `scope` and `result` fields of the refine reports in `.agent/reports/` and its archive, and read no further. Whether it changed is the `result` comparison in `practices/reports.md`.
 
 Scope given with the invocation is used as-is. Otherwise resolve it with `AskUserQuestion` from these options, omitting empty ones and merging staged and unstaged into one uncommitted option when more than four remain:
 - A component, feature, or set of files of your choosing, topical to recent work. Name it in the option
 - The staged diff
 - The unstaged diff
-- This branch against the base branch
+- This branch against the base branch: the branch `git symbolic-ref --short refs/remotes/origin/HEAD` names, or `main` where that fails
 - The previous commit, unless `HEAD~1` is the merge base with the base branch, which makes it the branch diff
 
 Mark exactly one option `(Recommended)`: the scope most worth refining now, judged by how much unrefined code it holds and how recently it changed. List it first, then the rest in the order above. Unlike the other questions in this skill, scope always gets a recommendation, because some scope has to be picked and you have already surveyed the candidates.
@@ -32,7 +31,7 @@ Free text through `Other` covers anything else. A scope too large to carry throu
 Mode is whether the pass may stop for the user, and whether it may fix bugs unasked. Resolve it immediately after scope. A mode given with the invocation (`guided`, `guided-fix`, `autonomous`, or `autonomous-fix`, in any wording) is used as-is. Otherwise ask with `AskUserQuestion`, offering the four below in this order, without a recommendation:
 - **Guided** - the user stays on hand to answer questions and review raised items. Interview them with `AskUserQuestion` at any step where their answer would settle something faster or more surely than you could alone, such as the intent behind odd code, which validation route to take, or whether a bug candidate's behavior is deliberate. Items raised for review still wait for Step 6, so the user answers them together, and Step 6 puts the non-trivial decisions among them through `/consult`
 - **Guided (fix bugs)** (`guided-fix`) - guided, with every bug that has one clear fix approved in advance, as **Bugs** in Step 5 describes, so Step 6 asks only about the rest. Everything this skill says of guided mode applies to it too
-- **Autonomous** - the user steps away, and the pass ends in a report and agenda items. Ask nothing after the mode question, because the user is not there to answer and a pending question stalls the whole pass. Steps 3, 6, and 8 say what changes, and Step 6 what changes again where an orchestrator dispatched the pass
+- **Autonomous** - the user steps away after the mode question, and the pass ends in a report and agenda items. Follow `When the user is away` in `practices/decisions.md`, under Step 5's own rule that every behavior change is raised. Steps 3, 6, and 8 say what changes, and Step 6 what changes again where an orchestrator dispatched the pass
 - **Autonomous (fix bugs)** (`autonomous-fix`) - autonomous, with every bug that has one clear fix approved in advance, as **Bugs** in Step 5 describes. Everything this skill says of autonomous mode applies to it too
 
 ## 2. Load guidance
@@ -139,7 +138,9 @@ Then audit every prose file this session wrote against the writing standards.
 
 ## 8. Report
 
-First add one agenda item for each item in `Needs your review`, tagged `User Decision` where it offers the user a choice, grouping the ones that would be resolved together, plus one untagged review item, as `practices/agenda.md` describes, for each of `Decided by the agent` and `Taste proposals` that is not empty, so the report can carry their IDs. Then complete the report this pass started, in one `Write`. Its `opened` lists the IDs just added, and its `closed` the earlier items this pass settled. The body after the front matter is a terse log of fragments, one line per item, no restating the diff. Keep the headings verbatim and in this order, omitting a section only when it is empty. Give options only where two or more real ones exist, and a `Recommendation` line only where Step 6 would mark one `(Recommended)`.
+Close the run as `Closing a run` in `practices/reports.md` describes. The items it opens are one for each item in `Needs your review`, tagged `User Decision` where it offers the user a choice, plus one untagged review item, as `practices/agenda.md` describes, for each of `Decided by the agent` and `Taste proposals` that is not empty. The items it removes are every earlier item this pass closed, as resolved when implemented or found addressed and as dropped on `Drop`, and any item asking for this scope to be refined. Where the scope is a list of paths, the report's `result` is the `scope-hash.sh` output for them, taken now that the last edit to the scope has landed.
+
+The body after the front matter is a terse log of fragments, one line per item, no restating the diff. Keep the headings verbatim and in this order, omitting a section only when it is empty. Give options only where two or more real ones exist, and a `Recommendation` line only where Step 6 would mark one `(Recommended)`.
 
 ```
 # Refine <subject, or the scope in a few words>
@@ -174,7 +175,5 @@ Recommendation: (a)
 - `<command>` - <anything noteworthy>
 - <each intended delta from Step 7, like: 3 tests deleted with parser/legacy.py>
 ```
-
-Then finish the agenda. Remove every earlier item this pass closed, logged as resolved when implemented or found addressed and as dropped on `Drop`, and any item asking for this scope to be refined. Archive the reports this leaves with nothing open, this one included when `Needs your review`, `Decided by the agent`, and `Taste proposals` are all empty.
 
 Name the report by its repo-relative path and give the highlights in a sentence or two.

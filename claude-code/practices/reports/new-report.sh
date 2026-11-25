@@ -6,26 +6,17 @@
 set -euo pipefail
 shopt -s nullglob
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+source "$SCRIPT_DIR/../lock.sh"
 
 # The install scripts stamp the deployed commit into the Claude home. A checkout of the config repo
 # has no stamp, and its reports leave the field out.
 DEPLOYED_COMMIT_PATH="$SCRIPT_DIR/../../.deployed-commit"
-LOCK_WAIT_TENTHS=50
 SEQUENCES=({a..y} z{a..z})
+SLUG_PATTERN='^[a-z0-9]+(-[a-z0-9]+)*$'
 
 usage() {
     echo "Usage: $0 --repo <path> --skill <name> [--subject <slug>]" >&2
     exit 2
-}
-
-take_lock() {
-    local lock_dir=$1 i
-    for ((i = 0; i < LOCK_WAIT_TENTHS; i++)); do
-        mkdir "$lock_dir" 2>/dev/null && return
-        sleep 0.1
-    done
-    echo "Error: lock '$lock_dir' still held after $((LOCK_WAIT_TENTHS / 10))s" >&2
-    exit 1
 }
 
 find_free_sequence() {
@@ -38,9 +29,10 @@ find_free_sequence() {
     exit 1
 }
 
+# Prints nothing for an unborn HEAD, so the report leaves the field out
 fetch_commit() {
     local repo=$1 sha
-    sha=$(git -C "$repo" rev-parse --short HEAD)
+    sha=$(git -C "$repo" rev-parse -q --verify --short HEAD) || return 0
     [[ -z "$(git -C "$repo" status --porcelain -uno)" ]] || sha="$sha-dirty"
     echo "$sha"
 }
@@ -57,9 +49,9 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 [[ -n "$repo" && -n "$skill" ]] || usage
-slug_pattern='^[a-z0-9]+(-[a-z0-9]+)*$'
-[[ "$skill" =~ $slug_pattern ]] || { echo "Error: --skill '$skill' is not a lowercase hyphenated slug" >&2; exit 2; }
-[[ -z "$subject" || "$subject" =~ $slug_pattern ]] || { echo "Error: --subject '$subject' is not a lowercase hyphenated slug" >&2; exit 2; }
+[[ -d "$repo" ]] || { echo "Error: --repo '$repo' is not a directory" >&2; exit 2; }
+[[ "$skill" =~ $SLUG_PATTERN ]] || { echo "Error: --skill '$skill' is not a lowercase hyphenated slug" >&2; exit 2; }
+[[ -z "$subject" || "$subject" =~ $SLUG_PATTERN ]] || { echo "Error: --subject '$subject' is not a lowercase hyphenated slug" >&2; exit 2; }
 
 branch=$(git -C "$repo" branch --show-current)
 commit=$(fetch_commit "$repo")
@@ -67,11 +59,12 @@ config=""
 if [[ -r "$DEPLOYED_COMMIT_PATH" ]]; then
     config=$(head -c 7 "$DEPLOYED_COMMIT_PATH")
 fi
+bash "$SCRIPT_DIR/../agent-dir/ensure-layout.sh" --repo "$repo" >/dev/null
 reports_dir="$repo/.agent/reports"
-mkdir -p "$reports_dir"
 
-take_lock "$reports_dir/.new-report.lock"
-trap 'rmdir "$reports_dir/.new-report.lock" 2>/dev/null || true' EXIT
+lock_dir="$reports_dir/.new-report.lock"
+take_lock "$lock_dir"
+trap 'give_lock "$lock_dir"' EXIT
 
 date=$(date +%F)
 day=${date//-/}
@@ -82,7 +75,7 @@ path="$reports_dir/$day$seq-$skill${subject:+-$subject}.md"
     echo "skill: $skill"
     echo "date: $date"
     echo "branch: ${branch:-detached}"
-    echo "commit: $commit"
+    [[ -z "$commit" ]] || echo "commit: $commit"
     [[ -z "$subject" ]] || echo "subject: $subject"
     [[ -z "$config" ]] || echo "config: $config"
     echo '---'

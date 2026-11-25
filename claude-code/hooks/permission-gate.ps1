@@ -19,7 +19,9 @@ $ErrorActionPreference = 'Stop'
 # substitution (backticks) and paths (/usr/bin/gh) cannot smuggle one past the patterns.
 $WordStart = '(^|[^\w-])'
 $WordEnd = '([^\w-]|$)'
-$GitCommand = $WordStart + 'git(\.exe)?'
+# Program names fold case, as on the Windows filesystem that resolves them, but git and gh read their
+# subcommands and flags with case, so the checks on those match with case too.
+$GitCommand = $WordStart + '(?i:git(\.exe)?)'
 
 # Anything that can move the index, HEAD, a ref, the working tree or the repository config. Only
 # options may stand between git and its subcommand, so `git ls-files config` is no config call.
@@ -42,35 +44,45 @@ $GitApplyIndexFlags = '--index|--cached|--3way|-3'
 $GitApplyIndexPattern = $GitCommand + $GitArgs + $Blank + '+apply(' + $Blank + '+' + $GitArg + '+)*' +
     $Blank + '+(' + $GitApplyIndexFlags + ')' + $WordEnd
 
-# Read forms of write verbs, cut before the write check. Worktree creation leaves the index, HEAD
-# and the working tree untouched. Quotes stay out of the arguments, so a commit message quoting one
-# of these shapes cannot clear the commit that carries it.
+# Read forms of write verbs, cut before the write check. Quotes stay out of the arguments, so a commit
+# message quoting one of these shapes cannot clear the commit that carries it.
 $GitSafeArg = '[^;&|)''"`\s]'
 $GitQuotedPath = $Blank + '+-C' + $Blank + '+("[^"]*"|''[^'']*'')'
 $GitSafeArgs = '(' + $Blank + '+' + $GitSafeArg + '+|' + $GitQuotedPath + ')*'
-$GitReadShapes = 'worktree' + $Blank + '+(add|list)' +
-    # The short listing flags cluster (-avv), and none of the write flags share a letter with them.
-    '|branch' + $Blank + '+(-[avrl]+|--list|--all|--remotes|--verbose|--show-current|--contains|--merged|--no-merged|--points-at|--format|--sort)' +
-    '|tag' + $Blank + '+(-l|-n[0-9]*|--list|--contains|--points-at|--format|--sort)' +
-    '|remote' + $Blank + '+(-v|--verbose|show|get-url)' +
+# Flags that only shape a listing act on whatever follows them, as git branch -r -d origin/x deletes, so
+# they count as a read only when nothing follows them but a listing flag, which refuses every write.
+# The short ones cluster (-avv), and none of the write flags share a letter with them.
+$GitShapeFlag = '--(sort|format)(=|' + $Blank + '+)' + $GitSafeArg + '*'
+$GitBranchShapeFlags = '(' + $Blank + '+(-[avr]+|--all|--remotes|--verbose|' + $GitShapeFlag + '))'
+$GitBranchListFlags = '-[avr]*l[avrl]*|--list|--contains|--merged|--no-merged|--points-at|--show-current'
+$GitTagShapeFlags = '(' + $Blank + '+' + $GitShapeFlag + ')'
+$GitTagListFlags = '-l|-n[0-9]*|--list|--contains|--points-at'
+$GitRemoteShapeFlags = '(' + $Blank + '+(-v|--verbose))'
+$GitReadShapes = 'worktree' + $Blank + '+list' +
+    '|branch' + $GitBranchShapeFlags + '*' + $Blank + '+(' + $GitBranchListFlags + ')' +
+    '|tag' + $GitTagShapeFlags + '*' + $Blank + '+(' + $GitTagListFlags + ')' +
+    '|remote' + $GitRemoteShapeFlags + '*' + $Blank + '+(show|get-url)' +
     '|config' + $Blank + '+(--get[a-zA-Z-]*|--list|-l)' +
     '|submodule' + $Blank + '+(status|summary)|notes' + $Blank + '+(list|show)' +
     '|reflog' + $Blank + '+show|stash' + $Blank + '+(list|show)' +
     '|apply' +
     '|bisect' + $Blank + '+(log|view|visualize)'
 # A subcommand given nothing to act on only lists, except stash, whose bare form stashes.
-$GitListVerbs = 'branch|tag|remote|worktree|submodule|notes|reflog'
+$GitListVerbs = 'branch' + $GitBranchShapeFlags + '*|tag' + $GitTagShapeFlags + '*|remote' + $GitRemoteShapeFlags + '*' +
+    '|worktree|submodule|notes|reflog'
 # A config key with no value after it is read back, where a value after it would set it.
 $GitConfigKey = 'config' + $Blank + '+[A-Za-z][A-Za-z0-9-]*\.[A-Za-z0-9.-]+'
+# Redirections may follow these, since they only move the output.
+$GitReadEnd = '(' + $Blank + '+[0-9]*[<>]+&?' + $Blank + '*' + $GitSafeArg + '*)*' + $Blank + '*($|[;&|)\r\n])'
 $GitReadPattern = $GitCommand + $GitSafeArgs + $Blank + '+((' + $GitReadShapes + ')' + $WordEnd +
-    '|((' + $GitListVerbs + ')|' + $GitConfigKey + ')' + $Blank + '*($|[;&|)\r\n]))'
+    '|((' + $GitListVerbs + ')|' + $GitConfigKey + ')' + $GitReadEnd + ')'
 
 # A clone under .agent/git/ is the agent's own scratch repository, so its local writes are cut before
 # the write check when -C names it, and only a push, which reaches the user's remote, stays denied.
 # No other option may join -C, since a second -C or a --git-dir would point back at the user's repo.
 # A component past git/ may not open with a dot, so a trailing .. cannot climb out.
 $GitScratchComponent = '[\w-][\w.-]*'
-$GitScratchTail = '\.agent[/\\]git[/\\]' + $GitScratchComponent + '([/\\]' + $GitScratchComponent + ')*[/\\]?'
+$GitScratchTail = '(?i:\.agent[/\\]git[/\\])' + $GitScratchComponent + '([/\\]' + $GitScratchComponent + ')*[/\\]?'
 $GitScratchDoubleQuoted = '"([^"]*[/\\])?' + $GitScratchTail + '"'
 $GitScratchSingleQuoted = '''([^'']*[/\\])?' + $GitScratchTail + ''''
 $GitScratchBare = '([^;&|)\s"'']*[/\\])?' + $GitScratchTail
@@ -121,15 +133,23 @@ $SshPlainFilePattern = '\.ssh[/\\](config|known_hosts)(\.old)?([^\w./\\*?-]|$)'
 # no task for TaskStop to reach. run_in_background covers every such case.
 $BackgroundLaunchers = 'nohup|disown|setsid|start-job|start-threadjob'
 $BackgroundLauncherPattern = $WordStart + '(' + $BackgroundLaunchers + ')' + $WordEnd
-# Start-Process detaches unless told to wait. Invoke-Item stays open for opening a file in its app.
-$StartProcessPattern = $WordStart + 'start-process' + $WordEnd
-$StartProcessWaitPattern = $WordStart + '(-wait|waitforexit|wait-process)' + $WordEnd
-$AmpersandNotBackground = '&&|&>>|&>|>&|<&|\|&'
+# Start-Process detaches unless told to wait, under its alias saps and under start, which is its alias
+# in PowerShell and hands off to cmd's start in Git Bash. start counts only where a statement opens
+# outside quotes, since npm start and grep 'a\|start' launch nothing. Invoke-Item stays open for
+# opening a file in its app.
+$StartProcessPattern = $WordStart + '(start-process|saps)' + $WordEnd
+# A quote left standing opens the command handed to a shell with -c. A blank must follow, since
+# start=$(date +%s) assigns a variable.
+$StartCommandPattern = '(^|[;&|({"''])' + $Blank + '*start(' + $Blank + '|$)'
+$StartProcessWaitPattern = $WordStart + '([-/]wait|waitforexit|wait-process)' + $WordEnd
+# && chains statements, so it becomes a separator that a wait can follow.
+$AmpersandAnd = '&&'
+$AmpersandNotBackground = '&>>|&>|>&|<&|\|&'
 # PowerShell's call operator opens a statement and runs in the foreground.
 $AmpersandCallOperator = '(^|[;(|{&])' + $Blank + '*&'
 # Only a standalone ampersand backgrounds, unlike one in a URL query string or a quoted name.
 $BackgroundAmpersandPattern = $Blank + '&'
-# A backgrounded job the same command waits for cannot outlive the call.
+# A wait after the last backgrounded job keeps every job from outliving the call.
 $WaitStatementPattern = '(^|[;&|(])' + $Blank + '*wait(' + $Blank + '|;|$)'
 # A quoted string is data to the shell, unless it is handed to a shell with -c or -Command.
 $QuotedString = '"[^"]*"|''[^'']*'''
@@ -145,7 +165,7 @@ $GitExecWords = $ShellCommandWords + '|ssh|eval|python[0-9.]*|node|perl|ruby'
 $GitQuotedLine = '"[^"\r\n]*"|''[^''\r\n]*'''
 $GitExecArgument = '(^|[^\w-])(' + $GitExecWords + ')(' + $Blank + '+' + $GitSafeArg + '+)*' + $Blank +
     '+(' + $GitQuotedLine + ')'
-$GitOptionQuoted = '(?i:' + $GitCommand + ')' + $GitArgs + $Blank + '+(' + $GitValueOptions + ')' + $Blank +
+$GitOptionQuoted = $GitCommand + $GitArgs + $Blank + '+(' + $GitValueOptions + ')' + $Blank +
     '+(' + $GitQuotedLine + ')'
 $GitExpandingString = '"[^"\r\n]*[$`][^"\r\n]*"'
 $GitDataString = '"[^"$`\r\n]*"|''[^''\r\n]*'''
@@ -153,13 +173,17 @@ $GitQuoteStripPattern = '(' + $GitExecArgument + '|' + $GitOptionQuoted + '|' + 
 $PipedShellPattern = '\|&?' + $Blank + '*(' + $ShellCommandWords + ')' + $WordEnd
 
 # A heredoc body fed to a reader or an interpreter is cut before every check, so a doc quoting
-# `git push` is not read as the command. A body whose opener line names a shell stays in view.
-$HeredocOpener = '<<-?[''"]?([A-Za-z_][A-Za-z0-9_]*)'
+# `git push` is not read as the command. A body whose opener line names a shell stays in view, and so
+# does each body line holding a command substitution under an unquoted delimiter, which runs it.
+$HeredocOpener = '<<-?([''"]?)([A-Za-z_][A-Za-z0-9_]*)'
+$CommandSubstitutionPattern = '[$][(]|`'
 $HeredocDataConsumers = '(^|[^\w-])(cat|tee|python[0-9.]*|node|perl|ruby)([^\w-]|$)'
 $HeredocShellWords = '(^|[^\w.-])(' + $ShellCommandWords + '|ssh|eval|source)([^\w.-]|$)'
 
 # gh is inverted: only these read-only shapes pass, everything else is a denial.
-$GhInvocationPattern = $WordStart + 'gh\s+([^;&|)\r\n]*)'
+$GhInvocationPattern = $WordStart + '(?i:gh(?:\.exe)?)[^\S\r\n]+([^;&|)\r\n]*)'
+# A command substitution opens a command of its own, so a gh inside one is split off as its own invocation.
+$GhSubstitutionOpener = '\$\(|[<>]\(|`'
 $GhBareReads = 'status|version|help|search|api|--version|--help|-h'
 $GhReadVerbs = 'view|list|ls|diff|checks|status|watch|download|clone|verify'
 # A gh followed by nothing but redirections is a name being looked up, as in `command -v gh >/dev/null`.
@@ -171,9 +195,10 @@ $GhPermittedWriteVerbs = 'rerun|cancel'
 $GhPermittedWritePattern = '^workflow\s+run' + $WordEnd + '|^run\s+(' + $GhPermittedWriteVerbs + ')' + $WordEnd
 # A graphql query and a mutation share one request shape, and -F query=@file hides the text.
 $GhGraphqlPattern = 'graphql'
-# gh api sends POST once a field flag appears, unless a read method is named.
-$GhMethodPattern = '(-X|--method)[\s=]*([A-Za-z]+)'
-$GhFieldPattern = '(^|\s)(-f|-F|--field|--raw-field|--input)(\s|=|$)'
+# gh api sends POST once a field flag appears, unless a read method is named. A short flag may carry its
+# value glued on (-ftitle=x, -XDELETE) or follow other short flags in one word (-iX DELETE).
+$GhMethodPattern = '(-[A-Za-z]*X|--method)[\s=]*([A-Za-z]+)'
+$GhFieldPattern = '(^|\s)(-[A-Za-z]*[fF]|(--field|--raw-field|--input)(\s|=|$))'
 $GhReadMethods = @('GET', 'HEAD')
 
 $ReasonAllow = 'Auto-approved by permission-gate.'
@@ -198,14 +223,14 @@ function Find-GhMethod($ghArgs) {
 }
 
 function Test-GhPermitted($ghArgs) {
-    if ($ghArgs -match $GhGraphqlPattern) { return $false }
-    if ($ghArgs -match $GhPermittedWritePattern) { return $true }
+    if ($ghArgs -cmatch $GhGraphqlPattern) { return $false }
+    if ($ghArgs -cmatch $GhPermittedWritePattern) { return $true }
 
     $method = Find-GhMethod $ghArgs
     if ($method -and $method -notin $GhReadMethods) { return $false }
-    if (-not $method -and $ghArgs -match $GhFieldPattern) { return $false }
+    if (-not $method -and $ghArgs -cmatch $GhFieldPattern) { return $false }
 
-    return $ghArgs -match $GhReadOnlyPattern
+    return $ghArgs -cmatch $GhReadOnlyPattern
 }
 
 # Cuts the body of every heredoc that is data or a script, keeping the opener line. A heredoc with no
@@ -214,13 +239,16 @@ function Remove-DataHeredocs($command) {
     $kept = [System.Collections.Generic.List[string]]::new()
     $delimiter = ''
     $keepBody = $false
+    $isQuoted = $false
     $body = [System.Collections.Generic.List[string]]::new()
+    $expanding = [System.Collections.Generic.List[string]]::new()
 
     foreach ($line in $command -split '\r?\n') {
         if ($delimiter) {
             $body.Add($line)
-            if ($line -match ('^[ \t]*' + $delimiter + '[ \t]*$')) {
-                if ($keepBody) { $kept.AddRange($body) }
+            if (-not $isQuoted -and $line -cmatch $CommandSubstitutionPattern) { $expanding.Add($line) }
+            if ($line -cmatch ('^[ \t]*' + $delimiter + '[ \t]*$')) {
+                if ($keepBody) { $kept.AddRange($body) } else { $kept.AddRange($expanding) }
                 $delimiter = ''
             }
             continue
@@ -229,9 +257,11 @@ function Remove-DataHeredocs($command) {
         $kept.Add($line)
         $opener = [regex]::Match($line, $HeredocOpener)
         if ($opener.Success) {
-            $delimiter = $opener.Groups[1].Value
-            $keepBody = $line -notmatch $HeredocDataConsumers -or $line -match $HeredocShellWords
+            $isQuoted = [bool]$opener.Groups[1].Value
+            $delimiter = $opener.Groups[2].Value
+            $keepBody = $line -cnotmatch $HeredocDataConsumers -or $line -cmatch $HeredocShellWords
             $body.Clear()
+            $expanding.Clear()
         }
     }
 
@@ -243,17 +273,22 @@ function Test-Backgrounds($command) {
     if ($command -match $BackgroundLauncherPattern) { return $true }
     if ($command -match $StartProcessPattern -and $command -notmatch $StartProcessWaitPattern) { return $true }
 
-    $ampersandText = [regex]::Replace(($command -replace '\r?\n', ';'), $QuoteStripPattern, '${1} ')
-    if ($ampersandText -match $WaitStatementPattern) { return $false }
+    $statementText = [regex]::Replace(($command -replace '\r?\n', ';'), $QuoteStripPattern, '${1} ')
+    if ($statementText -match $StartCommandPattern -and $command -notmatch $StartProcessWaitPattern) { return $true }
 
-    $ampersandText = ($ampersandText -replace $AmpersandNotBackground, ' ') -replace $AmpersandCallOperator, '$1 '
-    return $ampersandText -match $BackgroundAmpersandPattern
+    $ampersandText = (($statementText -replace $AmpersandAnd, ';') -replace $AmpersandNotBackground, ' ') -replace
+        $AmpersandCallOperator, '$1 '
+    $lastAmpersand = [regex]::Match($ampersandText, $BackgroundAmpersandPattern, 'RightToLeft')
+    if (-not $lastAmpersand.Success) { return $false }
+
+    return $ampersandText.Substring($lastAmpersand.Index + $lastAmpersand.Length) -cnotmatch $WaitStatementPattern
 }
 
 # The invocation text ends at an ampersand, so `gh 2>&1 pr merge 5` would be read as a bare `gh 2>`.
 # Joining the redirection keeps the whole argument list in view.
 function Test-GhInvocationsPermitted($command) {
-    $invocations = [regex]::Matches(($command -replace '>&', '>'), $GhInvocationPattern, 'IgnoreCase')
+    $split = ($command -replace '>&', '>') -replace $GhSubstitutionOpener, ';'
+    $invocations = [regex]::Matches($split, $GhInvocationPattern)
     foreach ($invocation in $invocations) {
         if (-not (Test-GhPermitted $invocation.Groups[2].Value)) { return $false }
     }
@@ -272,25 +307,25 @@ function Get-GateDecision($commandText, $toolName, $inBackground = $false) {
         return @{ decision = 'deny'; reason = $ReasonSsh }
     }
 
-    $gitText = $command -replace $GitScratchPattern, ('${1}' + $GitScratchMarker + ' ')
+    $gitText = $command -creplace $GitScratchPattern, ('${1}' + $GitScratchMarker + ' ')
 
     if ($gitText -match '["'']' -and $gitText -cnotmatch $PipedShellPattern) {
         $gitText = [regex]::Replace($gitText, $GitQuoteStripPattern, '${1}')
     }
 
-    if ($gitText -match $GitScratchOptionPattern) {
+    if ($gitText -cmatch $GitScratchOptionPattern) {
         return @{ decision = 'deny'; reason = $ReasonGit }
     }
 
-    if ($gitText -match $GitScratchPushPattern) {
+    if ($gitText -cmatch $GitScratchPushPattern) {
         return @{ decision = 'deny'; reason = $ReasonGitPush }
     }
 
-    if ($gitText -match $GitApplyIndexPattern) {
+    if ($gitText -cmatch $GitApplyIndexPattern) {
         return @{ decision = 'deny'; reason = $ReasonGitApply }
     }
 
-    if (($gitText -replace $GitReadPattern, ' ') -match $GitWritePattern) {
+    if (($gitText -creplace $GitReadPattern, ' ') -cmatch $GitWritePattern) {
         return @{ decision = 'deny'; reason = $ReasonGit }
     }
 

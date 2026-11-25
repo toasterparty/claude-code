@@ -16,7 +16,8 @@ WORD_START='(^|[^[:alnum:]_-])'
 WORD_END='([^[:alnum:]_-]|$)'
 # Program names fold case, as on the macOS filesystem that resolves them. Spelled as bracket
 # classes because sed has no portable case-insensitive flag.
-GIT_COMMAND="$WORD_START"'[Gg][Ii][Tt](\.[Ee][Xx][Ee])?'
+EXE_SUFFIX='(\.[Ee][Xx][Ee])?'
+GIT_COMMAND="$WORD_START"'[Gg][Ii][Tt]'"$EXE_SUFFIX"
 
 # Anything that can move the index, HEAD, a ref, the working tree or the repository config. Only
 # options may stand between git and its subcommand, so `git ls-files config` is no config call.
@@ -37,27 +38,37 @@ GIT_WRITE_PATTERN="$GIT_COMMAND$GIT_ARGS"'[[:blank:]]+('"$GIT_WRITE_VERBS"')'"$W
 GIT_APPLY_INDEX_FLAGS='--index|--cached|--3way|-3'
 GIT_APPLY_INDEX_PATTERN="$GIT_COMMAND$GIT_ARGS"'[[:blank:]]+apply([[:blank:]]+'"$GIT_ARG"'+)*[[:blank:]]+('"$GIT_APPLY_INDEX_FLAGS"')'"$WORD_END"
 
-# Read forms of write verbs, cut before the write check. Worktree creation leaves the index, HEAD
-# and the working tree untouched. Quotes stay out of the arguments, so a commit message quoting one
-# of these shapes cannot clear the commit that carries it.
+# Read forms of write verbs, cut before the write check. Quotes stay out of the arguments, so a commit
+# message quoting one of these shapes cannot clear the commit that carries it.
 GIT_SAFE_ARG="[^;&|)\`'\"[:blank:]]"
 GIT_QUOTED_PATH="[[:blank:]]+-C[[:blank:]]+(\"[^\"]*\"|'[^']*')"
 GIT_SAFE_ARGS='([[:blank:]]+'"$GIT_SAFE_ARG"'+|'"$GIT_QUOTED_PATH"')*'
-GIT_READ_SHAPES='worktree[[:blank:]]+(add|list)'
-# The short listing flags cluster (-avv), and none of the write flags share a letter with them.
-GIT_READ_SHAPES="$GIT_READ_SHAPES"'|branch[[:blank:]]+(-[avrl]+|--list|--all|--remotes|--verbose|--show-current|--contains|--merged|--no-merged|--points-at|--format|--sort)'
-GIT_READ_SHAPES="$GIT_READ_SHAPES"'|tag[[:blank:]]+(-l|-n[0-9]*|--list|--contains|--points-at|--format|--sort)'
-GIT_READ_SHAPES="$GIT_READ_SHAPES"'|remote[[:blank:]]+(-v|--verbose|show|get-url)'
+# Flags that only shape a listing act on whatever follows them, as git branch -r -d origin/x deletes, so
+# they count as a read only when nothing follows them but a listing flag, which refuses every write.
+# The short ones cluster (-avv), and none of the write flags share a letter with them.
+GIT_SHAPE_FLAG='--(sort|format)(=|[[:blank:]]+)'"$GIT_SAFE_ARG"'*'
+GIT_BRANCH_SHAPE_FLAGS='([[:blank:]]+(-[avr]+|--all|--remotes|--verbose|'"$GIT_SHAPE_FLAG"'))'
+GIT_BRANCH_LIST_FLAGS='-[avr]*l[avrl]*|--list|--contains|--merged|--no-merged|--points-at|--show-current'
+GIT_TAG_SHAPE_FLAGS='([[:blank:]]+'"$GIT_SHAPE_FLAG"')'
+GIT_TAG_LIST_FLAGS='-l|-n[0-9]*|--list|--contains|--points-at'
+GIT_REMOTE_SHAPE_FLAGS='([[:blank:]]+(-v|--verbose))'
+GIT_READ_SHAPES='worktree[[:blank:]]+list'
+GIT_READ_SHAPES="$GIT_READ_SHAPES|branch$GIT_BRANCH_SHAPE_FLAGS*[[:blank:]]+($GIT_BRANCH_LIST_FLAGS)"
+GIT_READ_SHAPES="$GIT_READ_SHAPES|tag$GIT_TAG_SHAPE_FLAGS*[[:blank:]]+($GIT_TAG_LIST_FLAGS)"
+GIT_READ_SHAPES="$GIT_READ_SHAPES|remote$GIT_REMOTE_SHAPE_FLAGS*[[:blank:]]+(show|get-url)"
 GIT_READ_SHAPES="$GIT_READ_SHAPES"'|config[[:blank:]]+(--get[[:alpha:]-]*|--list|-l)'
 GIT_READ_SHAPES="$GIT_READ_SHAPES"'|submodule[[:blank:]]+(status|summary)|notes[[:blank:]]+(list|show)'
 GIT_READ_SHAPES="$GIT_READ_SHAPES"'|reflog[[:blank:]]+show|stash[[:blank:]]+(list|show)'
 GIT_READ_SHAPES="$GIT_READ_SHAPES"'|apply'
 GIT_READ_SHAPES="$GIT_READ_SHAPES"'|bisect[[:blank:]]+(log|view|visualize)'
 # A subcommand given nothing to act on only lists, except stash, whose bare form stashes.
-GIT_LIST_VERBS='branch|tag|remote|worktree|submodule|notes|reflog'
+GIT_LIST_VERBS="branch$GIT_BRANCH_SHAPE_FLAGS*|tag$GIT_TAG_SHAPE_FLAGS*|remote$GIT_REMOTE_SHAPE_FLAGS*"
+GIT_LIST_VERBS="$GIT_LIST_VERBS|worktree|submodule|notes|reflog"
 # A config key with no value after it is read back, where a value after it would set it.
 GIT_CONFIG_KEY='config[[:blank:]]+[[:alpha:]][[:alnum:]-]*\.[[:alnum:].-]+'
-GIT_READ_PATTERN="$GIT_COMMAND$GIT_SAFE_ARGS"'[[:blank:]]+(('"$GIT_READ_SHAPES"')'"$WORD_END"'|(('"$GIT_LIST_VERBS"')|'"$GIT_CONFIG_KEY"')[[:blank:]]*($|[;&|)]))'
+# Redirections may follow these, since they only move the output.
+GIT_READ_END='([[:blank:]]+[0-9]*[<>]+&?[[:blank:]]*'"$GIT_SAFE_ARG"'*)*[[:blank:]]*($|[;&|)])'
+GIT_READ_PATTERN="$GIT_COMMAND$GIT_SAFE_ARGS"'[[:blank:]]+(('"$GIT_READ_SHAPES"')'"$WORD_END"'|(('"$GIT_LIST_VERBS"')|'"$GIT_CONFIG_KEY"')'"$GIT_READ_END)"
 
 # A clone under .agent/git/ is the agent's own scratch repository, so its local writes are cut before
 # the write check when -C names it, and only a push, which reaches the user's remote, stays denied.
@@ -115,18 +126,26 @@ SSH_PLAIN_FILE_PATTERN='\.ssh[/\\](config|known_hosts)(\.old)?([^[:alnum:]_./\\*
 # no task for TaskStop to reach. run_in_background covers every such case.
 BACKGROUND_LAUNCHERS='nohup|disown|setsid|start-job|start-threadjob'
 BACKGROUND_LAUNCHER_PATTERN="$WORD_START"'('"$BACKGROUND_LAUNCHERS"')'"$WORD_END"
-# Start-Process detaches unless told to wait. Invoke-Item stays open for opening a file in its app.
-START_PROCESS_PATTERN="$WORD_START"'start-process'"$WORD_END"
-START_PROCESS_WAIT_PATTERN="$WORD_START"'(-wait|waitforexit|wait-process)'"$WORD_END"
-AMPERSAND_NOT_BACKGROUND='&&|&>>|&>|>&|<&|\|&'
+# Start-Process detaches unless told to wait, under its alias saps and under start, which is its alias
+# in PowerShell and hands off to cmd's start in Git Bash. start counts only where a statement opens
+# outside quotes, since npm start and grep 'a\|start' launch nothing. Invoke-Item stays open for
+# opening a file in its app.
+START_PROCESS_PATTERN="$WORD_START"'(start-process|saps)'"$WORD_END"
+# A quote left standing opens the command handed to a shell with -c. A blank must follow, since
+# start=$(date +%s) assigns a variable.
+START_COMMAND_PATTERN='(^|[;&|({"'"$QUOTE"'])[[:blank:]]*start([[:blank:]]|$)'
+START_PROCESS_WAIT_PATTERN="$WORD_START"'([-/]wait|waitforexit|wait-process)'"$WORD_END"
+# && chains statements, so it becomes a separator that a wait can follow.
+AMPERSAND_AND='&&'
+AMPERSAND_NOT_BACKGROUND='&>>|&>|>&|<&|\|&'
 # PowerShell's call operator opens a statement and runs in the foreground.
 AMPERSAND_CALL_OPERATOR='(^|[;(|{&])[[:blank:]]*&'
 # Only a standalone ampersand backgrounds, unlike one in a URL query string or a quoted name.
 BACKGROUND_AMPERSAND_PATTERN='[[:blank:]]&'
-# A backgrounded job the same command waits for cannot outlive the call.
+# A wait after the last backgrounded job keeps every job from outliving the call.
 WAIT_STATEMENT_PATTERN='(^|[;&|(])[[:blank:]]*wait([[:blank:];]|$)'
 # A quoted string is data to the shell, unless it is handed to a shell with -c or -Command.
-QUOTED_STRING='"[^"]*"|'"'"'[^'"'"']*'"'"
+QUOTED_STRING='"[^"]*"|'"$QUOTE[^$QUOTE]*$QUOTE"
 SHELL_COMMAND_WORDS='sh|bash|zsh|dash|ksh|pwsh|powershell|su'
 SHELL_COMMAND_ARGUMENT='((^|[^[:alnum:]_-])('"$SHELL_COMMAND_WORDS"')([[:blank:]]+-[^[:blank:]]+)*[[:blank:]]+(-[[:alpha:]]*c|-[Cc]ommand)[[:blank:]]+('"$QUOTED_STRING"'))'
 QUOTE_STRIP_PATTERN="$SHELL_COMMAND_ARGUMENT|$QUOTED_STRING"
@@ -143,15 +162,20 @@ GIT_QUOTE_STRIP_PATTERN='('"$GIT_EXEC_ARGUMENT|$GIT_OPTION_QUOTED|$GIT_EXPANDING
 PIPED_SHELL_PATTERN='\|&?[[:blank:]]*('"$SHELL_COMMAND_WORDS"')'"$WORD_END"
 
 # A heredoc body fed to a reader or an interpreter is cut before every check, so a doc quoting
-# `git push` is not read as the command. A body whose opener line names a shell stays in view.
+# `git push` is not read as the command. A body whose opener line names a shell stays in view, and so
+# does each body line holding a command substitution under an unquoted delimiter, which runs it.
 HEREDOC_OPENER="<<-?['\"]?[A-Za-z_][A-Za-z0-9_]*"
 HEREDOC_OPENER_PREFIX="^<<-?['\"]?"
+COMMAND_SUBSTITUTION_PATTERN='[$][(]|`'
 HEREDOC_DATA_CONSUMERS='(^|[^[:alnum:]_-])(cat|tee|python[0-9.]*|node|perl|ruby)([^[:alnum:]_-]|$)'
 HEREDOC_SHELL_WORDS='(^|[^[:alnum:]_.-])('"$SHELL_COMMAND_WORDS"'|ssh|eval|source)([^[:alnum:]_.-]|$)'
 
 # gh is inverted: only these read-only shapes pass, everything else is a denial.
-GH_INVOCATION_PATTERN="$WORD_START"'[Gg][Hh][[:space:]]+[^;&|)]*'
-GH_INVOCATION_STRIP='^[^[:alnum:]_-]?[Gg][Hh][[:space:]]+'
+GH_PROGRAM='[Gg][Hh]'"$EXE_SUFFIX"'[[:space:]]+'
+GH_INVOCATION_PATTERN="$WORD_START$GH_PROGRAM"'[^;&|)]*'
+GH_INVOCATION_STRIP='^[^[:alnum:]_-]?'"$GH_PROGRAM"
+# A command substitution opens a command of its own, so a gh inside one is split off as its own invocation.
+GH_SUBSTITUTION_OPENER='\$\(|[<>]\(|`'
 GH_BARE_READS='status|version|help|search|api|--version|--help|-h'
 GH_READ_VERBS='view|list|ls|diff|checks|status|watch|download|clone|verify'
 # A gh followed by nothing but redirections is a name being looked up, as in `command -v gh >/dev/null`.
@@ -163,9 +187,10 @@ GH_PERMITTED_WRITE_VERBS='rerun|cancel'
 GH_PERMITTED_WRITE_PATTERN='^workflow[[:space:]]+run'"$WORD_END"'|^run[[:space:]]+('"$GH_PERMITTED_WRITE_VERBS"')'"$WORD_END"
 # A graphql query and a mutation share one request shape, and -F query=@file hides the text.
 GH_GRAPHQL_PATTERN='graphql'
-# gh api sends POST once a field flag appears, unless a read method is named.
-GH_METHOD_PATTERN='(-X|--method)[[:space:]=]*[A-Za-z]+'
-GH_FIELD_PATTERN='(^|[[:space:]])(-f|-F|--field|--raw-field|--input)([[:space:]]|=|$)'
+# gh api sends POST once a field flag appears, unless a read method is named. A short flag may carry its
+# value glued on (-ftitle=x, -XDELETE) or follow other short flags in one word (-iX DELETE).
+GH_METHOD_PATTERN='(-[[:alpha:]]*X|--method)[[:space:]=]*([[:alpha:]]+)'
+GH_FIELD_PATTERN='(^|[[:space:]])(-[[:alpha:]]*[fF]|(--field|--raw-field|--input)([[:space:]]|=|$))'
 GH_READ_METHODS='GET|HEAD'
 
 REASON_ALLOW='Auto-approved by permission-gate.'
@@ -205,7 +230,12 @@ matches_ci() {
 
 # The last -X/--method flag wins, as in gh itself. Prints nothing when none is given.
 find_gh_method() {
-    printf '%s' "$1" | grep -oE "$GH_METHOD_PATTERN" | tail -1 | grep -oE '[A-Za-z]+$' || true
+    local rest=$1 method=''
+    while [[ $rest =~ $GH_METHOD_PATTERN ]]; do
+        method=${BASH_REMATCH[2]}
+        rest=${rest#*"${BASH_REMATCH[0]}"}
+    done
+    printf '%s' "$method"
 }
 
 gh_permitted() {
@@ -236,12 +266,14 @@ gh_permitted() {
 # closing line is kept whole, so a stray << can never hide the rest of the command.
 strip_data_heredocs() {
     printf '%s\n' "$1" | awk \
-        -v opener="$HEREDOC_OPENER" -v prefix="$HEREDOC_OPENER_PREFIX" \
+        -v opener="$HEREDOC_OPENER" -v prefix="$HEREDOC_OPENER_PREFIX" -v quote="$QUOTE" \
+        -v substitution="$COMMAND_SUBSTITUTION_PATTERN" \
         -v data="$HEREDOC_DATA_CONSUMERS" -v shell="$HEREDOC_SHELL_WORDS" '
         delim != "" {
             body = body $0 "\n"
+            if (!quoted && $0 ~ substitution) expanding = expanding $0 "\n"
             if ($0 ~ ("^[ \t]*" delim "[ \t]*$")) {
-                if (keep) printf "%s", body
+                printf "%s", (keep ? body : expanding)
                 delim = ""
             }
             next
@@ -250,9 +282,11 @@ strip_data_heredocs() {
             print
             if (match($0, opener)) {
                 delim = substr($0, RSTART, RLENGTH)
+                quoted = index(delim, "\"") || index(delim, quote)
                 sub(prefix, "", delim)
                 keep = ($0 !~ data) || ($0 ~ shell)
                 body = ""
+                expanding = ""
             }
         }
         END { if (delim != "") printf "%s", body }
@@ -270,18 +304,28 @@ backgrounds() {
         return 0
     fi
 
-    if [[ $command_text != *'&'* ]]; then
+    if [[ $command_text != *'&'* && ${command_text,,} != *start* ]]; then
+        return 1
+    fi
+
+    local statement_text
+    statement_text="$(printf '%s' "$command_text" | tr '\n' ';' | sed -E "s/$QUOTE_STRIP_PATTERN/\1 /g")"
+    if matches_ci "$statement_text" "$START_COMMAND_PATTERN" && ! matches_ci "$command_text" "$START_PROCESS_WAIT_PATTERN"; then
+        return 0
+    fi
+
+    if [[ $statement_text != *'&'* ]]; then
         return 1
     fi
 
     local ampersand_text
-    ampersand_text="$(printf '%s' "$command_text" | tr '\n' ';' | sed -E "s/$QUOTE_STRIP_PATTERN/\1 \2/g")"
-    if matches "$ampersand_text" "$WAIT_STATEMENT_PATTERN"; then
+    ampersand_text="$(printf '%s' "$statement_text" | sed -E -e "s/$AMPERSAND_AND/;/g" \
+        -e "s/$AMPERSAND_NOT_BACKGROUND/ /g" -e "s/$AMPERSAND_CALL_OPERATOR/\1 /g")"
+    if ! matches "$ampersand_text" "$BACKGROUND_AMPERSAND_PATTERN"; then
         return 1
     fi
 
-    ampersand_text="$(printf '%s' "$ampersand_text" | sed -E -e "s/$AMPERSAND_NOT_BACKGROUND/ /g" -e "s/$AMPERSAND_CALL_OPERATOR/\1 /g")"
-    matches "$ampersand_text" "$BACKGROUND_AMPERSAND_PATTERN"
+    ! matches "${ampersand_text##*[[:blank:]]&}" "$WAIT_STATEMENT_PATTERN"
 }
 
 # The invocation text ends at an ampersand, so `gh 2>&1 pr merge 5` would be read as a bare `gh 2>`.
@@ -295,7 +339,7 @@ gh_invocations_permitted() {
     while IFS= read -r invocation; do
         gh_args="$(printf '%s' "$invocation" | sed -E "s/$GH_INVOCATION_STRIP//")"
         gh_permitted "$gh_args" || return 1
-    done < <(printf '%s' "$1" | sed -E 's/>&/>/g' | grep -oE "$GH_INVOCATION_PATTERN" || true)
+    done < <(printf '%s' "$1" | sed -E -e 's/>&/>/g' -e "s/$GH_SUBSTITUTION_OPENER/;/g" | grep -oE "$GH_INVOCATION_PATTERN" || true)
 }
 
 unguarded_rm() {

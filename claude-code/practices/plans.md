@@ -9,8 +9,8 @@ Completeness outranks brevity: state a fact at every step that needs it. A plan 
 
 ## Executing
 When executing a plan the user wrote, usually in `<repo>/.agent/inbox/`:
-- Read the whole plan first; raise ambiguities and conflicts up front, not mid-run
-- Then work unattended: resolve gaps in the plan's spirit and list deviations in the final report
+- Read the whole plan first; where the user is on hand, raise ambiguities and conflicts up front, not mid-run
+- Then work unattended: resolve gaps as `When the user is away` in `practices/decisions.md` directs, and list deviations in the final report
 - On a large task, strip the scaffolding, debug output, and dead code the run introduced, then rerun the project's validation
 - Distill process the run uncovered (build quirks, deploy steps, gotchas) into `<repo>/.agent/doc/`
 - Verify the result against the plan before reporting done

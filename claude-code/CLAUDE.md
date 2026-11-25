@@ -35,6 +35,7 @@ Monitor: filter to the lines that mean done or failed, never progress lines. Eve
 Read each file below on its trigger, once per session and again after a compaction drops it. Paths in this file and in every guidance file are relative to this file's directory:
 - `languages/english.md`: before first writing a `.md` file or any other prose that outlives the session (comments, docstrings, user-facing strings, `outbox/` deliverables, reports)
 - `languages/common.md`, plus the language's own file among `languages/{bash,c,make,python}.md`: on the code rule in AI Rules. No other language has a file
+- `practices/decisions.md`: before putting a decision to the user, and before deciding one yourself while the user is away
 - `practices/orchestration.md`: before orchestrating, that is driving an objective through subagents while doing none of the work yourself, whether a prompt asks for it ("Orchestrate an analysis of ...") or a skill does
 - `practices/plans.md`: before writing a plan another agent will execute, in a file or a subagent prompt, and before executing a plan the user wrote
 - `practices/repo-structure.md`: before starting a green-field project, or adding repo-level structure to an existing one (docs tree, `tools/`, `build/`, Makefile, `.gitignore`, `.vscode/`, install steps)
