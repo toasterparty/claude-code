@@ -40,10 +40,10 @@ Hand every non-trivial decision in the walk to one `/consult`, whether it is a `
 
 Then walk the `User Task` items, one at a time in agenda order. Give the exact steps: commands to run, where to look, and the result that counts as done. Verify each task the user reports done against evidence you can check yourself where one exists, such as a CI run, a file, or a log, then remove the item. A task the user cannot do now stays, with anything learned added as a sub-bullet.
 
-Then close as step 9 directs, listing in chat the items this session unblocked, since the next Autonomous run can take them.
+Then close as step 9 directs, adding to its counts the items this session unblocked, since the next Autonomous run can take them.
 
 ## 4. Review
-Brief in chat, by section in agenda order: a line each for the open items worth doing next, with why the top one ranks first, then every item the walk removed as resolved or left unclear, and every move you would propose.
+Brief in chat, by section in agenda order: a line each for the open items worth doing next, with why the top one ranks first, then how many items the walk removed as resolved, and every move you would propose.
 
 Then ask in one `AskUserQuestion` batch, adding calls only if more than four questions remain:
 - The pick: the top open item, the next two as alternatives, and `None` to stop after the cleanup. Another item or a reorder comes through `Other`
@@ -102,9 +102,8 @@ A decision made without asking is a choice the work forced that no plan, doc, or
 ### Chat
 Report in chat:
 - What was done and where you deviated
-- Items removed as resolved, each with its evidence
-- Items skipped as blocked, by ID, and what each needs from the user, with every other `User Task` and `User Decision` item on the agenda
-- Unclear items left in place, and any proposed reorder
+- The agenda in counts, as `Chat reports` in `practices/agenda.md` describes: items removed, added, and left unclear, and the decisions and tasks waiting on the user
+- Any proposed reorder
 - The intent and subject best suited to the next `/next` run
 
 Keep it a summary. The user often skips it, so anything a later session needs must already be in the diff, the agenda, or a report.

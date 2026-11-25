@@ -102,6 +102,13 @@ Trust the tags before re-deriving anything. An item tagged `User Task` or `User 
 
 Record what the check confirms, so the next walk can skip it: stamp `open @<HEAD>` on each item checked and found still open, restamping one already stamped, and add the tag for each blocker found that the item did not yet name. An item classified from its tags or an existing stamp alone was not checked, so its stamp stays as it was, because a restamp claims a check that never ran.
 
+## Chat reports
+Wherever you report agenda state unasked, such as a task's closing reply, a skill's close, or the context in a question, give counts by kind, as in "Resolved 3 items and added 2. 12 decisions and 2 tasks wait on you." The user skims past a list of IDs, and asks or reads the agenda to learn which items they are. Describe the work you did by what it changed, without item IDs mid-sentence.
+
+Elaborate on an item unprompted where it is important or interesting enough to earn the user's attention, such as a decision that holds up much of the agenda or a surprising finding. Say what it is about in words, with its ID after, so the user can name it back.
+
+An answer to a question about which items, and a choice between items, name each one.
+
 ## What's next
 Answer "What's next on the agenda?" with the top item of the top section: what resolving it takes and why it ranks first, then a line each for the next two. Stop there. The user agrees or reorders, then asks next turn to implement it or to walk through its decisions. `/next` is the user's way to work the agenda in one run.
 

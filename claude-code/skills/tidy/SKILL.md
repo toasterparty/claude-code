@@ -58,4 +58,4 @@ Files already committed stay tracked until the user untracks them. Never touch t
 Update project memory to match the tidied directory and cut its bloat: stale paths, rules the user CLAUDE.md already carries, prose that restates itself.
 
 ## Report
-List the moves, deletions, and generalized files, the agenda items dropped with their evidence, and the items added with their source asset. Name each step 5 script and the procedure it replaces, give transcripts skimmed against transcripts skipped, and flag anything left in place because its fate was unclear.
+List the moves, deletions, and generalized files. Report the agenda items dropped and added as `Chat reports` in `practices/agenda.md` describes. Name each step 5 script and the procedure it replaces, give transcripts skimmed against transcripts skipped, and flag anything left in place because its fate was unclear.
